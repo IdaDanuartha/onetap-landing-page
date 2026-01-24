@@ -515,66 +515,87 @@ function StatisticsSection() {
     <AnimatedSection className="section bg-gradient-to-br from-primary-950 via-primary-900 to-primary-950" id="statistics">
       <div className="max-w-7xl mx-auto">
         <motion.div variants={fadeInUp} className="text-center mb-16">
-          <span className="text-secondary-400 font-semibold text-sm uppercase tracking-wider">Data Pasar Indonesia 2024</span>
+          <span className="text-secondary-400 font-semibold text-sm uppercase tracking-wider">Mengapa Sekarang?</span>
           <h2 className="mt-3 text-3xl md:text-5xl font-bold text-white">
-            Momentum NFC di <span className="text-secondary-400">Indonesia</span>
+            Ekosistem <span className="text-secondary-400">Siap</span> untuk NFC
           </h2>
           <p className="mt-4 text-primary-200 max-w-2xl mx-auto">
-            Indonesia memimpin adopsi pembayaran digital di Asia Tenggara dengan pertumbuhan pesat teknologi NFC
+            2025-2026 adalah momentum tepat — teknologi, perilaku, dan tren pasar sudah mendukung adopsi produk NFC
           </p>
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-          <StatCounter value={53} suffix="M+" label="Pengguna QRIS" />
-          <StatCounter value={96} suffix="%" label="Adopsi E-Wallet" />
-          <StatCounter value={79} suffix="%" label="Penetrasi Internet" />
-          <StatCounter value={209} suffix="%" label="Pertumbuhan YoY" />
+          <StatCounter value={95} suffix="%+" label="Smartphone Baru Support NFC" />
+          <StatCounter value={90} suffix="%+" label="Preferensi Custom Design" />
+          <StatCounter value={75} suffix="JT+" label="Gen Z di Indonesia" />
+          <StatCounter value={15} suffix="-25" label="Target Usia Tahun" />
         </div>
 
-        <motion.div variants={fadeInUp} className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-secondary-400/20">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-secondary-400" />
-                Tren Utama
-              </h3>
-              <ul className="space-y-3 text-primary-200">
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-secondary-400 mt-0.5 flex-shrink-0" />
-                  Bank Indonesia meluncurkan QRIS Tap NFC pilot (Des 2024)
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-secondary-400 mt-0.5 flex-shrink-0" />
-                  34.23 juta merchant sudah menerima pembayaran digital
-                </li>
-                <li className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-secondary-400 mt-0.5 flex-shrink-0" />
-                  Pasar pembayaran proximity tumbuh 21.74% CAGR
-                </li>
-              </ul>
+        <div className="grid md:grid-cols-2 gap-6">
+          <motion.div variants={fadeInUp} className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-secondary-400/20">
+            <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-secondary-400" />
+              Smartphone Siap NFC
+            </h3>
+            <p className="text-primary-200 mb-4">
+              95-98% smartphone baru di Indonesia sudah mendukung NFC — Samsung, Xiaomi, OPPO, realme menjadikannya fitur standar.
+            </p>
+            <div className="bg-secondary-400/10 rounded-lg p-3 flex items-start gap-2">
+              <Zap className="w-4 h-4 text-secondary-400 mt-0.5 flex-shrink-0" />
+              <p className="text-secondary-400 text-sm font-medium">
+                Momentum: Hambatan adopsi semakin kecil → NFC feasible untuk mass market
+              </p>
             </div>
-            <div>
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <ArrowRight className="w-5 h-5 text-secondary-400" />
-                Proyeksi 2025
-              </h3>
-              <ul className="space-y-3 text-primary-200">
-                <li className="flex items-start gap-3">
-                  <ArrowRight className="w-5 h-5 text-primary-400 mt-0.5 flex-shrink-0" />
-                  Digital payment market: USD 115.34 Miliar
-                </li>
-                <li className="flex items-start gap-3">
-                  <ArrowRight className="w-5 h-5 text-primary-400 mt-0.5 flex-shrink-0" />
-                  E-commerce market: USD 95 Miliar
-                </li>
-                <li className="flex items-start gap-3">
-                  <ArrowRight className="w-5 h-5 text-primary-400 mt-0.5 flex-shrink-0" />
-                  Smartphone ownership terus meningkat
-                </li>
-              </ul>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-secondary-400/20">
+            <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Fingerprint className="w-5 h-5 text-secondary-400" />
+              Perilaku Tap Sudah Terbentuk
+            </h3>
+            <p className="text-primary-200 mb-4">
+              QRIS, e-wallet, dan contactless payment membuat generasi muda terbiasa dengan interaksi &quot;tap&quot; dalam aktivitas sehari-hari.
+            </p>
+            <div className="bg-secondary-400/10 rounded-lg p-3 flex items-start gap-2">
+              <Zap className="w-4 h-4 text-secondary-400 mt-0.5 flex-shrink-0" />
+              <p className="text-secondary-400 text-sm font-medium">
+                Momentum: NFC keychain terasa natural, bukan teknologi asing
+              </p>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-secondary-400/20">
+            <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Palette className="w-5 h-5 text-secondary-400" />
+              Tren Aksesoris Personal
+            </h3>
+            <p className="text-primary-200 mb-4">
+              Remaja 15-25 tahun mencari aksesoris dengan cerita, fungsi, dan personalisasi. Keychain jadi item populer — terjangkau & ekspresif.
+            </p>
+            <div className="bg-secondary-400/10 rounded-lg p-3 flex items-start gap-2">
+              <Zap className="w-4 h-4 text-secondary-400 mt-0.5 flex-shrink-0" />
+              <p className="text-secondary-400 text-sm font-medium">
+                Momentum: 90%+ responden menjadikan desain custom sebagai faktor utama
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-secondary-400/20">
+            <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-secondary-400" />
+              Harga Terjangkau
+            </h3>
+            <p className="text-primary-200 mb-4">
+              Mulai dari Rp 25.000 untuk keychain basic dan Rp 45.000 untuk NFC keychain — sangat cocok untuk budget Gen Z dan pelajar.
+            </p>
+            <div className="bg-secondary-400/10 rounded-lg p-3 flex items-start gap-2">
+              <Zap className="w-4 h-4 text-secondary-400 mt-0.5 flex-shrink-0" />
+              <p className="text-secondary-400 text-sm font-medium">
+                Momentum: Aksesoris fungsional dengan harga terjangkau = daya beli tinggi
+              </p>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </AnimatedSection>
   );
@@ -585,7 +606,7 @@ function HowItWorksSection() {
   const steps = [
     {
       step: "01",
-      title: "Pesan",
+      title: "Order",
       description: "Pilih desain dan kirimkan data Anda: link profil, sosial media, kontak, atau info bisnis. Kami yang urus sisanya!",
       icon: Settings,
     },
@@ -597,7 +618,7 @@ function HowItWorksSection() {
     },
     {
       step: "03",
-      title: "Terhubung",
+      title: "Connected",
       description: "Informasi langsung muncul di layar. Simpan kontak atau akses link dengan mudah.",
       icon: Link2,
     },
@@ -648,23 +669,23 @@ function HowItWorksSection() {
 function ProductsSection() {
   const products = [
     {
-      name: "Personal Edition",
-      description: "NFC Keychain untuk personal branding dan networking",
-      features: ["Desain custom", "NFC chip premium", "Link profil & sosmed", "Lifetime akses", "Gratis pengiriman"],
+      name: "Basic Keychain",
+      description: "Keychain stylish tanpa fitur NFC",
+      features: ["Desain custom", "Material premium", "Berbagai pilihan warna", "Tahan lama", "Gratis pengiriman"],
       price: "Mulai Rp 25.000",
-      popular: true,
-    },
-    {
-      name: "Business Edition",
-      description: "NFC Keychain untuk profesional dan pelaku bisnis",
-      features: ["Logo perusahaan", "Kartu nama digital", "vCard download", "Multi-link halaman", "Priority support"],
-      price: "Mulai Rp 50.000",
       popular: false,
     },
     {
+      name: "OneTap Keychain",
+      description: "Keychain dengan teknologi NFC untuk berbagi link & profil",
+      features: ["Semua fitur Basic", "NFC chip premium", "Link profil & sosmed", "Lifetime akses", "Update data kapan saja"],
+      price: "Mulai Rp 45.000",
+      popular: true,
+    },
+    {
       name: "Custom Edition",
-      description: "NFC Keychain full custom sesuai kebutuhan Anda",
-      features: ["Desain bebas sesuai request", "Material premium pilihan", "Bulk order discount", "Konsultasi desain gratis", "Dedicated support"],
+      description: "Full custom sesuai kebutuhan Anda",
+      features: ["Ukuran custom", "Packaging eksklusif", "Desain bebas request", "Bulk order discount", "Konsultasi gratis"],
       price: "Custom Quote",
       popular: false,
     },
@@ -788,9 +809,50 @@ function UseCasesSection() {
 
 // CTA Section
 function CTASection() {
+  const [mounted, setMounted] = useState(false);
+
+  // Pre-generate particle positions to avoid hydration mismatch
+  const particles = useMemo(() => {
+    if (!mounted) return [];
+    return [...Array(12)].map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      duration: 3 + Math.random() * 2,
+      delay: Math.random() * 2,
+    }));
+  }, [mounted]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <AnimatedSection className="section bg-gradient-animated" id="contact">
-      <div className="max-w-4xl mx-auto text-center">
+    <AnimatedSection className="section bg-gradient-animated relative overflow-hidden" id="contact">
+      {/* Floating particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {particles.map((particle) => (
+          <motion.div
+            key={particle.id}
+            className="absolute w-2 h-2 bg-secondary-400 rounded-full"
+            style={{
+              left: `${particle.left}%`,
+              top: `${particle.top}%`,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              opacity: [0.3, 0.7, 0.3],
+            }}
+            transition={{
+              duration: particle.duration,
+              repeat: Infinity,
+              delay: particle.delay,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="max-w-4xl mx-auto text-center relative z-10">
         <motion.div variants={fadeInUp}>
           <h2 className="text-3xl md:text-5xl font-bold text-white">
             Siap Untuk Lebih <span className="text-secondary-400">Terhubung?</span>
