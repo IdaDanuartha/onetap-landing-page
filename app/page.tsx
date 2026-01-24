@@ -33,11 +33,10 @@ import {
   ArrowRight,
   Zap,
 } from "lucide-react";
-
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+  visible: { opacity: 1, y: 0 },
 };
 
 const staggerContainer = {
@@ -50,7 +49,7 @@ const staggerContainer = {
 
 const scaleIn = {
   hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
+  visible: { opacity: 1, scale: 1 },
 };
 
 // Counter animation hook
@@ -81,7 +80,7 @@ function useCounter(end: number, duration: number = 2000, startCounting: boolean
 }
 
 // Section wrapper with animation
-function AnimatedSection({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function AnimatedSection({ children, className = "", id }: { children: React.ReactNode; className?: string; id?: string }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -92,6 +91,7 @@ function AnimatedSection({ children, className = "" }: { children: React.ReactNo
       animate={isInView ? "visible" : "hidden"}
       variants={staggerContainer}
       className={className}
+      id={id}
     >
       {children}
     </motion.section>
