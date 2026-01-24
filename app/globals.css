@@ -1,26 +1,306 @@
 @import "tailwindcss";
 
 :root {
+  /* Primary Blue Color Palette - #0e53df */
+  --primary-50: #eef4ff;
+  --primary-100: #d9e5ff;
+  --primary-200: #bcd3ff;
+  --primary-300: #8eb8ff;
+  --primary-400: #5991ff;
+  --primary-500: #0e53df;
+  --primary-600: #0a45c2;
+  --primary-700: #0837a0;
+  --primary-800: #062d84;
+  --primary-900: #05236a;
+  --primary-950: #031545;
+
+  /* Secondary Yellow Color Palette - #ffd200 */
+  --secondary-50: #fffbeb;
+  --secondary-100: #fff4c6;
+  --secondary-200: #ffe988;
+  --secondary-300: #ffd94a;
+  --secondary-400: #ffd200;
+  --secondary-500: #e6bd00;
+  --secondary-600: #cc9f00;
+  --secondary-700: #a37a00;
+  --secondary-800: #865f00;
+  --secondary-900: #704e00;
+
+  /* Light Mode */
   --background: #ffffff;
-  --foreground: #171717;
+  --background-secondary: #f8fafc;
+  --foreground: #0f172a;
+  --foreground-secondary: #475569;
+  --foreground-muted: #64748b;
+  
+  /* Accent */
+  --accent: #0e53df;
+  --accent-hover: #0a45c2;
+  --accent-light: rgba(14, 83, 223, 0.1);
+  --accent-secondary: #ffd200;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+  --color-secondary-50: var(--secondary-50);
+  --color-secondary-100: var(--secondary-100);
+  --color-secondary-200: var(--secondary-200);
+  --color-secondary-300: var(--secondary-300);
+  --color-secondary-400: var(--secondary-400);
+  --color-secondary-500: var(--secondary-500);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
+  --color-accent-secondary: var(--accent-secondary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0a0f1a;
+    --background-secondary: #111827;
+    --foreground: #f1f5f9;
+    --foreground-secondary: #cbd5e1;
+    --foreground-muted: #94a3b8;
+    --accent: #5991ff;
+    --accent-hover: #0e53df;
+    --accent-light: rgba(89, 145, 255, 0.15);
   }
+}
+
+* {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background: rgba(17, 24, 39, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Gradient Text - Blue to Yellow */
+.gradient-text {
+  background: linear-gradient(135deg, #0e53df 0%, #5991ff 50%, #ffd200 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient Text - Blue only */
+.gradient-text-blue {
+  background: linear-gradient(135deg, #0e53df 0%, #5991ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Primary Button */
+.btn-primary {
+  background: linear-gradient(135deg, #0e53df 0%, #0a45c2 100%);
+  color: white;
+  padding: 0.875rem 2rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(14, 83, 223, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 83, 223, 0.5);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background: transparent;
+  color: var(--foreground);
+  padding: 0.875rem 2rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  border: 2px solid var(--primary-500);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--accent-light);
+  transform: translateY(-2px);
+}
+
+/* Yellow Accent Button */
+.btn-accent {
+  background: linear-gradient(135deg, #ffd200 0%, #e6bd00 100%);
+  color: #031545;
+  padding: 0.875rem 2rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(255, 210, 0, 0.4);
+}
+
+.btn-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 210, 0, 0.5);
+}
+
+/* Card Styles */
+.card {
+  background: var(--background);
+  border: 1px solid rgba(14, 83, 223, 0.1);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  border-color: var(--primary-400);
+  box-shadow: 0 20px 40px rgba(14, 83, 223, 0.12);
+  transform: translateY(-4px);
+}
+
+/* Section Styles */
+.section {
+  padding: 6rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding: 8rem 2rem;
+  }
+}
+
+/* Animated Background Gradient */
+.bg-gradient-animated {
+  background: linear-gradient(
+    135deg,
+    #031545 0%,
+    #05236a 25%,
+    #0e53df 50%,
+    #05236a 75%,
+    #031545 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Floating Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Pulse Glow - Yellow */
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(255, 210, 0, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(255, 210, 0, 0.8);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* NFC Ring Animation - Yellow */
+@keyframes nfc-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.nfc-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--secondary-400);
+  border-radius: 50%;
+  animation: nfc-ring 2s ease-out infinite;
+}
+
+.nfc-ring:nth-child(2) { animation-delay: 0.5s; }
+.nfc-ring:nth-child(3) { animation-delay: 1s; }
+
+/* Counter Animation */
+.counter {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Yellow highlight */
+.highlight-yellow {
+  color: var(--secondary-400);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-600);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-500);
+}
+
+/* Three.js Canvas */
+.three-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
