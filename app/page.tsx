@@ -585,8 +585,8 @@ function HowItWorksSection() {
   const steps = [
     {
       step: "01",
-      title: "Program",
-      description: "Isi data profil, link sosial media, atau informasi bisnis Anda ke NFC keychain.",
+      title: "Pesan",
+      description: "Pilih desain dan kirimkan data Anda: link profil, sosial media, kontak, atau info bisnis. Kami yang urus sisanya!",
       icon: Settings,
     },
     {
@@ -597,7 +597,7 @@ function HowItWorksSection() {
     },
     {
       step: "03",
-      title: "Connected",
+      title: "Terhubung",
       description: "Informasi langsung muncul di layar. Simpan kontak atau akses link dengan mudah.",
       icon: Link2,
     },
@@ -609,7 +609,7 @@ function HowItWorksSection() {
         <motion.div variants={fadeInUp} className="text-center mb-16">
           <span className="text-primary-500 font-semibold text-sm uppercase tracking-wider">Cara Kerja</span>
           <h2 className="mt-3 text-3xl md:text-5xl font-bold">
-            Semudah <span className="gradient-text">1-2-3</span>
+            Cukup <span className="gradient-text">3 Langkah</span> Mudah
           </h2>
         </motion.div>
 
@@ -749,9 +749,9 @@ function UseCasesSection() {
       icon: PartyPopper,
     },
     {
-      title: "Access Control",
-      description: "Kunci pintar untuk akses gedung atau ruangan",
-      icon: KeyRound,
+      title: "Private File",
+      description: "Simpan link dokumen penting dengan proteksi password sebelum diakses",
+      icon: Lock,
     },
   ];
 
