@@ -23,16 +23,10 @@ import {
 // Each keychain QR code links to:  /write?code=<ACCESS_CODE>
 // The codes below are the only valid ones — add more as you ship more keychains.
 const VALID_ACCESS_CODES: Set<string> = new Set([
-  "OT7K2M",
-  "OT3N9P",
-  "OT5X1R",
-  "OTA8F4",
-  "OTQ6W0",
-  "OTB2J7",
-  "OT4H8L",
-  "OTC1E5",
-  "OT9D3Y",
-  "OTF6N2",
+  "WJI6UNRR", "DM85KY8W", "MHIP22TO", "7SIF01UZ", "314BETR0",
+  "6GFLIIZI", "O3QUHQ7D", "491ON71B", "AIZNYI70", "W51DCDM1",
+  "U44UZLET", "9BXHTXWU", "9GQE5FMA", "YCFF3ZCK", "L2Z037TP",
+  "F0K93HEW", "XNNVJ0CC", "75W331FV", "GDFJCTAQ", "YEBK393M",
 ]);
 
 // ─── NFC helper ─────────────────────────────────────────────────────────────
@@ -73,7 +67,7 @@ const fadeUp: Variants = {
 };
 
 // ─── Access Gate ─────────────────────────────────────────────────────────────
-function AccessGate({ onUnlock }: { onUnlock: () => void }) {
+function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -86,7 +80,7 @@ function AccessGate({ onUnlock }: { onUnlock: () => void }) {
     setTimeout(() => {
       const trimmed = code.trim().toUpperCase();
       if (VALID_ACCESS_CODES.has(trimmed)) {
-        onUnlock();
+        onUnlock(trimmed);
       } else {
         setError("Kode akses tidak valid. Cek QR code pada box keychainmu.");
         setLoading(false);
@@ -136,7 +130,7 @@ function AccessGate({ onUnlock }: { onUnlock: () => void }) {
             type="text"
             value={code}
             onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(null); }}
-            placeholder="Contoh: OT7K2M"
+            placeholder="KODE AKSES"
             maxLength={10}
             autoComplete="off"
             autoCorrect="off"
@@ -422,12 +416,21 @@ export default function WritePage() {
   const [screen, setScreen] = useState<Screen>("gate");
   const [autoChecked, setAutoChecked] = useState(false);
 
-  // Auto-verify if ?code= is in URL
+  const handleUnlock = (code: string) => {
+    localStorage.setItem("onetap_access_code", code);
+    setScreen("writer");
+  };
+
+  // Auto-verify if ?code= is in URL or saved in localStorage
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const qrCode = params.get("code")?.trim().toUpperCase() ?? null;
+    const savedCode = localStorage.getItem("onetap_access_code");
 
     if (qrCode && VALID_ACCESS_CODES.has(qrCode)) {
+      localStorage.setItem("onetap_access_code", qrCode);
+      setScreen("writer");
+    } else if (savedCode && VALID_ACCESS_CODES.has(savedCode)) {
       setScreen("writer");
     }
     setAutoChecked(true);
@@ -467,7 +470,7 @@ export default function WritePage() {
         <main className="flex-1 flex items-center justify-center px-4 py-12">
           <AnimatePresence mode="wait">
             {screen === "gate" ? (
-              <AccessGate key="gate" onUnlock={() => setScreen("writer")} />
+              <AccessGate key="gate" onUnlock={handleUnlock} />
             ) : (
               <NFCWriter key="writer" />
             )}
