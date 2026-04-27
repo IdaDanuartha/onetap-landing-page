@@ -25,7 +25,6 @@ export const metadata: Metadata = {
   authors: [{ name: "OneTap Indonesia" }],
   openGraph: {
     title: "OneTap - NFC Keychain Indonesia | Everything Connected",
-    title: "OneTap - NFC Keychain Indonesia",
     description:
       "Berbagi identitas digital semudah satu sentuhan. Cek katalog produk NFC kami sekarang!",
     url: "https://onetap.id",
