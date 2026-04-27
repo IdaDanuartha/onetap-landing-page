@@ -1,328 +1,439 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+
+/* =============================================
+   FORCE LIGHT MODE — intentional brand decision
+   ============================================= */
 :root {
-  /* Primary Blue Color Palette - #0e53df */
-  --primary-50: #eef4ff;
-  --primary-100: #d9e5ff;
-  --primary-200: #bcd3ff;
-  --primary-300: #8eb8ff;
-  --primary-400: #5991ff;
-  --primary-500: #0e53df;
-  --primary-600: #0a45c2;
-  --primary-700: #0837a0;
-  --primary-800: #062d84;
-  --primary-900: #05236a;
-  --primary-950: #031545;
+  color-scheme: light only;
+}
 
-  /* Secondary Yellow Color Palette - #ffd200 */
-  --secondary-50: #fffbeb;
-  --secondary-100: #fff4c6;
-  --secondary-200: #ffe988;
-  --secondary-300: #ffd94a;
-  --secondary-400: #ffd200;
-  --secondary-500: #e6bd00;
-  --secondary-600: #cc9f00;
-  --secondary-700: #a37a00;
-  --secondary-800: #865f00;
-  --secondary-900: #704e00;
+/* =============================================
+   DESIGN TOKENS — Warm Neutral-Pink Palette
+   ============================================= */
+:root {
+  /* Primary Pink */
+  --color-primary:       #FF5FA2;
+  --color-primary-soft:  #F6B7C8;
+  --color-primary-light: #fff0f7;
+  --color-primary-hover: #e54d90;
 
-  /* Light Mode */
-  --background: #ffffff;
-  --background-secondary: #f8fafc;
-  --foreground: #0f172a;
-  --foreground-secondary: #475569;
-  --foreground-muted: #64748b;
-  
-  /* Accent */
-  --accent: #0e53df;
-  --accent-hover: #0a45c2;
-  --accent-light: rgba(14, 83, 223, 0.1);
-  --accent-secondary: #ffd200;
+  /* Backgrounds */
+  --color-bg:            #FFF8F2;   /* warm white — main page bg */
+  --color-bg-white:      #FFFFFF;   /* cards, navbar */
+  --color-bg-gray:       #F3F4F6;   /* alternating sections, input bg */
+
+  /* Text */
+  --color-text-dark:     #1A1A2E;
+  --color-text-body:     #374151;
+  --color-text-muted:    #6B7280;
+
+  /* Border */
+  --color-border:        #f3e8ef;
+  --color-border-gray:   #E5E7EB;
+
+  /* Deep Navy footer */
+  --color-navy:          #1A1A2E;
+
+  /* WhatsApp green */
+  --color-wa:            #25D366;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-background-secondary: var(--background-secondary);
-  --color-foreground: var(--foreground);
-  --color-foreground-secondary: var(--foreground-secondary);
-  --color-foreground-muted: var(--foreground-muted);
-  --color-primary-50: var(--primary-50);
-  --color-primary-100: var(--primary-100);
-  --color-primary-200: var(--primary-200);
-  --color-primary-300: var(--primary-300);
-  --color-primary-400: var(--primary-400);
-  --color-primary-500: var(--primary-500);
-  --color-primary-600: var(--primary-600);
-  --color-primary-700: var(--primary-700);
-  --color-primary-800: var(--primary-800);
-  --color-primary-900: var(--primary-900);
-  --color-primary-950: var(--primary-950);
-  --color-secondary-50: var(--secondary-50);
-  --color-secondary-100: var(--secondary-100);
-  --color-secondary-200: var(--secondary-200);
-  --color-secondary-300: var(--secondary-300);
-  --color-secondary-400: var(--secondary-400);
-  --color-secondary-500: var(--secondary-500);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-accent-light: var(--accent-light);
-  --color-accent-secondary: var(--accent-secondary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--color-primary);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-bg: var(--color-bg);
+  --color-bg-white: var(--color-bg-white);
+  --color-bg-gray: var(--color-bg-gray);
+  --color-text-dark: var(--color-text-dark);
+  --color-text-body: var(--color-text-body);
+  --color-text-muted: var(--color-text-muted);
+  --color-border: var(--color-border);
+  --color-border-gray: var(--color-border-gray);
+  --color-navy: var(--color-navy);
+  --color-wa: var(--color-wa);
+  --font-sans: 'Inter', var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0f1a;
-    --background-secondary: #111827;
-    --foreground: #f1f5f9;
-    --foreground-secondary: #cbd5e1;
-    --foreground-muted: #94a3b8;
-    --accent: #5991ff;
-    --accent-hover: #0e53df;
-    --accent-light: rgba(89, 145, 255, 0.15);
-  }
-}
-
+/* =============================================
+   BASE STYLES
+   ============================================= */
 * {
   scroll-behavior: smooth;
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text-body);
+  font-family: 'Inter', var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Glassmorphism */
-.glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+/* =============================================
+   TYPOGRAPHY
+   ============================================= */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-dark);
+  font-family: 'Inter', var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  .glass {
-    background: rgba(17, 24, 39, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
+/* =============================================
+   LAYOUT UTILITIES
+   ============================================= */
+.container-main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
 }
 
-/* Gradient Text - Blue to Yellow */
-.gradient-text {
-  background: linear-gradient(135deg, #0e53df 0%, #5991ff 50%, #ffd200 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Gradient Text - Blue only */
-.gradient-text-blue {
-  background: linear-gradient(135deg, #0e53df 0%, #5991ff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Primary Button */
-.btn-primary {
-  background: linear-gradient(135deg, #0e53df 0%, #0a45c2 100%);
-  color: white;
-  padding: 0.875rem 2rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 14px rgba(14, 83, 223, 0.4);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(14, 83, 223, 0.5);
-}
-
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: var(--foreground);
-  padding: 0.875rem 2rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  border: 2px solid var(--primary-500);
-  transition: all 0.3s ease;
-}
-
-.btn-secondary:hover {
-  background: var(--accent-light);
-  transform: translateY(-2px);
-}
-
-/* Yellow Accent Button */
-.btn-accent {
-  background: linear-gradient(135deg, #ffd200 0%, #e6bd00 100%);
-  color: #031545;
-  padding: 0.875rem 2rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 14px rgba(255, 210, 0, 0.4);
-}
-
-.btn-accent:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 210, 0, 0.5);
-}
-
-/* Card Styles */
-.card {
-  background: var(--background);
-  border: 1px solid rgba(14, 83, 223, 0.1);
-  border-radius: 1.5rem;
-  padding: 2rem;
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  border-color: var(--primary-400);
-  box-shadow: 0 20px 40px rgba(14, 83, 223, 0.12);
-  transform: translateY(-4px);
-}
-
-/* Section Styles */
 .section {
-  padding: 6rem 1.5rem;
+  padding: 5rem 1.5rem;
 }
 
 @media (min-width: 768px) {
   .section {
-    padding: 8rem 2rem;
+    padding: 7rem 2rem;
   }
 }
 
-/* Animated Background Gradient */
-.bg-gradient-animated {
-  background: linear-gradient(
-    135deg,
-    #031545 0%,
-    #05236a 25%,
-    #0e53df 50%,
-    #05236a 75%,
-    #031545 100%
-  );
-  background-size: 400% 400%;
-  animation: gradient-shift 15s ease infinite;
+/* =============================================
+   SECTION BACKGROUNDS (alternating pattern)
+   ============================================= */
+.bg-page        { background: var(--color-bg); }
+.bg-white-clean { background: var(--color-bg-white); }
+.bg-gray-light  { background: var(--color-bg-gray); }
+.bg-pink-cta    { background: var(--color-primary); }
+.bg-navy-footer { background: var(--color-navy); }
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+
+/* Primary — pink solid */
+.btn-primary {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(255, 95, 162, 0.35);
 }
 
-/* Floating Animation */
+/* Secondary — ghost/outline pink */
+.btn-secondary {
+  border: 1.5px solid var(--color-primary);
+  color: var(--color-primary);
+  background: transparent;
+  border-radius: 12px;
+  padding: 11px 28px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--color-primary-light);
+  transform: scale(1.02);
+}
+
+/* WhatsApp button */
+.btn-wa {
+  background: var(--color-wa);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-wa:hover {
+  background: #1db954;
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
+}
+
+/* On-pink button (for CTA banner section) */
+.btn-on-pink {
+  background: #ffffff;
+  color: var(--color-primary);
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-on-pink:hover {
+  background: var(--color-primary-light);
+  transform: scale(1.02);
+}
+
+/* =============================================
+   CARD
+   ============================================= */
+.card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 2rem;
+  transition: all 0.25s ease;
+}
+
+.card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 12px 36px rgba(255, 95, 162, 0.12);
+  transform: translateY(-4px);
+}
+
+/* =============================================
+   BADGE / PILL
+   ============================================= */
+.badge-primary {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-soft {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* =============================================
+   NAVBAR
+   ============================================= */
+.navbar {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* =============================================
+   GRADIENT TEXT (pink)
+   ============================================= */
+.gradient-text {
+  background: linear-gradient(135deg, #FF5FA2 0%, #F6B7C8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =============================================
+   FLOATING WHATSAPP BUTTON
+   ============================================= */
+.floating-wa {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-wa);
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+  transition: all 0.2s ease;
+}
+
+.floating-wa:hover {
+  background: #1db954;
+  box-shadow: 0 8px 32px rgba(37, 211, 102, 0.5);
+  transform: scale(1.05);
+}
+
+/* =============================================
+   ANIMATIONS
+   ============================================= */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+  50%       { transform: translateY(-16px); }
 }
 
 .animate-float {
-  animation: float 6s ease-in-out infinite;
+  animation: float 5s ease-in-out infinite;
 }
 
-/* Pulse Glow - Yellow */
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 20px rgba(255, 210, 0, 0.4);
-  }
-  50% { 
-    box-shadow: 0 0 40px rgba(255, 210, 0, 0.8);
-  }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-/* NFC Ring Animation - Yellow */
-@keyframes nfc-ring {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
 
 .nfc-ring {
   position: absolute;
   width: 100%;
   height: 100%;
-  border: 2px solid var(--secondary-400);
+  border: 2px solid var(--color-primary-soft);
   border-radius: 50%;
-  animation: nfc-ring 2s ease-out infinite;
+  animation: pulse-ring 2.5s ease-out infinite;
 }
 
-.nfc-ring:nth-child(2) { animation-delay: 0.5s; }
-.nfc-ring:nth-child(3) { animation-delay: 1s; }
+.nfc-ring:nth-child(2) { animation-delay: 0.7s; }
+.nfc-ring:nth-child(3) { animation-delay: 1.4s; }
 
-/* Counter Animation */
+/* =============================================
+   COUNTER
+   ============================================= */
 .counter {
   font-variant-numeric: tabular-nums;
 }
 
-/* Yellow highlight */
-.highlight-yellow {
-  color: var(--secondary-400);
+/* =============================================
+   FAQ ACCORDION
+   ============================================= */
+.faq-item {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+.faq-item.open {
+  border-color: var(--color-primary-soft);
 }
 
-::-webkit-scrollbar-track {
-  background: var(--background-secondary);
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  background: var(--color-bg-white);
+  font-weight: 600;
+  color: var(--color-text-dark);
+  font-size: 15px;
+  gap: 1rem;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--primary-600);
-  border-radius: 4px;
+.faq-answer {
+  padding: 0 1.5rem 1.25rem;
+  background: var(--color-bg-white);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.7;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-500);
-}
+/* =============================================
+   SCROLLBAR
+   ============================================= */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-primary-soft); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
 
-/* Three.js Canvas */
+/* =============================================
+   THREE.JS CANVAS (kept for hero 3D if needed)
+   ============================================= */
 .three-canvas {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
 }
 
-/* Card for the public /write page */
+/* =============================================
+   CARD for /write page (keep compatibility)
+   ============================================= */
 .card-writer {
-  background: var(--background);
-  border: 1px solid rgba(14, 83, 223, 0.1);
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
   border-radius: 1.25rem;
   padding: 1.5rem;
   transition: border-color 0.2s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  .card-writer {
-    background: var(--background-secondary);
-    border-color: rgba(255, 255, 255, 0.06);
-  }
-}
-
 /* NFC ring pulse used on /write page */
 @keyframes nfc-ring-pulse {
-  0%   { transform: scale(1); opacity: 0.9; }
+  0%   { transform: scale(1);   opacity: 0.9; }
   100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* =============================================
+   STEP CONNECTOR LINE
+   ============================================= */
+.step-connector {
+  position: absolute;
+  top: 3.5rem;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-primary-soft), transparent);
+}
+
+/* =============================================
+   HERO BLOB SHAPES
+   ============================================= */
+.blob {
+  border-radius: 50% 40% 60% 40% / 50% 60% 40% 50%;
+  filter: blur(60px);
+  opacity: 0.18;
+}
+
+/* =============================================
+   TESTIMONIAL CARD
+   ============================================= */
+.testimonial-card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 1.75rem;
+  transition: all 0.25s ease;
+}
+
+.testimonial-card:hover {
+  border-color: var(--color-primary-soft);
+  box-shadow: 0 8px 24px rgba(255, 95, 162, 0.1);
 }

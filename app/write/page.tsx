@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, type Variants, type Easing } from "framer-motion";
 import {
@@ -17,17 +18,14 @@ import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
+  SmartphoneNfc
 } from "lucide-react";
 
 // ─── Valid access codes ─────────────────────────────────────────────────────
-// Each keychain QR code links to:  /write?code=<ACCESS_CODE>
-// The codes below are the only valid ones — add more as you ship more keychains.
-const VALID_ACCESS_CODES: Set<string> = new Set([
-  "WJI6UNRR", "DM85KY8W", "MHIP22TO", "7SIF01UZ", "314BETR0",
-  "6GFLIIZI", "O3QUHQ7D", "491ON71B", "AIZNYI70", "W51DCDM1",
-  "U44UZLET", "9BXHTXWU", "9GQE5FMA", "YCFF3ZCK", "L2Z037TP",
-  "F0K93HEW", "XNNVJ0CC", "75W331FV", "GDFJCTAQ", "YEBK393M",
-]);
+const envCodes = process.env.NEXT_PUBLIC_VALID_ACCESS_CODES || "";
+const VALID_ACCESS_CODES: Set<string> = new Set(
+  envCodes.split(",").map((c) => c.trim().toUpperCase()).filter(Boolean)
+);
 
 // ─── NFC helper ─────────────────────────────────────────────────────────────
 function isNFCSupported(): boolean {
@@ -61,9 +59,9 @@ type WriteStatus = "idle" | "waiting";
 
 // ─── Animation variants ──────────────────────────────────────────────────────
 const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" as Easing } },
-  exit: { opacity: 0, y: -16, transition: { duration: 0.25 } },
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.3 } },
 };
 
 // ─── Access Gate ─────────────────────────────────────────────────────────────
@@ -82,10 +80,10 @@ function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
       if (VALID_ACCESS_CODES.has(trimmed)) {
         onUnlock(trimmed);
       } else {
-        setError("Kode akses tidak valid. Cek QR code pada box keychainmu.");
+        setError("Kode akses tidak valid. Silakan cek QR code pada box.");
         setLoading(false);
       }
-    }, 700); // brief delay for UX
+    }, 800);
   }
 
   return (
@@ -97,89 +95,100 @@ function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
       exit="exit"
       className="w-full max-w-md mx-auto"
     >
-      {/* Icon */}
-      <div className="flex justify-center mb-8">
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-2xl">
-            <KeyRound className="w-10 h-10 text-secondary-400" />
-          </div>
-          {/* Animated rings */}
-          {[0, 0.4, 0.8].map((delay, i) => (
-            <span
-              key={i}
-              className="absolute inset-0 rounded-full border-2 border-secondary-400/40"
-              style={{
-                animation: `nfc-ring-pulse 2.4s ease-out ${delay}s infinite`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
+      <div className="bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_60px_-15px_rgba(255,95,162,0.15)] rounded-[2.5rem] p-8 sm:p-10 relative overflow-hidden">
+        {/* Decorative background glow */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-200/50 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-100/50 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Masukkan Kode Akses</h1>
-        <p className="mt-3 text-foreground-muted text-sm leading-relaxed max-w-xs mx-auto">
-          Kode akses tersedia di QR code yang ada di dalam box keychain OneTap kamu.
+        {/* Icon */}
+        <div className="flex justify-center mb-8 relative z-10">
+          <div className="relative">
+            <motion.div 
+              whileHover={{ scale: 1.05, rotate: 5 }}
+              className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-xl shadow-primary-500/30 text-white"
+            >
+              <KeyRound className="w-10 h-10" />
+            </motion.div>
+            {/* Animated rings */}
+            {[0, 0.4, 0.8].map((delay, i) => (
+              <span
+                key={i}
+                className="absolute inset-0 rounded-3xl border border-primary-400/40"
+                style={{
+                  animation: `nfc-ring-pulse 2.5s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s infinite`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="text-center mb-8 relative z-10">
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Akses Premium</h1>
+          <p className="mt-3 text-slate-500 text-sm leading-relaxed max-w-[260px] mx-auto">
+            Masukkan kode unik yang terdapat pada box keychain OneTap Anda.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+          <div className="relative group">
+            <input
+              id="access-code-input"
+              type="text"
+              value={code}
+              onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(null); }}
+              placeholder="XXXXX-XXXXX"
+              maxLength={10}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              className={`w-full h-16 px-6 rounded-2xl bg-slate-50/50 border-2 text-slate-800 text-center text-xl font-bold tracking-[0.3em] uppercase outline-none transition-all duration-300 placeholder:text-slate-300 placeholder:tracking-normal placeholder:font-medium ${
+                error
+                  ? "border-red-300 focus:border-red-500 bg-red-50/30 focus:ring-4 focus:ring-red-500/10"
+                  : "border-slate-200 focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 hover:border-slate-300"
+              }`}
+            />
+          </div>
+
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -10, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
+                  <XCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
+                  {error}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <motion.button
+            type="submit"
+            disabled={!code.trim() || loading}
+            whileHover={{ scale: 1.01, y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-primary-500/25 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-300 group"
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                Buka Akses <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </>
+            )}
+          </motion.button>
+        </form>
+
+        <p className="mt-8 text-center text-sm text-slate-500 relative z-10 font-medium">
+          Kehilangan kode?{" "}
+          <a href="/#contact" className="text-primary-600 hover:text-primary-700 transition-colors underline decoration-primary-200 underline-offset-4">
+            Hubungi Support
+          </a>
         </p>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="relative">
-          <input
-            id="access-code-input"
-            type="text"
-            value={code}
-            onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(null); }}
-            placeholder="KODE AKSES"
-            maxLength={10}
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className={`w-full h-14 px-5 rounded-2xl border-2 bg-background text-foreground text-center text-xl font-bold tracking-[0.3em] uppercase outline-none transition-all duration-200 ${
-              error
-                ? "border-red-400 focus:border-red-500 bg-red-50/10"
-                : "border-foreground/10 focus:border-primary-500"
-            }`}
-          />
-        </div>
-
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-400/30 text-red-500 text-sm"
-            >
-              <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <motion.button
-          type="submit"
-          disabled={!code.trim() || loading}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold text-base flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-        >
-          {loading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <>
-              Verifikasi <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </motion.button>
-      </form>
-
-      <p className="mt-8 text-center text-xs text-foreground-muted">
-        Tidak punya kode?{" "}
-        <a href="/#contact" className="text-primary-500 hover:underline">
-          Hubungi OneTap
-        </a>
-      </p>
     </motion.div>
   );
 }
@@ -188,12 +197,12 @@ function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
 type IconComponent = React.FC<React.SVGProps<SVGSVGElement> & { className?: string }>;
 
 const TYPE_OPTIONS: { id: RecordType; label: string; icon: IconComponent; placeholder?: string }[] = [
-  { id: "url", label: "URL / Link", icon: LinkIcon as IconComponent, placeholder: "https://example.com" },
-  { id: "text", label: "Plain Text", icon: Type as IconComponent, placeholder: "Ketik teks apapun…" },
-  { id: "phone", label: "Phone", icon: Phone as IconComponent, placeholder: "+628123456789" },
-  { id: "sms", label: "SMS", icon: MessageSquare as IconComponent, placeholder: "+628123456789" },
-  { id: "email", label: "Email", icon: Mail as IconComponent, placeholder: "hello@example.com" },
-  { id: "erase", label: "Hapus Tag", icon: Eraser as IconComponent, placeholder: undefined },
+  { id: "url", label: "Link/URL", icon: LinkIcon as IconComponent, placeholder: "https://instagram.com/..." },
+  { id: "text", label: "Pesan Teks", icon: Type as IconComponent, placeholder: "Halo, ini keychain saya!" },
+  { id: "phone", label: "Telepon", icon: Phone as IconComponent, placeholder: "+62812..." },
+  { id: "sms", label: "Kirim SMS", icon: MessageSquare as IconComponent, placeholder: "+62812..." },
+  { id: "email", label: "Kirim Email", icon: Mail as IconComponent, placeholder: "nama@email.com" },
+  { id: "erase", label: "Format Ulang", icon: Eraser as IconComponent, placeholder: undefined },
 ];
 
 function NFCWriter() {
@@ -213,7 +222,6 @@ function NFCWriter() {
 
     let payload = data.trim();
 
-    // Normalize data per type
     if (recordType === "url") {
       if (!payload.startsWith("http://") && !payload.startsWith("https://")) {
         payload = `https://${payload}`;
@@ -234,7 +242,7 @@ function NFCWriter() {
       setLastResult("success");
     } catch (err) {
       setLastResult("error");
-      setErrorMsg(err instanceof Error ? err.message : "Gagal menulis ke tag.");
+      setErrorMsg(err instanceof Error ? err.message : "Gagal terhubung ke NFC.");
     } finally {
       setWriteStatus("idle");
     }
@@ -244,12 +252,14 @@ function NFCWriter() {
 
   if (!supported) {
     return (
-      <div className="w-full max-w-md mx-auto mt-4">
-        <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-6 flex flex-col items-center gap-3 text-center">
-          <AlertCircle className="w-10 h-10 text-amber-500" />
-          <p className="font-semibold text-amber-600">Web NFC Tidak Didukung</p>
-          <p className="text-sm text-amber-600/80">
-            Fitur ini hanya tersedia di Android Chrome. Pastikan kamu menggunakan Chrome di Android.
+      <div className="w-full max-w-md mx-auto">
+        <div className="bg-white/80 backdrop-blur-xl border border-pink-200 shadow-xl shadow-pink-500/10 rounded-[2rem] p-8 flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-full bg-pink-100 flex items-center justify-center mb-4">
+            <AlertCircle className="w-8 h-8 text-pink-500" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Browser Tidak Mendukung</h2>
+          <p className="text-slate-500 leading-relaxed">
+            Fitur penulisan NFC saat ini hanya tersedia melalui peramban <strong>Google Chrome di perangkat Android</strong> yang memiliki sensor NFC.
           </p>
         </div>
       </div>
@@ -263,150 +273,176 @@ function NFCWriter() {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="w-full max-w-lg mx-auto space-y-6"
+      className="w-full max-w-2xl mx-auto"
     >
-      {/* Header */}
-      <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-500 text-sm font-medium mb-4">
-          <ShieldCheck className="w-4 h-4" />
-          Akses Terverifikasi
-        </div>
-        <h1 className="text-2xl font-bold text-foreground">Tulis NFC Tag</h1>
-        <p className="mt-1 text-sm text-foreground-muted">
-          Pilih jenis data, isi konten, lalu tempelkan tag ke belakang HP.
-        </p>
-      </div>
+      <div className="bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_60px_-15px_rgba(255,95,162,0.12)] rounded-[2.5rem] overflow-hidden relative">
+        
+        {/* Glow Effects */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-100/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50/40 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Waiting overlay */}
-      <AnimatePresence>
-        {writeStatus === "waiting" && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="rounded-2xl border-2 border-primary-500 bg-primary-500/5 p-8 flex flex-col items-center gap-4 text-center"
+        {/* Header Section */}
+        <div className="px-8 pt-10 pb-8 text-center relative z-10 border-b border-slate-100">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 border border-green-200 text-green-600 text-sm font-semibold mb-6 shadow-sm"
           >
-            <div className="relative w-20 h-20">
-              <span className="absolute inset-0 rounded-full border-2 border-primary-400/40" style={{ animation: "nfc-ring-pulse 1.6s ease-out 0s infinite" }} />
-              <span className="absolute inset-0 rounded-full border-2 border-primary-400/30" style={{ animation: "nfc-ring-pulse 1.6s ease-out 0.4s infinite" }} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Wifi className="w-8 h-8 text-primary-500 animate-pulse" />
-              </div>
-            </div>
-            <p className="font-semibold text-foreground text-lg">Siap Menulis…</p>
-            <p className="text-sm text-foreground-muted">Tempelkan NFC tag ke belakang HP kamu sekarang.</p>
+            <ShieldCheck className="w-4 h-4" />
+            Terverifikasi
           </motion.div>
-        )}
-      </AnimatePresence>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Kustomisasi Keychain</h1>
+          <p className="mt-3 text-slate-500 text-base max-w-md mx-auto">
+            Tentukan aksi apa yang akan terjadi saat orang lain menyentuh keychain Anda.
+          </p>
+        </div>
 
-      {writeStatus === "idle" && (
-        <>
-          {/* Result feedback */}
-          <AnimatePresence>
-            {lastResult === "success" && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-green-500/10 border border-green-500/30 text-green-600"
-              >
-                <CheckCircle2 className="w-5 h-5 shrink-0" />
-                <span className="text-sm font-medium">Berhasil ditulis ke NFC tag!</span>
-              </motion.div>
-            )}
-            {lastResult === "error" && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-400/30 text-red-500"
-              >
-                <XCircle className="w-5 h-5 shrink-0" />
-                <span className="text-sm">{errorMsg}</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Type selector */}
-          <div className="card-writer">
-            <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-3">Jenis Data</p>
-            <div className="grid grid-cols-3 gap-2">
-              {TYPE_OPTIONS.map((t) => {
-                const Icon = t.icon;
-                const active = recordType === t.id;
-                const isErase = t.id === "erase";
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => { setRecordType(t.id); setData(""); setLastResult(null); }}
-                    className={`flex flex-col items-center gap-2 py-4 px-2 rounded-xl border-2 transition-all duration-200 ${
-                      active
-                        ? isErase
-                          ? "border-red-400 bg-red-500/10 text-red-500"
-                          : "border-primary-500 bg-primary-500/10 text-primary-500"
-                        : "border-transparent bg-background-secondary text-foreground-muted hover:border-primary-400/40 hover:text-foreground"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-[10px] font-semibold tracking-wide text-center">{t.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Input */}
-          <div className="card-writer">
-            {recordType === "erase" ? (
-              <div className="flex items-start gap-3 text-red-500">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <p className="text-sm">
-                  Aksi ini akan <strong>menghapus semua data</strong> dari NFC tag dan mengembalikannya ke kondisi kosong.
-                </p>
+        <div className="p-8 relative z-10">
+          <div className="grid md:grid-cols-[1fr_1.2fr] gap-8">
+            
+            {/* Left Column: Type Selection */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">Pilih Mode</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {TYPE_OPTIONS.map((t) => {
+                  const Icon = t.icon;
+                  const active = recordType === t.id;
+                  const isErase = t.id === "erase";
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => { setRecordType(t.id); setData(""); setLastResult(null); }}
+                      className={`relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 ${
+                        active
+                          ? isErase
+                            ? "bg-red-50 border-2 border-red-400 text-red-600 shadow-sm"
+                            : "bg-primary-50/50 border-2 border-primary-500 text-primary-600 shadow-md shadow-primary-500/10"
+                          : "bg-slate-50 border-2 border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                      }`}
+                    >
+                      <Icon className={`w-6 h-6 ${active && !isErase ? "text-primary-500" : ""}`} />
+                      <span className="text-xs font-bold tracking-wide text-center">{t.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-            ) : (
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-                  {recordType === "url" ? "URL" : recordType === "text" ? "Teks" : recordType === "phone" ? "Nomor Telepon" : recordType === "sms" ? "Nomor SMS" : "Alamat Email"}
-                </label>
-                {recordType === "text" ? (
-                  <textarea
-                    value={data}
-                    onChange={(e) => { setData(e.target.value); setLastResult(null); }}
-                    placeholder={selectedType.placeholder}
-                    rows={4}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-foreground/10 focus:border-primary-500 bg-background text-foreground outline-none transition-colors text-sm resize-none"
-                  />
+            </div>
+
+            {/* Right Column: Input & Action */}
+            <div className="flex flex-col">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">Konten Data</h3>
+              
+              <div className="flex-1 bg-slate-50 rounded-3xl p-6 border border-slate-100/50">
+                {recordType === "erase" ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                      <Eraser className="w-8 h-8 text-red-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800">Format Ulang Chip</h4>
+                      <p className="text-sm text-slate-500 mt-2 max-w-[200px] mx-auto">
+                        Tindakan ini akan mengosongkan seluruh data pada keychain.
+                      </p>
+                    </div>
+                  </div>
                 ) : (
-                  <input
-                    type={recordType === "url" ? "url" : recordType === "email" ? "email" : "text"}
-                    value={data}
-                    onChange={(e) => { setData(e.target.value); setLastResult(null); }}
-                    placeholder={selectedType.placeholder}
-                    className="w-full h-12 px-4 rounded-xl border-2 border-foreground/10 focus:border-primary-500 bg-background text-foreground outline-none transition-colors text-sm"
-                  />
+                  <div className="space-y-3 h-full flex flex-col">
+                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                      <selectedType.icon className="w-4 h-4 text-primary-500" />
+                      Masukkan {selectedType.label}
+                    </label>
+                    {recordType === "text" ? (
+                      <textarea
+                        value={data}
+                        onChange={(e) => { setData(e.target.value); setLastResult(null); }}
+                        placeholder={selectedType.placeholder}
+                        rows={5}
+                        className="w-full flex-1 px-5 py-4 rounded-2xl border-2 border-slate-200 focus:border-primary-500 bg-white text-slate-800 outline-none transition-all text-base resize-none shadow-sm focus:ring-4 focus:ring-primary-500/10"
+                      />
+                    ) : (
+                      <input
+                        type={recordType === "url" ? "url" : recordType === "email" ? "email" : "text"}
+                        value={data}
+                        onChange={(e) => { setData(e.target.value); setLastResult(null); }}
+                        placeholder={selectedType.placeholder}
+                        className="w-full px-5 py-4 rounded-2xl border-2 border-slate-200 focus:border-primary-500 bg-white text-slate-800 outline-none transition-all text-base shadow-sm focus:ring-4 focus:ring-primary-500/10"
+                      />
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Write button */}
-          <motion.button
-            onClick={handleWrite}
-            disabled={recordType !== "erase" && !data.trim()}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className={`w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
-              recordType === "erase"
-                ? "bg-red-500 hover:bg-red-600 text-white shadow-red-500/30"
-                : "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-primary-500/30"
-            }`}
-          >
-            <Wifi className="w-5 h-5" />
-            {recordType === "erase" ? "Hapus NFC Tag" : "Tulis ke NFC Tag"}
-          </motion.button>
-        </>
-      )}
+          {/* Action Area */}
+          <div className="mt-8 pt-8 border-t border-slate-100 relative">
+            <AnimatePresence mode="popLayout">
+              {lastResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className={`mb-6 p-4 rounded-2xl flex items-center gap-3 border ${
+                    lastResult === "success" 
+                      ? "bg-green-50 border-green-200 text-green-700" 
+                      : "bg-red-50 border-red-200 text-red-700"
+                  }`}
+                >
+                  {lastResult === "success" ? <CheckCircle2 className="w-6 h-6 shrink-0 text-green-500" /> : <XCircle className="w-6 h-6 shrink-0 text-red-500" />}
+                  <span className="font-semibold">{lastResult === "success" ? "Berhasil menulis data ke NFC Keychain!" : errorMsg}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.button
+              onClick={handleWrite}
+              disabled={recordType !== "erase" && !data.trim()}
+              whileHover={{ scale: 1.01, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl transition-all duration-300 disabled:opacity-50 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed ${
+                recordType === "erase"
+                  ? "bg-red-500 hover:bg-red-600 text-white shadow-red-500/25"
+                  : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/20"
+              }`}
+            >
+              <SmartphoneNfc className="w-6 h-6" />
+              {recordType === "erase" ? "Mulai Proses Format" : "Tulis ke Keychain"}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Loading Overlay */}
+        <AnimatePresence>
+          {writeStatus === "waiting" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 rounded-[2.5rem] bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-8"
+            >
+              <div className="relative w-32 h-32 mb-6">
+                <span className="absolute inset-0 rounded-full border-[3px] border-primary-500/30" style={{ animation: "nfc-ring-pulse 2s cubic-bezier(0.16, 1, 0.3, 1) 0s infinite" }} />
+                <span className="absolute inset-0 rounded-full border-[3px] border-primary-500/20" style={{ animation: "nfc-ring-pulse 2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s infinite" }} />
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-400 to-primary-600 rounded-full shadow-2xl shadow-primary-500/40">
+                  <SmartphoneNfc className="w-12 h-12 text-white animate-pulse" />
+                </div>
+              </div>
+              <h2 className="font-extrabold text-2xl text-slate-800 mb-2">Siap Menerima Data</h2>
+              <p className="text-slate-500 max-w-[250px] leading-relaxed">
+                Tempelkan dan tahan bagian belakang HP Anda ke keychain OneTap sekarang.
+              </p>
+              
+              <button 
+                onClick={() => setWriteStatus("idle")}
+                className="mt-8 text-sm font-semibold text-slate-400 hover:text-slate-600 transition-colors px-4 py-2"
+              >
+                Batalkan Proses
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
     </motion.div>
   );
 }
@@ -421,7 +457,6 @@ export default function WritePage() {
     setScreen("writer");
   };
 
-  // Auto-verify if ?code= is in URL or saved in localStorage
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const qrCode = params.get("code")?.trim().toUpperCase() ?? null;
@@ -438,8 +473,8 @@ export default function WritePage() {
 
   if (!autoChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -448,26 +483,28 @@ export default function WritePage() {
     <>
       <style>{`
         @keyframes nfc-ring-pulse {
-          0%   { transform: scale(1); opacity: 0.9; }
-          100% { transform: scale(2.2); opacity: 0; }
+          0%   { transform: scale(1); opacity: 1; }
+          100% { transform: scale(2.5); opacity: 0; }
         }
       `}</style>
 
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* Minimal brand bar */}
-        <header className="flex items-center justify-center py-6 px-4 border-b border-foreground/5">
-          <a href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow">
-              <Wifi className="w-4 h-4 text-secondary-400" />
-            </div>
-            <span className="text-lg font-bold text-foreground group-hover:text-primary-500 transition-colors">
+      <div className="min-h-screen bg-[#FAFAFA] bg-[url('/images/noise.png')] flex flex-col relative overflow-hidden selection:bg-primary-500/30">
+        
+        {/* Ambient background colors */}
+        <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-[#FFE5F0]/60 to-transparent pointer-events-none" />
+
+        {/* Brand header */}
+        <header className="relative z-10 flex items-center justify-between py-6 px-6 sm:px-12">
+          <a href="/" className="flex items-center gap-3 group">
+            <Image src="/images/logo_simple.png" alt="OneTap" width={36} height={36} className="object-contain" />
+            <span className="text-xl font-extrabold text-slate-800 tracking-tight">
               OneTap
             </span>
           </a>
         </header>
 
         {/* Main content */}
-        <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <main className="flex-1 flex items-center justify-center px-4 py-8 relative z-10">
           <AnimatePresence mode="wait">
             {screen === "gate" ? (
               <AccessGate key="gate" onUnlock={handleUnlock} />
@@ -477,9 +514,14 @@ export default function WritePage() {
           </AnimatePresence>
         </main>
 
-        {/* Footer note */}
-        <footer className="py-6 text-center text-xs text-foreground-muted border-t border-foreground/5">
-          OneTap NFC — Layanan eksklusif untuk pemilik keychain ✦ Web NFC hanya tersedia di Android Chrome
+        {/* Minimal Footer */}
+        <footer className="relative z-10 py-8 px-6 text-center border-t border-slate-200/60">
+          <div className="max-w-md mx-auto">
+            <p className="text-sm font-semibold text-slate-800 mb-1">Writer App for OneTap Owners</p>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Membutuhkan perangkat Android dengan sensor NFC dan browser Google Chrome untuk dapat menulis data ke keychain.
+            </p>
+          </div>
         </footer>
       </div>
     </>
