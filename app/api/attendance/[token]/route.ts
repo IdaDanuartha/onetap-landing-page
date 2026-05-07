@@ -6,11 +6,18 @@ import { sendWhatsApp } from '@/lib/whatsapp';
 const lastTapped: Record<string, number> = {};
 const RATE_LIMIT_MS = 60_000;
 
-// POST /api/attendance/[token]
-// Called automatically when the /attend/[token] page loads.
-// Records attendance and sends a WhatsApp notification via the configured gateway.
-export async function POST(
+// GET /api/attendance/[token] - Health check
+export async function GET(
   _req: Request,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  const { token } = await params;
+  return NextResponse.json({ message: `Token ${token} is active and ready for POST.` });
+}
+
+// POST /api/attendance/[token]
+export async function POST(
+  req: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {

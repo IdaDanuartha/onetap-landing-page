@@ -765,7 +765,7 @@ export default function AttendanceManagementPage() {
                     disabled={isSubmitting}
                     className="flex-[2] py-4 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 disabled:opacity-50"
                   >
-                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    <Save className="w-5 h-5" />
                     {editingTag ? 'Simpan Perubahan' : 'Tambah Siswa'}
                   </button>
                 </div>
