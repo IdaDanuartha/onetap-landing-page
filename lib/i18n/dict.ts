@@ -9,7 +9,6 @@ export const translations = {
       features: "Fitur",
       orderNow: "Order Sekarang",
       attendance: "Absensi",
-      checkLogs: "Cek Log Absen",
     },
     hero: {
       badge: "New: Smart NFC Cards Now Available",
@@ -398,7 +397,6 @@ export const translations = {
       features: "Features",
       orderNow: "Order Now",
       attendance: "Attendance",
-      checkLogs: "Check Logs",
     },
     hero: {
       badge: "New: Smart NFC Cards Now Available",
