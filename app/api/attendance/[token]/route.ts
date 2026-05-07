@@ -142,23 +142,24 @@ export async function POST(
       .replace(/{time}/g, time);
 
     // Send WA via configured gateway (fully automatic)
-    let waSent = false;
+    let waResult = { success: false, error: 'Not attempted' };
     try {
-        waSent = await sendWhatsApp({ 
+        waResult = await sendWhatsApp({ 
           target: tag.teacher_phone, 
           message,
           token: tag.whatsapp_token 
         });
-    } catch (waErr) {
+    } catch (waErr: any) {
         console.error('[attendance/token] WhatsApp send error:', waErr);
+        waResult = { success: false, error: waErr.message || String(waErr) };
     }
 
     // Update log with WA send status
     const { error: updateError } = await supabase
       .from('attendance_logs')
       .update({
-        wa_sent: waSent,
-        wa_error: waSent ? null : 'WhatsApp gateway failed to deliver',
+        wa_sent: waResult.success,
+        wa_error: waResult.success ? null : waResult.error,
       })
       .eq('id', log.id);
 
@@ -173,7 +174,8 @@ export async function POST(
       subject: tag.subject ?? null,
       date,
       time,
-      waSent,
+      waSent: waResult.success,
+      waError: waResult.success ? null : waResult.error,
     });
   } catch (err: any) {
     console.error('[attendance/token] Final catch:', err);

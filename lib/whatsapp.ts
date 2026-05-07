@@ -12,12 +12,15 @@ interface SendWAParams {
   token?: string;
 }
 
-export async function sendWhatsApp({ target, message, token: customToken }: SendWAParams): Promise<boolean> {
+export async function sendWhatsApp({ target, message, token: customToken }: SendWAParams): Promise<{ success: boolean; error?: string }> {
   const token = customToken || process.env.FONNTE_API_TOKEN;
   if (!token) {
     console.warn('[WhatsApp] API TOKEN not configured. Skipping WA send.');
-    return false;
+    return { success: false, error: 'API Token not configured' };
   }
+
+  // Normalize phone number (08xxx -> 628xxx)
+  const normalizedTarget = target.startsWith('0') ? '62' + target.substring(1) : target;
 
   try {
     const res = await fetch('https://api.fonnte.com/send', {
@@ -27,23 +30,27 @@ export async function sendWhatsApp({ target, message, token: customToken }: Send
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        target,
+        target: normalizedTarget,
         message,
         countryCode: '62',
       }),
     });
 
+    const text = await res.text();
     if (!res.ok) {
-      console.error('[WhatsApp] HTTP error:', res.status, await res.text());
-      return false;
+      console.error('[WhatsApp] HTTP error:', res.status, text);
+      return { success: false, error: `HTTP ${res.status}: ${text}` };
     }
 
-    const data = await res.json();
+    const data = JSON.parse(text);
     // Success if status is true
-    return data.status === true;
-  } catch (err) {
+    return { 
+      success: data.status === true, 
+      error: data.status === true ? undefined : data.reason || 'Fonnte gateway error' 
+    };
+  } catch (err: any) {
     console.error('[WhatsApp] Send error:', err);
-    return false;
+    return { success: false, error: err.message || String(err) };
   }
 }
 
