@@ -59,6 +59,33 @@ export async function POST(
       return NextResponse.json({ error: 'Tag tidak valid atau tidak aktif' }, { status: 404 });
     }
 
+    // Check if student already attended today (prevent duplicates)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const { data: existingLogs, error: checkError } = await supabase
+      .from('attendance_logs')
+      .select('id, tapped_at')
+      .eq('token', token)
+      .gte('tapped_at', startOfToday.toISOString())
+      .lte('tapped_at', endOfToday.toISOString())
+      .limit(1);
+
+    if (checkError) {
+        console.error('[attendance/token] duplicate check error:', checkError);
+    }
+
+    if (existingLogs && existingLogs.length > 0) {
+      return NextResponse.json({ 
+        error: 'Sudah Absen', 
+        message: 'Siswa sudah tercatat hadir hari ini.',
+        studentName: tag.student_name,
+        alreadyLogged: true
+      }, { status: 400 });
+    }
+
     const tappedAt = new Date();
 
     // Insert attendance log
