@@ -231,8 +231,7 @@ export default function AttendanceManagementPage() {
 
       if (error) throw error;
 
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      alert("Berhasil memperbarui nomor WhatsApp secara massal!");
       setBulkWAPhone("");
       setShowBulkWAModal(false);
       setSelectedTags([]);
@@ -320,8 +319,7 @@ export default function AttendanceManagementPage() {
       alert("Gagal menyimpan: " + error.message);
     } else {
       setTags(tags.map(t => ({ ...t, message_template: globalMessageTemplate })));
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      alert("Template WhatsApp berhasil disimpan!");
     }
   };
 
