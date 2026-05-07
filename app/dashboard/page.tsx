@@ -156,32 +156,6 @@ export default function DashboardPage() {
     ? ((stats.totalClicks / (stats.totalClicks + 15)) * 100).toFixed(1)
     : '0';
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FFF8F2]">
-        <div className="flex flex-col items-center gap-4">
-          <motion.div
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [1, 0.7, 1]
-            }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Image
-              src="/images/logo_simple.png"
-              alt="OneTap"
-              width={80}
-              height={80}
-              className="object-contain"
-            />
-          </motion.div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-[#FF5FA2] uppercase tracking-widest">Loading OneTap...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2]">
@@ -242,7 +216,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div>
               <h1 className="text-3xl sm:text-4xl font-black text-[#18080F] tracking-tight flex items-center gap-3">
-                Halo, {user?.name.split(' ')[0]}
+                Halo, {(user?.name || '').split(' ')[0]}
                 <motion.div
                   animate={{
                     scale: [1, 1.1, 1],
