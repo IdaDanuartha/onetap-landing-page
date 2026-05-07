@@ -42,6 +42,9 @@ export default function AttendanceManagementPage() {
   const [currentBulkIndex, setCurrentBulkIndex] = useState(-1);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
 
   // Form State
@@ -99,50 +102,91 @@ export default function AttendanceManagementPage() {
     if (!file) return;
 
     setImportLoading(true);
+    setImportError(null);
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
         const lines = text.split(/\r?\n/).filter(line => line.trim());
         
+        if (lines.length === 0) {
+          setImportError("File kosong atau tidak valid.");
+          return;
+        }
+
         // Skip header if it exists
         const startLine = lines[0].toLowerCase().includes('nama') ? 1 : 0;
         const newTags = [];
 
         for (let i = startLine; i < lines.length; i++) {
-          const [name, className, subject, phone] = lines[i].split(',').map(s => s?.trim());
-          if (name && className) {
-            newTags.push({
-              student_name: name,
-              class_name: className,
-              subject: subject || "",
-              teacher_phone: phone || "",
-              token: Math.random().toString(36).substring(2, 8).toUpperCase(),
-              created_by: user.id,
-              is_active: true,
-              school_name: schoolName
-            });
+          const row = lines[i].split(',');
+          if (row.length < 2) continue; // Skip rows that don't have at least name and class
+
+          const [name, className, subject, phone] = row.map(s => s?.trim());
+          
+          if (!name || !className) {
+            setImportError(`Baris ${i + 1} tidak valid: Nama dan Kelas wajib diisi.`);
+            return;
           }
+
+          newTags.push({
+            student_name: name,
+            class_name: className,
+            subject: subject || "",
+            teacher_phone: phone || "",
+            token: Math.random().toString(36).substring(2, 8).toUpperCase(),
+            created_by: user.id,
+            is_active: true,
+            school_name: schoolName
+          });
         }
 
-        if (newTags.length > 0) {
-          const { error } = await supabase.from("attendance_tags").insert(newTags);
-          if (error) throw error;
-          
-          setShowSuccess(true);
-          setTimeout(() => setShowSuccess(false), 3000);
-          fetchData();
-          setShowImportModal(false);
+        if (newTags.length === 0) {
+          setImportError("Tidak ada data valid yang ditemukan untuk diimport.");
+          return;
         }
+
+        const { error } = await supabase.from("attendance_tags").insert(newTags);
+        if (error) throw error;
+        
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+        fetchData();
+        setShowImportModal(false);
       } catch (err) {
         console.error("Import failed:", err);
-        alert("Gagal mengimpor data. Pastikan format CSV benar (Nama, Kelas, Mapel, WhatsApp).");
+        setImportError("Gagal mengimpor data. Pastikan format CSV benar dan gunakan koma sebagai pemisah.");
       } finally {
         setImportLoading(false);
         if (e.target) e.target.value = "";
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTags.length === 0) return;
+    if (!confirm(`Hapus ${selectedTags.length} siswa terpilih secara permanen?`)) return;
+
+    setIsDeletingBulk(true);
+    try {
+      const { error } = await supabase
+        .from("attendance_tags")
+        .delete()
+        .in("id", selectedTags);
+
+      if (error) throw error;
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      setSelectedTags([]);
+      fetchData();
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+      alert("Gagal menghapus data terpilih.");
+    } finally {
+      setIsDeletingBulk(false);
+    }
   };
 
   const downloadTemplate = () => {
@@ -445,14 +489,45 @@ export default function AttendanceManagementPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50/50">
-                  <th className="px-8 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Siswa</th>
-                  <th className="px-8 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Kelas</th>
-                  <th className="px-8 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">WhatsApp</th>
-                  <th className="px-8 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
-                  <th className="px-8 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Aksi</th>
+                  <th className="px-6 py-5 w-10">
+                    <input 
+                      type="checkbox"
+                      checked={selectedTags.length === filteredTags.length && filteredTags.length > 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTags(filteredTags.map(t => t.id));
+                        } else {
+                          setSelectedTags([]);
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-gray-300 text-[#FF5FA2] focus:ring-[#FF5FA2]"
+                    />
+                  </th>
+                  <th className="px-4 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Siswa</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Kelas / Mapel</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
+                {selectedTags.length > 0 && (
+                  <tr className="bg-[#FF5FA2]/5">
+                    <td colSpan={4} className="px-6 py-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-[#FF5FA2]">
+                          {selectedTags.length} Siswa Terpilih
+                        </span>
+                        <button 
+                          onClick={handleBulkDelete}
+                          disabled={isDeletingBulk}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50"
+                        >
+                          {isDeletingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                          Hapus Terpilih
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
                 {loading ? (
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
@@ -486,13 +561,26 @@ export default function AttendanceManagementPage() {
                     </td>
                   </tr>
                 ) : filteredTags.map((tag) => (
-                  <tr key={tag.id} className="hover:bg-gray-50/30 transition-colors group">
-                    <td className="px-8 py-5">
+                  <tr key={tag.id} className={`hover:bg-gray-50/30 transition-colors ${selectedTags.includes(tag.id) ? 'bg-[#FF5FA2]/5' : ''}`}>
+                    <td className="px-6 py-5">
+                      <input 
+                        type="checkbox"
+                        checked={selectedTags.includes(tag.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedTags(prev => [...prev, tag.id]);
+                          } else {
+                            setSelectedTags(prev => prev.filter(id => id !== tag.id));
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-gray-300 text-[#FF5FA2] focus:ring-[#FF5FA2]"
+                      />
+                    </td>
+                    <td className="px-4 py-5">
                       <div className="font-bold text-[#18080F]">{tag.student_name}</div>
                       <div className="text-[10px] text-gray-400 font-mono">ID: {tag.token}</div>
                     </td>
                     <td className="px-8 py-5 text-gray-500 font-medium">{tag.class_name || "-"}</td>
-                    <td className="px-8 py-5 text-gray-500 font-medium">{tag.teacher_phone || "-"}</td>
                     <td className="px-8 py-5">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${tag.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                         {tag.is_active ? 'Aktif' : 'Nonaktif'}
@@ -857,6 +945,13 @@ export default function AttendanceManagementPage() {
               </div>
 
               <div className="space-y-6">
+                {importError && (
+                  <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-800 font-medium">{importError}</p>
+                  </div>
+                )}
+
                 <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
                   <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
