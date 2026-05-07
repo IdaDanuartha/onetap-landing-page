@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal } from "lucide-react";
+import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info } from "lucide-react";
 import Link from "next/link";
 
 interface Tag {
@@ -60,9 +60,7 @@ export default function AttendanceManagementPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
-  const [isBulkScanning, setIsBulkScanning] = useState(false);
   const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
-  const [showScanModal, setShowScanModal] = useState(false);
 
 
   const [formData, setFormData] = useState({
@@ -1055,6 +1053,8 @@ export default function AttendanceManagementPage() {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
       {/* Bulk WA Update Modal */}
       <AnimatePresence>
         {showBulkWAModal && (

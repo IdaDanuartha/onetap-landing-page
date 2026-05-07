@@ -154,7 +154,7 @@ export async function POST(
       .replace(/{time}/g, time);
 
     // Send WA via configured gateway (fully automatic)
-    let waResult = { success: false, error: 'Not attempted' };
+    let waResult: { success: boolean; error?: string } = { success: false, error: 'Not attempted' };
     try {
         waResult = await sendWhatsApp({ 
           target: tag.teacher_phone, 
