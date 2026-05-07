@@ -339,7 +339,7 @@ export default function AttendanceManagementPage() {
         class_name: result.className || "-",
         status: res.ok ? "success" : "error",
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        message: result.error || (res.ok ? "Kehadiran Berhasil!" : "Gagal")
+        message: result.message ? `${result.error}: ${result.message}` : (result.error || (res.ok ? "Kehadiran Berhasil!" : "Gagal"))
       };
 
       setScanLogs(prev => [newLog, ...prev].slice(0, 50));
