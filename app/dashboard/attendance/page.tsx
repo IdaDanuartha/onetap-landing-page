@@ -345,16 +345,26 @@ export default function AttendanceManagementPage() {
       await ndef.scan();
       
       ndef.onreading = async (event: any) => {
-        const { message } = event;
-        const record = message.records[0];
-        if (record && record.recordType === "url") {
-          const decoder = new TextDecoder();
-          const url = decoder.decode(record.data);
-          const token = url.split('/').pop();
+        try {
+          const { message } = event;
+          if (!message || !message.records || message.records.length === 0) return;
+          const record = message.records[0];
           
-          if (token) {
-            await processAttendance(token);
+          if (record && record.recordType === "url") {
+            const decoder = new TextDecoder();
+            // Fallback for older Web NFC implementations that used .payload instead of .data
+            const dataToDecode = record.data || record.payload;
+            if (!dataToDecode) return;
+            
+            const url = decoder.decode(dataToDecode);
+            const token = url.split('/').pop();
+            
+            if (token) {
+              await processAttendance(token);
+            }
           }
+        } catch (err) {
+          console.error("NFC Parsing Error:", err);
         }
       };
 
@@ -1554,10 +1564,10 @@ export default function AttendanceManagementPage() {
       <AnimatePresence>
         {showSuccess && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-6 right-6 z-[200] bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm"
+            initial={{ opacity: 0, y: -50, scale: 0.9, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+            exit={{ opacity: 0, y: -20, scale: 0.9, x: '-50%' }}
+            className="fixed top-6 left-1/2 z-[200] bg-green-500 text-white px-6 py-4 rounded-full shadow-2xl flex items-center justify-center gap-3 font-bold text-sm w-[90%] max-w-sm"
           >
             <CheckCircle2 className="w-5 h-5" />
             {successMessage}

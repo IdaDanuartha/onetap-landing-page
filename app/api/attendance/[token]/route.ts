@@ -8,8 +8,11 @@ const supabaseAdmin = createSupabaseClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Simple in-memory rate limiter: max 1 attendance per token per 60s
-const lastTapped: Record<string, number> = {};
+// Use a global lock map to prevent identical concurrent requests across the same worker
+const globalForLocks = globalThis as unknown as { attendanceLocks: Map<string, number> };
+if (!globalForLocks.attendanceLocks) {
+  globalForLocks.attendanceLocks = new Map<string, number>();
+}
 const RATE_LIMIT_MS = 60_000;
 
 // GET /api/attendance/[token] - Health check
@@ -42,13 +45,14 @@ export async function POST(
 
     // Rate limiting
     const now = Date.now();
-    if (lastTapped[token] && now - lastTapped[token] < RATE_LIMIT_MS) {
+    const lastTappedTime = globalForLocks.attendanceLocks.get(token);
+    if (lastTappedTime && now - lastTappedTime < RATE_LIMIT_MS) {
       return NextResponse.json(
         { error: 'Terlalu cepat. Tunggu sebentar sebelum tap lagi.' },
         { status: 429 }
       );
     }
-    lastTapped[token] = now;
+    globalForLocks.attendanceLocks.set(token, now);
 
 
     const { data: tag, error: tagSelectError } = await supabaseAdmin
