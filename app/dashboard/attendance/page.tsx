@@ -32,6 +32,11 @@ export default function AttendanceManagementPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showScanModal, setShowScanModal] = useState(false);
+  const [showBulkWAModal, setShowBulkWAModal] = useState(false);
+  const [bulkWAPhone, setBulkWAPhone] = useState("");
+  const [isSubmittingBulkWA, setIsSubmittingBulkWA] = useState(false);
+  const [isBulkScanning, setIsBulkScanning] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
@@ -208,6 +213,37 @@ export default function AttendanceManagementPage() {
       alert("Gagal menghapus data terpilih.");
     } finally {
       setIsDeletingBulk(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkUpdateWA = async () => {
+    if (!bulkWAPhone || bulkWAPhone.trim() === "") {
+      alert("Nomor WhatsApp wajib diisi.");
+      return;
+    }
+
+    setIsSubmittingBulkWA(true);
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("attendance_tags")
+        .update({ teacher_phone: bulkWAPhone })
+        .in("id", selectedTags);
+
+      if (error) throw error;
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      setBulkWAPhone("");
+      setShowBulkWAModal(false);
+      setSelectedTags([]);
+      fetchData();
+    } catch (err) {
+      console.error("Bulk update WA failed:", err);
+      alert("Gagal memperbarui nomor WhatsApp.");
+    } finally {
+      setIsSubmittingBulkWA(false);
       setIsSubmitting(false);
     }
   };
@@ -684,14 +720,23 @@ export default function AttendanceManagementPage() {
                         <span className="text-sm font-bold text-[#FF5FA2]">
                           {selectedTags.length} Siswa Terpilih
                         </span>
-                        <button 
-                          onClick={handleBulkDeleteTrigger}
-                          disabled={isDeletingBulk}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50 shadow-lg shadow-red-500/20"
-                        >
-                          {isDeletingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                          Hapus Terpilih
-                        </button>
+                        <div className="flex gap-3">
+                          <button 
+                            onClick={() => setShowBulkWAModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white text-xs font-bold hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20"
+                          >
+                            <Smartphone className="w-3 h-3" />
+                            Update WA ({selectedTags.length})
+                          </button>
+                          <button 
+                            onClick={handleBulkDeleteTrigger}
+                            disabled={isDeletingBulk}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50 shadow-lg shadow-red-500/20"
+                          >
+                            {isDeletingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                            Hapus Terpilih
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -969,6 +1014,63 @@ export default function AttendanceManagementPage() {
                   className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-black hover:bg-red-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 disabled:opacity-50"
                 >
                   {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Ya, Hapus'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      {/* Bulk WA Update Modal */}
+      <AnimatePresence>
+        {showBulkWAModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowBulkWAModal(false)}
+              className="absolute inset-0 bg-[#18080F]/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl relative z-10"
+            >
+              <div className="w-20 h-20 rounded-3xl bg-blue-50 flex items-center justify-center mx-auto mb-6 transform rotate-3">
+                <Smartphone className="w-10 h-10 text-blue-500" />
+              </div>
+              
+              <h3 className="text-2xl font-black text-[#18080F] mb-3 text-center">
+                Update WA Masal
+              </h3>
+              <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8 text-center">
+                Masukkan nomor WhatsApp baru untuk <span className="text-blue-600 font-bold">{selectedTags.length} siswa</span> terpilih.
+              </p>
+
+              <div className="space-y-4 mb-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nomor WhatsApp Baru</label>
+                  <input
+                    type="text"
+                    value={bulkWAPhone}
+                    onChange={(e) => setBulkWAPhone(e.target.value)}
+                    placeholder="Contoh: 628123456789"
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-bold text-center"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBulkWAModal(false)}
+                  className="flex-1 py-4 rounded-2xl bg-gray-50 text-gray-500 font-black hover:bg-gray-100 transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleBulkUpdateWA}
+                  disabled={isSubmittingBulkWA}
+                  className="flex-[2] py-4 rounded-2xl bg-blue-500 text-white font-black hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                >
+                  {isSubmittingBulkWA ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Perbarui Semua'}
                 </button>
               </div>
             </motion.div>
