@@ -118,7 +118,35 @@ export default function DashboardAttendanceLogsPage() {
             <p className="text-gray-500 font-medium">Log kehadiran lengkap dengan status pengiriman WhatsApp.</p>
           </div>
           
-          <button className="px-6 py-3 rounded-2xl bg-white border border-gray-200 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm">
+          <button 
+            onClick={() => {
+              if (filteredLogs.length === 0) return;
+              
+              const headers = ["Nama Siswa", "Kelas", "Mapel", "Waktu Tap", "Status WA"];
+              const csvContent = [
+                headers.join(","),
+                ...filteredLogs.map(log => [
+                  `"${log.student_name}"`,
+                  `"${log.class_name}"`,
+                  `"${log.subject || '-'}"`,
+                  `"${new Date(log.tapped_at).toLocaleString('id-ID')}"`,
+                  log.wa_sent ? "Terkirim" : "Gagal"
+                ].join(","))
+              ].join("\n");
+
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const link = document.createElement("a");
+              const url = URL.createObjectURL(blob);
+              link.setAttribute("href", url);
+              link.setAttribute("download", `histori_absensi_${new Date().toISOString().split('T')[0]}.csv`);
+              link.style.visibility = 'hidden';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            className="px-6 py-3 rounded-2xl bg-white border border-gray-200 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={filteredLogs.length === 0}
+          >
             <Download className="w-5 h-5" />
             Ekspor CSV
           </button>

@@ -40,6 +40,8 @@ export default function AttendanceManagementPage() {
   const [subjectFilter, setSubjectFilter] = useState("");
   const [bulkWriteQueue, setBulkWriteQueue] = useState<Tag[]>([]);
   const [currentBulkIndex, setCurrentBulkIndex] = useState(-1);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
 
 
   // Form State
@@ -91,6 +93,70 @@ export default function AttendanceManagementPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        
+        // Skip header if it exists
+        const startLine = lines[0].toLowerCase().includes('nama') ? 1 : 0;
+        const newTags = [];
+
+        for (let i = startLine; i < lines.length; i++) {
+          const [name, className, subject, phone] = lines[i].split(',').map(s => s?.trim());
+          if (name && className) {
+            newTags.push({
+              student_name: name,
+              class_name: className,
+              subject: subject || "",
+              teacher_phone: phone || "",
+              token: Math.random().toString(36).substring(2, 8).toUpperCase(),
+              created_by: user.id,
+              is_active: true,
+              school_name: schoolName
+            });
+          }
+        }
+
+        if (newTags.length > 0) {
+          const { error } = await supabase.from("attendance_tags").insert(newTags);
+          if (error) throw error;
+          
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 3000);
+          fetchData();
+          setShowImportModal(false);
+        }
+      } catch (err) {
+        console.error("Import failed:", err);
+        alert("Gagal mengimpor data. Pastikan format CSV benar (Nama, Kelas, Mapel, WhatsApp).");
+      } finally {
+        setImportLoading(false);
+        if (e.target) e.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const downloadTemplate = () => {
+    const csvContent = "Nama Siswa, Kelas, Mapel, No WhatsApp (Gunakan 62...)\nBudi Santoso, 10A, Matematika, 628123456789\nSiti Aminah, 10A, Bahasa Indonesia, 628987654321";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "template_import_siswa.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleOpenModal = (tag?: Tag) => {
     if (tag) {
@@ -289,13 +355,22 @@ export default function AttendanceManagementPage() {
             </div>
           </div>
           
-          <button 
-            onClick={() => handleOpenModal()}
-            className="px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all flex items-center gap-2 shadow-lg shadow-[#FF5FA2]/20"
-          >
-            <Plus className="w-5 h-5" />
-            Tambah Siswa
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button 
+              onClick={() => setShowImportModal(true)}
+              className="px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm"
+            >
+              <Download className="w-5 h-5 rotate-180" />
+              Import CSV
+            </button>
+            <button 
+              onClick={() => handleOpenModal()}
+              className="px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all flex items-center gap-2 shadow-lg shadow-[#FF5FA2]/20"
+            >
+              <Plus className="w-5 h-5" />
+              Tambah Siswa
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -760,6 +835,140 @@ export default function AttendanceManagementPage() {
               >
                 Saya Mengerti
               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Import Modal */}
+      <AnimatePresence>
+        {showImportModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#18080F]/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-[#18080F]">Import Siswa</h3>
+                <button onClick={() => setShowImportModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                  <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    Format File CSV:
+                  </h4>
+                  <p className="text-sm text-blue-800 leading-relaxed">
+                    Gunakan koma (,) sebagai pemisah. Urutan kolom:<br/>
+                    <code className="bg-white/50 px-1 rounded font-bold">Nama, Kelas, Mapel, WhatsApp</code>
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={downloadTemplate}
+                    className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 font-bold hover:border-[#FF5FA2] hover:text-[#FF5FA2] transition-all flex flex-col items-center gap-1"
+                  >
+                    <Download className="w-6 h-6" />
+                    <span>Download Template CSV</span>
+                  </button>
+
+                  <label className="block">
+                    <div className={`w-full py-4 rounded-2xl bg-[#18080F] text-white font-black text-center cursor-pointer hover:bg-[#FF5FA2] transition-all flex items-center justify-center gap-2 ${importLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      {importLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Plus className="w-5 h-5" />
+                          Pilih File & Import
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={handleImportCSV}
+                        disabled={importLoading}
+                      />
+                    </div>
+                  </label>
+                </div>
+
+                <p className="text-center text-xs text-gray-400 font-medium">
+                  Token absensi akan digenerate secara otomatis untuk setiap siswa.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Import Modal */}
+      <AnimatePresence>
+        {showImportModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#18080F]/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-[#18080F]">Import Siswa</h3>
+                <button onClick={() => setShowImportModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                  <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    Format File CSV:
+                  </h4>
+                  <p className="text-sm text-blue-800 leading-relaxed">
+                    Gunakan koma (,) sebagai pemisah. Urutan kolom:<br/>
+                    <code className="bg-white/50 px-1 rounded font-bold">Nama, Kelas, Mapel, WhatsApp</code>
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={downloadTemplate}
+                    className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 font-bold hover:border-[#FF5FA2] hover:text-[#FF5FA2] transition-all flex flex-col items-center gap-1"
+                  >
+                    <Download className="w-6 h-6" />
+                    <span>Download Template CSV</span>
+                  </button>
+
+                  <label className="block">
+                    <div className={`w-full py-4 rounded-2xl bg-[#18080F] text-white font-black text-center cursor-pointer hover:bg-[#FF5FA2] transition-all flex items-center justify-center gap-2 ${importLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      {importLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Plus className="w-5 h-5" />
+                          Pilih File & Import
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={handleImportCSV}
+                        disabled={importLoading}
+                      />
+                    </div>
+                  </label>
+                </div>
+
+                <p className="text-center text-xs text-gray-400 font-medium">
+                  Token absensi akan digenerate secara otomatis untuk setiap siswa.
+                </p>
+              </div>
             </motion.div>
           </div>
         )}
