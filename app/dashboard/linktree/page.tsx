@@ -143,19 +143,26 @@ export default function LinktreeBuilderPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FFF8F2]">
-        <div className="relative">
+        <div className="flex flex-col items-center gap-4">
           <motion.div
-            animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute inset-0 rounded-full bg-[#FF5FA2]/20 blur-2xl"
-          />
-          <Image
-            src="/images/logo_simple.png"
-            alt="OneTap"
-            width={64}
-            height={64}
-            className="relative object-contain animate-pulse"
-          />
+            animate={{ 
+              scale: [1, 1.1, 1],
+              opacity: [1, 0.7, 1]
+            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Image
+              src="/images/logo_simple.png"
+              alt="OneTap"
+              width={80}
+              height={80}
+              className="object-contain"
+            />
+          </motion.div>
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-[#FF5FA2]" />
+            <span className="text-sm font-bold text-[#FF5FA2] uppercase tracking-widest">Loading Editor...</span>
+          </div>
         </div>
       </div>
     );

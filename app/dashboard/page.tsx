@@ -37,11 +37,11 @@ export default function DashboardPage() {
         .maybeSingle();
 
       if (profile) {
-        setUser({ 
-          name: profile.display_name ?? authUser.email ?? '', 
-          email: authUser.email ?? '', 
+        setUser({
+          name: profile.display_name ?? authUser.email ?? '',
+          email: authUser.email ?? '',
           username: profile.username,
-          slug: page?.slug || profile.username 
+          slug: page?.slug || profile.username
         });
         setNewUsername(page?.slug || profile.username);
       }
@@ -108,7 +108,7 @@ export default function DashboardPage() {
       }
 
       const { data: { user: authUser } } = await supabase.auth.getUser();
-      
+
       // Update slug in linktree_pages (assumes one page for now, or the primary one)
       const { error } = await supabase
         .from('linktree_pages')
@@ -152,26 +152,33 @@ export default function DashboardPage() {
   };
 
   // Calculate dynamic conversion rate (mock logic: clicks / 10 views as base if no view data)
-  const conversionRate = stats.totalClicks > 0 
-    ? ((stats.totalClicks / (stats.totalClicks + 15)) * 100).toFixed(1) 
+  const conversionRate = stats.totalClicks > 0
+    ? ((stats.totalClicks / (stats.totalClicks + 15)) * 100).toFixed(1)
     : '0';
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FFF8F2]">
-        <div className="relative">
+        <div className="flex flex-col items-center gap-4">
           <motion.div
-            animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute inset-0 rounded-full bg-[#FF5FA2]/20 blur-2xl"
-          />
-          <Image
-            src="/images/logo_simple.png"
-            alt="OneTap"
-            width={64}
-            height={64}
-            className="relative object-contain animate-pulse"
-          />
+            animate={{ 
+              scale: [1, 1.1, 1],
+              opacity: [1, 0.7, 1]
+            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Image
+              src="/images/logo_simple.png"
+              alt="OneTap"
+              width={80}
+              height={80}
+              className="object-contain"
+            />
+          </motion.div>
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-[#FF5FA2]" />
+            <span className="text-sm font-bold text-[#FF5FA2] uppercase tracking-widest">Loading OneTap...</span>
+          </div>
         </div>
       </div>
     );
@@ -205,7 +212,7 @@ export default function DashboardPage() {
                 <ExternalLink className="w-4 h-4" />
                 Lihat Halaman
               </Link>
-              
+
               <div className="h-8 w-px bg-gray-200 hidden sm:block mx-1" />
 
               <div className="flex items-center gap-3">
@@ -236,14 +243,14 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div>
               <h1 className="text-3xl sm:text-4xl font-black text-[#18080F] tracking-tight flex items-center gap-3">
-                Halo, {user?.name.split(' ')[0]} 
+                Halo, {user?.name.split(' ')[0]}
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.1, 1],
                     rotate: [0, 5, -5, 0]
                   }}
-                  transition={{ 
-                    repeat: Infinity, 
+                  transition={{
+                    repeat: Infinity,
                     duration: 4,
                     ease: "easeInOut"
                   }}
@@ -262,7 +269,7 @@ export default function DashboardPage() {
                 </motion.div>
               </h1>
               <div className="text-base sm:text-lg text-gray-500 mt-2 font-medium flex flex-wrap items-center gap-2">
-                Kelola kartu digitalmu di 
+                Kelola kartu digitalmu di
                 <div className="flex items-center gap-2">
                   {isEditingUsername ? (
                     <div className="flex flex-col gap-1">
@@ -296,10 +303,10 @@ export default function DashboardPage() {
                           {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                         </button>
                         <button
-                          onClick={() => { 
-                            setIsEditingUsername(false); 
-                            setNewUsername(user?.username || ''); 
-                            setUsernameError(''); 
+                          onClick={() => {
+                            setIsEditingUsername(false);
+                            setNewUsername(user?.username || '');
+                            setUsernameError('');
                           }}
                           className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-all"
                           title="Batal"
@@ -311,7 +318,7 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <>
-                      <Link 
+                      <Link
                         href={`/l/${user?.slug || user?.username}`}
                         target="_blank"
                         className="text-[#FF5FA2] font-bold hover:underline transition-all"
@@ -328,8 +335,8 @@ export default function DashboardPage() {
                     </>
                   )}
                 </div>
-                
-                <button 
+
+                <button
                   onClick={handleShare}
                   className="p-2 rounded-xl bg-white border border-gray-200 hover:border-[#FF5FA2] text-gray-400 hover:text-[#FF5FA2] transition-all shadow-sm hover:shadow-md ml-auto sm:ml-0"
                   title="Share link"
@@ -338,7 +345,7 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
-            
+
             <Link
               href="/dashboard/linktree"
               className="flex md:hidden items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-lg shadow-[#FF5FA2]/20"
@@ -435,16 +442,16 @@ export default function DashboardPage() {
                 className="group relative block p-8 rounded-[32px] bg-white border border-[#F6B7C8]/10 shadow-sm hover:shadow-xl hover:shadow-[#FF5FA2]/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full"
               >
                 <div className={`absolute top-0 right-0 w-32 h-32 ${item.bg}/30 rounded-full -mr-16 -mt-16 blur-3xl group-hover:scale-150 transition-transform duration-500`} />
-                
+
                 <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform duration-300`}>
                   <item.icon className={`w-7 h-7 ${item.iconColor}`} />
                 </div>
-                
+
                 <h3 className="text-xl font-black text-[#18080F] mb-3">{item.title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed font-medium mb-6">
                   {item.desc}
                 </p>
-                
+
                 <div className="flex items-center gap-2 text-[#FF5FA2] font-bold text-sm uppercase tracking-wider group-hover:gap-4 transition-all">
                   Kelola Sekarang
                   <ChevronRight className="w-4 h-4" />

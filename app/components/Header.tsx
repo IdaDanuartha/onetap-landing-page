@@ -90,12 +90,33 @@ export default function Header() {
               {locale.toUpperCase()}
             </button>
             
-            <a
-              href={user ? "/dashboard" : "/auth/login"}
-              className={`text-sm font-semibold transition-colors duration-300 ${isScrolled ? "text-[#18080F]" : "text-white"} hover:text-[#FF5FA2]`}
-            >
-              {user ? "Dashboard" : t('common.login')}
-            </a>
+            {user ? (
+              <div className="flex items-center gap-4">
+                <a
+                  href="/dashboard"
+                  className={`text-sm font-semibold transition-colors duration-300 ${isScrolled ? "text-[#18080F]" : "text-white"} hover:text-[#FF5FA2]`}
+                >
+                  Dashboard
+                </a>
+                <button
+                  onClick={async () => {
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    window.location.href = "/";
+                  }}
+                  className={`text-sm font-semibold transition-colors duration-300 ${isScrolled ? "text-red-500" : "text-red-400"} hover:text-red-600`}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <a
+                href="/auth/login"
+                className={`text-sm font-semibold transition-colors duration-300 ${isScrolled ? "text-[#18080F]" : "text-white"} hover:text-[#FF5FA2]`}
+              >
+                {t('common.login')}
+              </a>
+            )}
             <a
               href="#pricing"
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#18080F] text-white text-sm font-bold hover:bg-[#FF5FA2] transition-all duration-200 shadow-lg shadow-[#18080F]/10"
@@ -175,6 +196,19 @@ export default function Header() {
                   >
                     {user ? "Dashboard" : t('common.login')}
                   </a>
+                  
+                  {user && (
+                    <button
+                      onClick={async () => {
+                        const supabase = createClient();
+                        await supabase.auth.signOut();
+                        window.location.href = "/";
+                      }}
+                      className="text-[17px] font-bold text-red-500 text-left tracking-tight"
+                    >
+                      Logout
+                    </button>
+                  )}
                   
                   <a
                     href="#pricing"
