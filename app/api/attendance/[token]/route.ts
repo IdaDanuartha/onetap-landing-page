@@ -143,7 +143,7 @@ export async function POST(
       timeZone: 'Asia/Jakarta',
     });
 
-    const defaultTemplate = 'Halo Orang Tua {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.';
+    const defaultTemplate = 'Halo Pendamping {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.';
     const template = (tag.message_template as string) || defaultTemplate;
 
     const message = template

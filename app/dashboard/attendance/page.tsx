@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info } from "lucide-react";
+import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb } from "lucide-react";
 import Link from "next/link";
 
 interface Tag {
@@ -43,7 +43,7 @@ export default function AttendanceManagementPage() {
   const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
   const [presentToday, setPresentToday] = useState(0);
   const [schoolName, setSchoolName] = useState("Umum");
-  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("Halo Orang Tua {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.");
+  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("Halo Pendamping {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.");
   const [user, setUser] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isWritingNFC, setIsWritingNFC] = useState(false);
@@ -445,7 +445,7 @@ export default function AttendanceManagementPage() {
     if (!user) return;
 
     if (editingTag && (!formData.teacher_phone || formData.teacher_phone.trim() === "")) {
-      alert("Nomor WhatsApp Orang Tua wajib diisi agar notifikasi bisa terkirim.");
+      alert("Nomor WhatsApp Pendamping wajib diisi agar notifikasi bisa terkirim.");
       return;
     }
 
@@ -621,7 +621,7 @@ export default function AttendanceManagementPage() {
                   rows={5}
                   value={globalMessageTemplate}
                   onChange={(e) => setGlobalMessageTemplate(e.target.value)}
-                  placeholder="Halo Orang Tua {student_name}, ananda telah hadir..."
+                  placeholder="Halo Pendamping {student_name}, ananda telah hadir..."
                   className="flex-1 px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold text-sm resize-none"
                 />
                 <button
@@ -652,11 +652,11 @@ export default function AttendanceManagementPage() {
               </div>
               <div>
                 <p className="text-base font-black text-amber-900">Beberapa siswa belum memiliki nomor WhatsApp</p>
-                <p className="text-sm font-bold text-amber-700/80">Sistem tidak bisa mengirim notifikasi ke orang tua jika nomor WA kosong.</p>
+                <p className="text-sm font-bold text-amber-700/80">Sistem tidak bisa mengirim notifikasi ke pendamping jika nomor WA kosong.</p>
               </div>
             </div>
             <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-black shadow-lg shadow-amber-600/20">
-              💡 Gunakan Bulk Update WA di tabel
+              <Lightbulb className="w-4 h-4" /> Gunakan Bulk Update WA di tabel
             </div>
           </motion.div>
         )}
@@ -930,7 +930,7 @@ export default function AttendanceManagementPage() {
 
                 {editingTag ? (
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Orang Tua <span className="text-red-500">*</span></label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Pendamping <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
