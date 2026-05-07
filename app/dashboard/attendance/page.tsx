@@ -45,6 +45,7 @@ export default function AttendanceManagementPage() {
   const [importError, setImportError] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+  const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
 
 
   // Form State
@@ -164,11 +165,15 @@ export default function AttendanceManagementPage() {
     reader.readAsText(file);
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDeleteTrigger = () => {
     if (selectedTags.length === 0) return;
-    if (!confirm(`Hapus ${selectedTags.length} siswa terpilih secara permanen?`)) return;
+    setDeleteMode("bulk");
+    setShowDeleteModal(true);
+  };
 
+  const confirmBulkDelete = async () => {
     setIsDeletingBulk(true);
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from("attendance_tags")
@@ -181,11 +186,13 @@ export default function AttendanceManagementPage() {
       setTimeout(() => setShowSuccess(false), 3000);
       setSelectedTags([]);
       fetchData();
+      setShowDeleteModal(false);
     } catch (err) {
       console.error("Bulk delete failed:", err);
       alert("Gagal menghapus data terpilih.");
     } finally {
       setIsDeletingBulk(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -208,7 +215,7 @@ export default function AttendanceManagementPage() {
       setFormData({
         student_name: tag.student_name,
         class_name: tag.class_name,
-        teacher_phone: tag.teacher_phone,
+        teacher_phone: tag.teacher_phone || "",
         token: tag.token,
         subject: tag.subject || "",
       });
@@ -223,6 +230,12 @@ export default function AttendanceManagementPage() {
       });
     }
     setShowModal(true);
+  };
+
+  const handleDeleteTrigger = (tag: Tag) => {
+    setTagToDelete(tag);
+    setDeleteMode("single");
+    setShowDeleteModal(true);
   };
 
   const handleSaveSchoolName = async () => {
@@ -517,9 +530,9 @@ export default function AttendanceManagementPage() {
                           {selectedTags.length} Siswa Terpilih
                         </span>
                         <button 
-                          onClick={handleBulkDelete}
+                          onClick={handleBulkDeleteTrigger}
                           disabled={isDeletingBulk}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50 shadow-lg shadow-red-500/20"
                         >
                           {isDeletingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                           Hapus Terpilih
@@ -757,24 +770,29 @@ export default function AttendanceManagementPage() {
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl relative z-10 text-center"
             >
-              <div className="w-20 h-20 rounded-3xl bg-red-50 flex items-center justify-center mx-auto mb-6">
-                <AlertTriangle className="w-10 h-10 text-red-500" />
+              <div className="w-20 h-20 rounded-3xl bg-red-50 flex items-center justify-center mx-auto mb-6 transform -rotate-3">
+                <Trash2 className="w-10 h-10 text-red-500" />
               </div>
               
-              <h3 className="text-xl font-black text-[#18080F] mb-2">Hapus Data Siswa?</h3>
-              <p className="text-gray-500 text-sm font-medium mb-8">
-                Anda akan menghapus data <span className="text-[#18080F] font-bold">{tagToDelete?.student_name}</span>. Tindakan ini tidak dapat dibatalkan.
+              <h3 className="text-2xl font-black text-[#18080F] mb-3">
+                {deleteMode === "bulk" ? `Hapus ${selectedTags.length} Siswa?` : "Hapus Data Siswa?"}
+              </h3>
+              <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">
+                {deleteMode === "bulk" 
+                  ? `Apakah Anda yakin ingin menghapus ${selectedTags.length} siswa yang dipilih?`
+                  : <>Anda akan menghapus data <span className="text-[#18080F] font-bold">{tagToDelete?.student_name}</span>.</>}
+                <br />Tindakan ini tidak dapat dibatalkan.
               </p>
 
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 py-4 rounded-2xl bg-gray-100 text-gray-500 font-black hover:bg-gray-200 transition-all"
+                  className="flex-1 py-4 rounded-2xl bg-gray-50 text-gray-500 font-black hover:bg-gray-100 transition-all"
                 >
                   Batal
                 </button>
                 <button
-                  onClick={confirmDelete}
+                  onClick={deleteMode === "bulk" ? confirmBulkDelete : confirmDelete}
                   disabled={isSubmitting}
                   className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-black hover:bg-red-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 disabled:opacity-50"
                 >
