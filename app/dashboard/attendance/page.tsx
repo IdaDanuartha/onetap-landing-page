@@ -528,7 +528,7 @@ export default function AttendanceManagementPage() {
               <tbody className="divide-y divide-gray-50">
                 {selectedTags.length > 0 && (
                   <tr className="bg-[#FF5FA2]/5">
-                    <td colSpan={4} className="px-6 py-3">
+                    <td colSpan={5} className="px-6 py-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-[#FF5FA2]">
                           {selectedTags.length} Siswa Terpilih
