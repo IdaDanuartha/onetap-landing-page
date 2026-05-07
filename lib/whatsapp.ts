@@ -13,7 +13,7 @@ interface SendWAParams {
 }
 
 export async function sendWhatsApp({ target, message, token: customToken }: SendWAParams): Promise<{ success: boolean; error?: string }> {
-  const token = customToken || process.env.FONNTE_API_TOKEN;
+  const token = (customToken || process.env.FONNTE_API_TOKEN)?.trim();
   if (!token) {
     console.warn('[WhatsApp] API TOKEN not configured. Skipping WA send.');
     return { success: false, error: 'API Token not configured' };

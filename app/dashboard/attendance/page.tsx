@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb } from "lucide-react";
@@ -307,6 +307,7 @@ export default function AttendanceManagementPage() {
     } else {
       localStorage.setItem('onetap_school_name', schoolName);
       setTags(tags.map(t => ({ ...t, school_name: schoolName })));
+      setSuccessMessage("Nama Sekolah/Instansi berhasil disimpan!");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     }
@@ -368,7 +369,12 @@ export default function AttendanceManagementPage() {
     }
   };
 
+  const processingTokens = React.useRef<Record<string, boolean>>({});
+
   const processAttendance = async (token: string) => {
+    if (processingTokens.current[token]) return;
+    processingTokens.current[token] = true;
+
     try {
       const res = await fetch(`/api/attendance/${token}`, { method: 'POST' });
       const result = await res.json();
@@ -388,6 +394,11 @@ export default function AttendanceManagementPage() {
       }
     } catch (err) {
       console.error("Attendance processing error:", err);
+    } finally {
+      // Release lock after 3 seconds to prevent duplicate rapid scans
+      setTimeout(() => {
+        processingTokens.current[token] = false;
+      }, 3000);
     }
   };
 
