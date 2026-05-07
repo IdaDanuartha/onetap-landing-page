@@ -354,7 +354,7 @@ export default function AttendanceManagementPage() {
                 ))}
               </select>
 
-              {(classFilter || subjectFilter) && filteredTags.length > 0 && (
+              {filteredTags.length > 0 && (
                 <button 
                   onClick={startBulkWrite}
                   className="px-4 py-3 rounded-xl bg-[#FF5FA2]/10 text-[#FF5FA2] font-black text-sm hover:bg-[#FF5FA2]/20 transition-all flex items-center gap-2 whitespace-nowrap"
