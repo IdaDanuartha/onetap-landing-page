@@ -146,8 +146,8 @@ export default function AttendanceManagementPage() {
 
           const [name, className, subject, phone] = row.map(s => s?.trim());
           
-          if (!name || !className || !phone) {
-            setImportError(`Baris ${i + 1} tidak valid: Nama, Kelas, dan Nomor WhatsApp wajib diisi.`);
+          if (!name || !className) {
+            setImportError(`Baris ${i + 1} tidak valid: Nama dan Kelas wajib diisi.`);
             return;
           }
 
@@ -446,7 +446,7 @@ export default function AttendanceManagementPage() {
     e.preventDefault();
     if (!user) return;
 
-    if (!formData.teacher_phone || formData.teacher_phone.trim() === "") {
+    if (editingTag && (!formData.teacher_phone || formData.teacher_phone.trim() === "")) {
       alert("Nomor WhatsApp Orang Tua wajib diisi agar notifikasi bisa terkirim.");
       return;
     }
@@ -638,6 +638,28 @@ export default function AttendanceManagementPage() {
             </div>
           </div>
         </div>
+
+        {/* Warning Banner */}
+        {tags.length > 0 && tags.some(t => !t.teacher_phone || t.teacher_phone.trim() === "") && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-6 rounded-[2rem] bg-amber-50 border border-amber-100 flex flex-col md:flex-row items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-base font-black text-amber-900">Beberapa siswa belum memiliki nomor WhatsApp</p>
+                <p className="text-sm font-bold text-amber-700/80">Sistem tidak bisa mengirim notifikasi ke orang tua jika nomor WA kosong.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-black shadow-lg shadow-amber-600/20">
+              💡 Gunakan Bulk Update WA di tabel
+            </div>
+          </motion.div>
+        )}
 
         {/* List Card */}
         <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl overflow-hidden">
@@ -906,19 +928,31 @@ export default function AttendanceManagementPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Orang Tua <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={formData.teacher_phone}
-                      onChange={(e) => setFormData({...formData, teacher_phone: e.target.value})}
-                      placeholder="628123456789"
-                      className="w-full pl-11 pr-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold"
-                    />
+                {editingTag ? (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Orang Tua <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.teacher_phone}
+                        onChange={(e) => setFormData({...formData, teacher_phone: e.target.value})}
+                        placeholder="628123456789"
+                        className="w-full pl-11 pr-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold"
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-black text-blue-700 mb-1 uppercase tracking-wider">💡 Tips Pengisian</p>
+                      <p className="text-xs font-bold text-blue-600/80 leading-relaxed">
+                        Nomor WA tidak perlu diisi sekarang. Anda bisa mengisi nomor WA banyak siswa sekaligus menggunakan fitur <span className="text-blue-700 underline">Bulk Update WA</span> di tabel utama.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Unique Token (NFC ID)</label>

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 import { sendWhatsApp } from '@/lib/whatsapp';
 
-const supabase = createSupabaseClient(
+const supabaseAdmin = createSupabaseClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
@@ -28,6 +29,17 @@ export async function POST(
   try {
     const { token } = await params;
 
+    // Verify user is logged in
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ 
+        error: 'Akses ditolak', 
+        message: 'Hanya Guru/Admin yang sudah login yang dapat mencatat kehadiran.' 
+      }, { status: 401 });
+    }
+
     // Rate limiting
     const now = Date.now();
     if (lastTapped[token] && now - lastTapped[token] < RATE_LIMIT_MS) {
@@ -39,7 +51,7 @@ export async function POST(
     lastTapped[token] = now;
 
 
-    const { data: tag, error: tagSelectError } = await supabase
+    const { data: tag, error: tagSelectError } = await supabaseAdmin
       .from('attendance_tags')
       .select('*')
       .eq('token', token)
@@ -65,7 +77,7 @@ export async function POST(
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    const { data: existingLogs, error: checkError } = await supabase
+    const { data: existingLogs, error: checkError } = await supabaseAdmin
       .from('attendance_logs')
       .select('id, tapped_at')
       .eq('token', token)
@@ -89,7 +101,7 @@ export async function POST(
     const tappedAt = new Date();
 
     // Insert attendance log
-    const { data: log, error: logError } = await supabase
+    const { data: log, error: logError } = await supabaseAdmin
       .from('attendance_logs')
       .insert({
         token,
@@ -155,7 +167,7 @@ export async function POST(
     }
 
     // Update log with WA send status
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('attendance_logs')
       .update({
         wa_sent: waResult.success,

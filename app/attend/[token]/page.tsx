@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { CheckCircle2, AlertCircle, Calendar, Clock, BookOpen, MessageSquare } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Calendar, Clock, BookOpen, MessageSquare, Lock } from 'lucide-react';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 interface AttendancePageProps {
   params: Promise<{ token: string }>;
@@ -10,7 +12,8 @@ interface AttendancePageProps {
 
 export default function AttendancePage({ params }: AttendancePageProps) {
   const { token } = use(params);
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const router = useRouter();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'unauthorized'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [data, setData] = useState<{
     studentName: string;
@@ -25,6 +28,14 @@ export default function AttendancePage({ params }: AttendancePageProps) {
   useEffect(() => {
     async function processAttendance() {
       try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          setStatus('unauthorized');
+          return;
+        }
+
         const res = await fetch(`/api/attendance/${token}`, { method: 'POST' });
         const result = await res.json();
 
@@ -73,6 +84,44 @@ export default function AttendancePage({ params }: AttendancePageProps) {
             >
               Mohon jangan tutup halaman ini
             </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'unauthorized') {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{ background: 'var(--color-bg)' }}
+      >
+        <div className="card max-w-sm w-full text-center p-8">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
+            style={{ background: '#FEF3C7', color: '#D97706' }}
+          >
+            <Lock className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-black mb-2" style={{ color: 'var(--color-text-dark)' }}>
+            Akses Terbatas
+          </h2>
+          <p className="text-sm mb-8 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            Hanya akun terdaftar (Guru/Admin) yang dapat mencatat kehadiran. Silakan login terlebih dahulu.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/login')}
+              className="btn-primary w-full justify-center py-4 text-base"
+            >
+              Login Sekarang
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full text-xs font-bold text-gray-400 hover:text-[#FF5FA2] transition-colors"
+            >
+              Kembali ke Beranda
+            </button>
           </div>
         </div>
       </div>
