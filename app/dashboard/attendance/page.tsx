@@ -55,6 +55,7 @@ export default function AttendanceManagementPage() {
     teacher_phone: "",
     token: "",
     subject: "",
+    is_active: true,
   });
 
   const supabase = createClient();
@@ -218,6 +219,7 @@ export default function AttendanceManagementPage() {
         teacher_phone: tag.teacher_phone || "",
         token: tag.token,
         subject: tag.subject || "",
+        is_active: tag.is_active,
       });
     } else {
       setEditingTag(null);
@@ -227,6 +229,7 @@ export default function AttendanceManagementPage() {
         teacher_phone: "",
         token: Math.random().toString(36).substring(2, 8).toUpperCase(),
         subject: "",
+        is_active: true,
       });
     }
     setShowModal(true);
@@ -731,6 +734,22 @@ export default function AttendanceManagementPage() {
                     placeholder="GENERATED-ID"
                     className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-mono text-sm font-bold"
                   />
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div>
+                    <div className="text-sm font-bold text-[#18080F]">Status Aktif</div>
+                    <div className="text-[10px] text-gray-400 font-medium">Siswa tidak aktif tidak dapat melakukan absensi.</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, is_active: !formData.is_active})}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.is_active ? 'translate-x-6' : 'translate-x-1'}`}
+                    />
+                  </button>
                 </div>
 
                 <div className="pt-4 flex gap-3">
