@@ -261,7 +261,7 @@ export default function AttendanceManagementPage() {
 
   const handleWriteNFC = async (token: string, isBulk = false, studentName = "") => {
     if (!('NDEFReader' in window)) {
-      const url = `${window.location.origin}/api/attendance/${token}`;
+      const url = `${window.location.origin}/attend/${token}`;
       await navigator.clipboard.writeText(url);
       setFallbackToken(token);
       setShowNFCFallback(true);
@@ -274,7 +274,7 @@ export default function AttendanceManagementPage() {
       // @ts-ignore
       const ndef = new NDEFReader();
       await ndef.write({
-        records: [{ recordType: "url", data: `${window.location.origin}/api/attendance/${token}` }]
+        records: [{ recordType: "url", data: `${window.location.origin}/attend/${token}` }]
       });
       
       setWriteStatus("success");
