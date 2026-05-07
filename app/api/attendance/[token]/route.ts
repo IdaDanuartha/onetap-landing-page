@@ -35,12 +35,17 @@ export async function POST(
 
     const supabase = await createClient();
 
-    const { data: tag } = await supabase
+    const { data: tag, error: tagSelectError } = await supabase
       .from('attendance_tags')
       .select('*')
       .eq('token', token)
       .eq('is_active', true)
       .maybeSingle();
+
+    if (tagSelectError) {
+      console.error('[attendance/token] tag selection error:', tagSelectError);
+      throw tagSelectError;
+    }
 
     if (!tag) {
       return NextResponse.json({ error: 'Tag tidak valid atau tidak aktif' }, { status: 404 });
@@ -61,9 +66,17 @@ export async function POST(
         wa_sent: false,
       })
       .select('id')
-      .single();
+      .maybeSingle();
 
-    if (logError) throw logError;
+    if (logError) {
+      console.error('[attendance/token] log insertion error:', logError);
+      throw logError;
+    }
+
+    if (!log) {
+      console.error('[attendance/token] Failed to create log - no data returned');
+      throw new Error('Gagal mencatat log kehadiran');
+    }
 
     // Format date/time in Indonesian locale
     const date = tappedAt.toLocaleDateString('id-ID', {
@@ -83,27 +96,36 @@ export async function POST(
     const template = (tag.message_template as string) || defaultTemplate;
 
     const message = template
-      .replace(/{student_name}/g, tag.student_name)
-      .replace(/{class_name}/g, tag.class_name)
+      .replace(/{student_name}/g, tag.student_name || 'Siswa')
+      .replace(/{class_name}/g, tag.class_name || '-')
       .replace(/{subject}/g, tag.subject ?? '-')
       .replace(/{date}/g, date)
       .replace(/{time}/g, time);
 
     // Send WA via configured gateway (fully automatic)
-    const waSent = await sendWhatsApp({ 
-      target: tag.teacher_phone, 
-      message,
-      token: tag.whatsapp_token // Uses user's token if available, otherwise falls back to global
-    });
+    let waSent = false;
+    try {
+        waSent = await sendWhatsApp({ 
+          target: tag.teacher_phone, 
+          message,
+          token: tag.whatsapp_token 
+        });
+    } catch (waErr) {
+        console.error('[attendance/token] WhatsApp send error:', waErr);
+    }
 
     // Update log with WA send status
-    await supabase
+    const { error: updateError } = await supabase
       .from('attendance_logs')
       .update({
         wa_sent: waSent,
         wa_error: waSent ? null : 'WhatsApp gateway failed to deliver',
       })
       .eq('id', log.id);
+
+    if (updateError) {
+      console.error('[attendance/token] log update error:', updateError);
+    }
 
     return NextResponse.json({
       success: true,
@@ -114,8 +136,12 @@ export async function POST(
       time,
       waSent,
     });
-  } catch (err) {
-    console.error('[attendance/token]', err);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  } catch (err: any) {
+    console.error('[attendance/token] Final catch:', err);
+    return NextResponse.json({ 
+      error: 'Internal error', 
+      message: err.message || String(err),
+      details: err.details || null
+    }, { status: 500 });
   }
 }
