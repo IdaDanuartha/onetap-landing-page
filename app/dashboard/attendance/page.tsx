@@ -1256,12 +1256,12 @@ export default function AttendanceManagementPage() {
       {/* Bulk Scan Modal */}
       <AnimatePresence>
         {showScanModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#18080F]/60 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-[#18080F]/60 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-[2rem] md:rounded-[3rem] p-5 md:p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[95vh] md:max-h-none relative custom-scrollbar"
+              className="bg-white rounded-[2rem] md:rounded-[3rem] p-5 md:p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh] relative custom-scrollbar"
             >
               <div className="absolute top-0 left-0 w-full h-1.5 md:h-2 bg-orange-500 overflow-hidden">
                 <motion.div 
