@@ -3,7 +3,6 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import Script from "next/script";
-import PageLoader from "./components/PageLoader";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -116,7 +115,6 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${outfit.variable} antialiased`}>
         <LanguageProvider>
-          <PageLoader />
           {children}
         </LanguageProvider>
 
