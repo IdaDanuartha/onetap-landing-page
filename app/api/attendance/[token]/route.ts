@@ -79,13 +79,15 @@ export async function POST(
       timeZone: 'Asia/Jakarta',
     });
 
-    // Render the message template
-    const message = (tag.message_template as string)
-      .replace('{student_name}', tag.student_name)
-      .replace('{class_name}', tag.class_name)
-      .replace('{subject}', tag.subject ?? '-')
-      .replace('{date}', date)
-      .replace('{time}', time);
+    const defaultTemplate = 'Halo Orang Tua {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.';
+    const template = (tag.message_template as string) || defaultTemplate;
+
+    const message = template
+      .replace(/{student_name}/g, tag.student_name)
+      .replace(/{class_name}/g, tag.class_name)
+      .replace(/{subject}/g, tag.subject ?? '-')
+      .replace(/{date}/g, date)
+      .replace(/{time}/g, time);
 
     // Send WA via configured gateway (fully automatic)
     const waSent = await sendWhatsApp({ 
