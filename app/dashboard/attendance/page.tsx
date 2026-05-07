@@ -1261,9 +1261,9 @@ export default function AttendanceManagementPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-[3rem] p-8 max-w-2xl w-full shadow-2xl overflow-hidden relative"
+              className="bg-white rounded-[2rem] md:rounded-[3rem] p-5 md:p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[95vh] md:max-h-none relative custom-scrollbar"
             >
-              <div className="absolute top-0 left-0 w-full h-2 bg-orange-500 overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1.5 md:h-2 bg-orange-500 overflow-hidden">
                 <motion.div 
                   className="h-full bg-white/30 w-1/3"
                   animate={{ x: ['-100%', '300%'] }}
@@ -1271,55 +1271,55 @@ export default function AttendanceManagementPage() {
                 />
               </div>
 
-              <div className="flex justify-between items-start mb-8">
+              <div className="flex justify-between items-start mb-6 md:mb-8">
                 <div>
                   <div className="flex items-center gap-2 text-orange-500 mb-1">
-                    <Signal className="w-4 h-4 animate-ping" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Sistem Aktif</span>
+                    <Signal className="w-3.5 h-3.5 animate-ping" />
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Sistem Aktif</span>
                   </div>
-                  <h3 className="text-3xl font-black text-[#18080F]">Absensi Massal</h3>
-                  <p className="text-sm text-gray-400 font-medium">Dekatkan kartu siswa ke sensor NFC perangkat Anda.</p>
+                  <h3 className="text-2xl md:text-3xl font-black text-[#18080F]">Absensi Massal</h3>
+                  <p className="text-xs md:text-sm text-gray-400 font-medium">Dekatkan kartu siswa ke sensor NFC perangkat Anda.</p>
                 </div>
                 <button 
                   onClick={() => {
                     setIsBulkScanning(false);
                     setShowScanModal(false);
                   }}
-                  className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-colors group"
+                  className="p-2.5 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-xl md:rounded-2xl transition-colors group"
                 >
-                  <X className="w-6 h-6 text-gray-400 group-hover:text-red-500 transition-colors" />
+                  <X className="w-5 h-5 md:w-6 md:h-6 text-gray-400 group-hover:text-red-500 transition-colors" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                 {/* Visual Radar */}
-                <div className="aspect-square bg-gray-50 rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden border border-gray-100">
+                <div className="aspect-square bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden border border-gray-100 min-h-[220px]">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div 
-                      className="w-48 h-48 border-2 border-orange-200 rounded-full"
+                      className="w-32 h-32 md:w-48 md:h-48 border-2 border-orange-200 rounded-full"
                       animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
                       transition={{ duration: 2, repeat: Infinity }}
                     />
                     <motion.div 
-                      className="w-48 h-48 border-2 border-orange-200 rounded-full"
+                      className="w-32 h-32 md:w-48 md:h-48 border-2 border-orange-200 rounded-full"
                       animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
                       transition={{ duration: 2, repeat: Infinity, delay: 1 }}
                     />
                   </div>
-                  <Radio className="w-16 h-16 text-orange-500 relative z-10 mb-4" />
-                  <p className="text-sm font-bold text-gray-400 animate-pulse uppercase tracking-widest">Menunggu Tap...</p>
+                  <Radio className="w-12 h-12 md:w-16 md:h-16 text-orange-500 relative z-10 mb-3 md:mb-4" />
+                  <p className="text-xs md:text-sm font-bold text-gray-400 animate-pulse uppercase tracking-widest">Menunggu Tap...</p>
                 </div>
 
                 {/* Scan Logs */}
-                <div className="flex flex-col h-[300px]">
-                  <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex justify-between">
-                    <span>Aktivitas Terakhir</span>
+                <div className="flex flex-col h-[250px] md:h-[300px]">
+                  <div className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-4 flex justify-between">
+                    <span>Aktivitas</span>
                     <span className="text-orange-500">{scanLogs.length} Terdeteksi</span>
                   </div>
-                  <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                  <div className="flex-1 overflow-y-auto space-y-2.5 md:space-y-3 pr-2 custom-scrollbar">
                     {scanLogs.length === 0 ? (
-                      <div className="h-full flex items-center justify-center text-center p-6 border-2 border-dashed border-gray-100 rounded-3xl">
-                        <p className="text-sm text-gray-300 font-medium italic">Belum ada aktivitas scan</p>
+                      <div className="h-full flex items-center justify-center text-center p-6 border-2 border-dashed border-gray-100 rounded-2xl md:rounded-3xl">
+                        <p className="text-xs md:text-sm text-gray-300 font-medium italic">Belum ada aktivitas</p>
                       </div>
                     ) : (
                       scanLogs.map((log, i) => (
@@ -1327,14 +1327,14 @@ export default function AttendanceManagementPage() {
                           key={i}
                           initial={{ x: 20, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
-                          className={`p-4 rounded-2xl border flex items-center gap-4 ${log.status === 'success' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}
+                          className={`p-3 md:p-4 rounded-xl md:rounded-2xl border flex items-center gap-3 md:gap-4 ${log.status === 'success' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}
                         >
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${log.status === 'success' ? 'bg-white text-green-500' : 'bg-white text-red-500'}`}>
-                            {log.status === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                          <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 ${log.status === 'success' ? 'bg-white text-green-500' : 'bg-white text-red-500'}`}>
+                            {log.status === 'success' ? <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" /> : <AlertTriangle className="w-4 h-4 md:w-5 md:h-5" />}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-black text-[#18080F] truncate">{log.student_name}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase">{log.class_name} • {log.time}</p>
+                            <p className="text-xs md:text-sm font-black text-[#18080F] truncate">{log.student_name}</p>
+                            <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase">{log.class_name} • {log.time}</p>
                           </div>
                         </motion.div>
                       ))
@@ -1343,12 +1343,12 @@ export default function AttendanceManagementPage() {
                 </div>
               </div>
 
-              <div className="mt-8 flex items-center gap-4 p-4 bg-orange-50 rounded-2xl border border-orange-100">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-orange-500 shrink-0">
-                  <Smartphone className="w-5 h-5" />
+              <div className="mt-6 md:mt-8 flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-orange-50 rounded-xl md:rounded-2xl border border-orange-100">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-white rounded-lg md:rounded-xl flex items-center justify-center text-orange-500 shrink-0">
+                  <Smartphone className="w-4 h-4 md:w-5 md:h-5" />
                 </div>
-                <p className="text-xs text-orange-800 font-medium leading-relaxed">
-                  <strong>Tips:</strong> Pastikan layar HP admin menyala dan tidak terkunci. Tempelkan kartu tepat di area sensor NFC (biasanya di bagian belakang atas).
+                <p className="text-[10px] md:text-xs text-orange-800 font-medium leading-relaxed">
+                  <strong>Tips:</strong> Pastikan layar HP menyala. Tempelkan kartu di area sensor NFC (biasanya di belakang atas).
                 </p>
               </div>
             </motion.div>
