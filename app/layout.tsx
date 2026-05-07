@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import Script from "next/script";
+import PageLoader from "./components/PageLoader";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -10,9 +12,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "OneTap - NFC Keychain Indonesia | Everything Connected",
+  title: "OneTap - NFC Keychain & Digital Business Card Indonesia",
   description:
-    "OneTap mengubah cara berbagi identitas dengan NFC keychain. Hubungkan dunia fisik dan digital dalam satu sentuhan. Tanpa aplikasi tambahan, informasi penting dapat diakses secara instan.",
+    "Solusi networking masa depan. Bagikan profil, kontak, dan sosial mediamu hanya dengan satu sentuhan NFC OneTap. Everything Connected.",
   keywords: [
     "NFC keychain",
     "kartu nama digital",
@@ -21,13 +23,19 @@ export const metadata: Metadata = {
     "digital business card",
     "contactless",
     "OneTap",
+    "Linktree alternative",
   ],
   authors: [{ name: "OneTap Indonesia" }],
+  icons: {
+    icon: "/images/logo_simple.png",
+    shortcut: "/images/logo_simple.png",
+    apple: "/images/logo_simple.png",
+  },
   openGraph: {
-    title: "OneTap - NFC Keychain Indonesia | Everything Connected",
+    title: "OneTap - Bagikan Semuanya dengan Satu Sentuhan",
     description:
-      "Berbagi identitas digital semudah satu sentuhan. Cek katalog produk NFC kami sekarang!",
-    url: "https://onetap.id",
+      "Transformasi networking fisik ke digital. Cek profil digital dan koleksi NFC kami sekarang!",
+    url: "https://onetap-charm.com",
     siteName: "OneTap Indonesia",
     images: [
       {
@@ -43,7 +51,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "OneTap - Everything Connected",
-    description: "Solusi networking modern dengan teknologi NFC.",
+    description: "Solusi networking modern dengan teknologi NFC. Bagikan duniamu instan.",
     images: ["/images/logo_simple.png"],
   },
 };
@@ -102,11 +110,13 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased`}>
         <LanguageProvider>
+          <PageLoader />
           {children}
         </LanguageProvider>
-        {/* Tawk.to Chatbot Integration */}
-        <script
-          type="text/javascript"
+
+        <Script
+          id="tawk-to"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();

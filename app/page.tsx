@@ -4,11 +4,12 @@ import FeaturesSection from "./components/FeaturesSection";
 import HowItWorksSection from "./components/HowItWorksSection";
 import ProductsSection from "./components/ProductsSection";
 import UseCasesSection from "./components/UseCasesSection";
+import NewFeaturesSection from "./components/NewFeaturesSection";
+import EducationSection from "./components/EducationSection";
 import TestimonialsSection from "./components/TestimonialsSection";
 import FAQSection from "./components/FAQSection";
 import CTABannerSection from "./components/CTABannerSection";
 import Footer from "./components/Footer";
-import FloatingWA from "./components/FloatingWA";
 
 export default function Home() {
   return (
@@ -20,12 +21,15 @@ export default function Home() {
         <HowItWorksSection />
         <ProductsSection />
         <UseCasesSection />
+        {/* NEW: Feature showcase */}
+        <NewFeaturesSection />
+        {/* NEW: Education / NFC Attendance showcase */}
+        <EducationSection />
         <TestimonialsSection />
         <FAQSection />
         <CTABannerSection />
       </main>
       <Footer />
-      <FloatingWA />
     </>
   );
 }

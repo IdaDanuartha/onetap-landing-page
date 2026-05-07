@@ -93,58 +93,45 @@ function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="w-full max-w-md mx-auto"
+      className="w-full max-w-lg mx-auto px-4"
     >
-      <div className="bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_60px_-15px_rgba(255,95,162,0.15)] rounded-[2.5rem] p-8 sm:p-10 relative overflow-hidden">
-        {/* Decorative background glow */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-200/50 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-100/50 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] p-10 sm:p-14 relative border border-slate-50">
+        {/* Subtle Inner Glow */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/20 to-transparent rounded-[2.5rem] pointer-events-none" />
 
-        {/* Icon */}
-        <div className="flex justify-center mb-8 relative z-10">
-          <div className="relative">
-            <motion.div 
-              whileHover={{ scale: 1.05, rotate: 5 }}
-              className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-xl shadow-primary-500/30 text-white"
-            >
-              <KeyRound className="w-10 h-10" />
-            </motion.div>
-            {/* Animated rings */}
-            {[0, 0.4, 0.8].map((delay, i) => (
-              <span
-                key={i}
-                className="absolute inset-0 rounded-3xl border border-primary-400/40"
-                style={{
-                  animation: `nfc-ring-pulse 2.5s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s infinite`,
-                }}
-              />
-            ))}
+        {/* Icon Header */}
+        <div className="flex justify-center mb-10 relative z-10">
+          <div className="w-24 h-24 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
+            <KeyRound className="w-10 h-10 text-slate-200" strokeWidth={1.5} />
           </div>
         </div>
 
-        <div className="text-center mb-8 relative z-10">
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Akses Premium</h1>
-          <p className="mt-3 text-slate-500 text-sm leading-relaxed max-w-[260px] mx-auto">
+        <div className="text-center mb-10 relative z-10">
+          <h1 className="text-3xl font-black text-[#18080F] tracking-tight mb-4">Akses Premium</h1>
+          <p className="text-gray-400 text-sm leading-relaxed max-w-[280px] mx-auto font-medium">
             Masukkan kode unik yang terdapat pada box keychain OneTap Anda.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
-          <div className="relative group">
+        <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+          <div className="relative">
             <input
               id="access-code-input"
               type="text"
               value={code}
-              onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(null); }}
+              onChange={(e) => { 
+                const val = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                setCode(val); 
+                setError(null); 
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && code.trim()) handleSubmit(e);
+              }}
               placeholder="XXXXX-XXXXX"
-              maxLength={10}
+              maxLength={11}
               autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              className={`w-full h-16 px-6 rounded-2xl bg-slate-50/50 border-2 text-slate-800 text-center text-xl font-bold tracking-[0.3em] uppercase outline-none transition-all duration-300 placeholder:text-slate-300 placeholder:tracking-normal placeholder:font-medium ${
-                error
-                  ? "border-red-300 focus:border-red-500 bg-red-50/30 focus:ring-4 focus:ring-red-500/10"
-                  : "border-slate-200 focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 hover:border-slate-300"
+              className={`w-full h-16 px-6 rounded-2xl bg-[#F8FAFC]/50 border border-slate-100 text-[#18080F] text-center text-xl font-bold tracking-[0.2em] uppercase outline-none transition-all duration-300 placeholder:text-slate-200 placeholder:tracking-normal placeholder:font-medium focus:bg-white focus:border-primary-200 focus:ring-4 focus:ring-primary-500/5 ${
+                error ? "border-red-100 bg-red-50/30" : ""
               }`}
             />
           </div>
@@ -152,39 +139,28 @@ function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
           <AnimatePresence>
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -10, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: "auto" }}
-                exit={{ opacity: 0, y: -10, height: 0 }}
-                className="overflow-hidden"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-red-500 text-xs text-center font-semibold"
               >
-                <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
-                  <XCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
-                  {error}
-                </div>
+                {error}
               </motion.div>
             )}
           </AnimatePresence>
 
-          <motion.button
-            type="submit"
-            disabled={!code.trim() || loading}
-            whileHover={{ scale: 1.01, y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-primary-500/25 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-300 group"
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                Buka Akses <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </>
-            )}
-          </motion.button>
+          {/* Hidden Submit Button for Accessibility but visible to triggers */}
+          <button type="submit" className="hidden" />
+          
+          {loading && (
+            <div className="flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+            </div>
+          )}
         </form>
 
-        <p className="mt-8 text-center text-sm text-slate-500 relative z-10 font-medium">
-          Kehilangan kode?{" "}
-          <a href="/#contact" className="text-primary-600 hover:text-primary-700 transition-colors underline decoration-primary-200 underline-offset-4">
+        <p className="mt-12 text-center text-sm font-semibold relative z-10">
+          <span className="text-gray-400">Kehilangan kode?</span>{" "}
+          <a href="https://wa.me/6281234567890" className="text-blue-500 hover:underline underline-offset-4">
             Hubungi Support
           </a>
         </p>

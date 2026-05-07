@@ -1,114 +1,79 @@
 "use client";
+
+import { HelpCircle, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import AnimatedSection, { fadeInUp } from "./AnimatedSection";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-const faqs = [
-  {
-    q: "Apa itu NFC keychain OneTap?",
-    a: "NFC keychain OneTap adalah aksesori berbentuk gantungan kunci yang dilengkapi chip NFC. Cukup tempelkan ke smartphone, dan orang lain bisa langsung mengakses link atau info yang Anda simpan.",
-  },
-  {
-    q: "Apakah perlu aplikasi khusus untuk menggunakannya?",
-    a: "Tidak perlu aplikasi apapun! Semua smartphone Android dan iPhone modern sudah mendukung NFC bawaan.",
-  },
-  {
-    q: "Berapa lama proses produksi?",
-    a: "Estimasi produksi 3–7 hari kerja setelah desain dan pembayaran dikonfirmasi. Pengiriman ke seluruh Indonesia.",
-  },
-  {
-    q: "Apakah bisa custom desain sepenuhnya?",
-    a: "Tentu! Kami menerima desain custom sesuai keinginan Anda — logo, warna, ukuran, bahkan bentuk khusus tersedia di paket Custom Edition.",
-  },
-  {
-    q: "Berapa harga minimum order?",
-    a: "Mulai dari Rp 25.000 untuk Basic Keychain dan Rp 45.000 untuk NFC Keychain. Untuk bulk order 10 pcs ke atas ada diskon khusus.",
-  },
-  {
-    q: "Apakah data di chip NFC bisa diubah?",
-    a: "Ya! Data yang tersimpan di chip bisa diubah kapan saja melalui platform kami tanpa perlu mengganti fisik keychain.",
-  },
-  {
-    q: "Bagaimana cara order?",
-    a: "Cukup klik tombol 'Order via WhatsApp', nanti tim kami akan membantu Anda memilih produk, mengirim desain, dan mengkonfirmasi pembayaran.",
-  },
-  {
-    q: "Apakah ada garansi produk?",
-    a: "Ya, kami memberikan garansi 30 hari untuk cacat produksi. Jika ada masalah, kami ganti tanpa biaya tambahan.",
-  },
-];
-
-// Note: In a real app, you'd translate the FAQ list too. 
-// For now, I'll translate the section header.
-
-function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boolean; onToggle: () => void }) {
-  return (
-    <div className={`faq-item ${isOpen ? "open" : ""}`}>
-      <button
-        className="faq-question w-full text-left"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-      >
-        <span>{q}</span>
-        <motion.span
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex-shrink-0"
-        >
-          <ChevronDown
-            className="w-5 h-5"
-            style={{ color: "var(--color-primary)" }}
-          />
-        </motion.span>
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            key="answer"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
-          >
-            <div className="faq-answer">{a}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 export default function FAQSection() {
   const { t } = useLanguage();
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const faqItems = t('faq.items') as { q: string; a: string }[];
 
   return (
-    <AnimatedSection className="section bg-page">
-      <div className="max-w-3xl mx-auto">
-        <motion.div variants={fadeInUp} className="text-center mb-12">
-          <span className="badge-soft">{t('faq.badge')}</span>
+    <AnimatedSection id="faq" className="py-24 lg:py-32 bg-[#FFF8F2]">
+      <div className="max-w-3xl mx-auto px-6 lg:px-8">
+        {/* Header */}
+        <motion.div variants={fadeInUp} className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#F6B7C8] text-[#FF5FA2] text-sm font-semibold mb-5">
+            <HelpCircle className="w-4 h-4" />
+            {t('faq.badge')}
+          </div>
           <h2
-            className="mt-4 text-3xl md:text-4xl font-bold"
-            style={{ color: "var(--color-text-dark)" }}
+            className="text-4xl lg:text-5xl text-[#18080F] mb-5 font-extrabold"
+            style={{ fontFamily: "var(--font-display)" }}
           >
             {t('faq.title')}
           </h2>
         </motion.div>
 
-        <motion.div variants={fadeInUp} className="flex flex-col gap-3">
-          {faqs.map((item, i) => (
-            <FAQItem 
-              key={i} 
-              q={item.q} 
-              a={item.a} 
-              isOpen={openIndex === i}
-              onToggle={() => setOpenIndex(openIndex === i ? null : i)}
-            />
+        {/* FAQ Items */}
+        <div className="space-y-4">
+          {faqItems.map((item, i) => (
+            <motion.div
+              key={i}
+              variants={fadeInUp}
+              className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                openIndex === i ? "bg-white border-[#F6B7C8] shadow-lg shadow-[#FF5FA2]/5" : "bg-white/50 border-gray-100 hover:border-gray-200"
+              }`}
+            >
+              <button
+                onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                className="w-full flex items-center justify-between p-6 text-left"
+              >
+                <span
+                  className={`text-lg font-bold pr-8 transition-colors duration-200 ${
+                    openIndex === i ? "text-[#FF5FA2]" : "text-[#18080F]"
+                  }`}
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  {item.q}
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 shrink-0 transition-transform duration-300 ${
+                    openIndex === i ? "rotate-180 text-[#FF5FA2]" : "text-gray-400"
+                  }`}
+                />
+              </button>
+              <AnimatePresence>
+                {openIndex === i && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <div className="px-6 pb-6 text-gray-500 leading-relaxed">
+                      {item.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </AnimatedSection>
   );

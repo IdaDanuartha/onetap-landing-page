@@ -1,47 +1,121 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-
 /* =============================================
-   FORCE LIGHT MODE — intentional brand decision
+   DESIGN TOKENS — From Redesign
    ============================================= */
 :root {
-  color-scheme: light only;
+  --font-size: 16px;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  
+  /* Legacy/Custom colors from original */
+  --color-primary: #FF5FA2;
+  --color-primary-soft: #F6B7C8;
+  --color-primary-light: #FFF1F7;
+  --color-primary-hover: #E94B8D;
+  --color-bg: #FAFAFA;
+  --color-bg-white: #FFFFFF;
+  --color-bg-gray: #F7F8FA;
+  --color-text-dark: #0F172A;
+  --color-text-body: #334155;
+  --color-text-muted: #64748B;
+  --color-border: #F1F5F9;
+  --color-border-gray: #E2E8F0;
+  --color-navy: #0F172A;
+  --color-wa: #22C55E;
 }
 
-/* =============================================
-   DESIGN TOKENS — Warm Neutral-Pink Palette
-   ============================================= */
-:root {
-  /* Primary Pink */
-  --color-primary:       #FF5FA2;
-  --color-primary-soft:  #F6B7C8;
-  --color-primary-light: #fff0f7;
-  --color-primary-hover: #e54d90;
-
-  /* Backgrounds */
-  --color-bg:            #FFF8F2;   /* warm white — main page bg */
-  --color-bg-white:      #FFFFFF;   /* cards, navbar */
-  --color-bg-gray:       #F3F4F6;   /* alternating sections, input bg */
-
-  /* Text */
-  --color-text-dark:     #1A1A2E;
-  --color-text-body:     #374151;
-  --color-text-muted:    #6B7280;
-
-  /* Border */
-  --color-border:        #f3e8ef;
-  --color-border-gray:   #E5E7EB;
-
-  /* Deep Navy footer */
-  --color-navy:          #1A1A2E;
-
-  /* WhatsApp green */
-  --color-wa:            #25D366;
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
 }
 
 @theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Legacy */
   --color-primary-soft: var(--color-primary-soft);
   --color-primary-light: var(--color-primary-light);
   --color-primary-hover: var(--color-primary-hover);
@@ -51,224 +125,38 @@
   --color-text-dark: var(--color-text-dark);
   --color-text-body: var(--color-text-body);
   --color-text-muted: var(--color-text-muted);
-  --color-border: var(--color-border);
   --color-border-gray: var(--color-border-gray);
   --color-navy: var(--color-navy);
   --color-wa: var(--color-wa);
-  --font-sans: 'Inter', var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
 }
 
-/* =============================================
-   BASE STYLES
-   ============================================= */
-* {
-  scroll-behavior: smooth;
-  box-sizing: border-box;
-}
+@layer base {
+  * {
+    @apply outline-ring/50;
+    scroll-behavior: smooth;
+    box-sizing: border-box;
+  }
 
-html {
-  color-scheme: light;
-}
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
 
-body {
-  background: var(--color-bg);
-  color: var(--color-text-body);
-  font-family: 'Inter', var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
+  html {
+    font-size: var(--font-size);
+  }
 
-/* =============================================
-   TYPOGRAPHY
-   ============================================= */
-h1, h2, h3, h4, h5, h6 {
-  color: var(--color-text-dark);
-  font-family: 'Inter', var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-}
-
-/* =============================================
-   LAYOUT UTILITIES
-   ============================================= */
-.container-main {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.section {
-  padding: 5rem 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .section {
-    padding: 7rem 2rem;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
   }
 }
 
-/* =============================================
-   SECTION BACKGROUNDS (alternating pattern)
-   ============================================= */
-.bg-page        { background: var(--color-bg); }
-.bg-white-clean { background: var(--color-bg-white); }
-.bg-gray-light  { background: var(--color-bg-gray); }
-.bg-pink-cta    { background: var(--color-primary); }
-.bg-navy-footer { background: var(--color-navy); }
-
-/* =============================================
-   BUTTONS
-   ============================================= */
-
-/* Primary — pink solid */
-.btn-primary {
-  background: var(--color-primary);
-  color: #ffffff;
-  border-radius: 12px;
-  padding: 12px 28px;
-  font-weight: 600;
-  font-size: 15px;
-  transition: all 0.2s ease;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  background: var(--color-primary-hover);
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(255, 95, 162, 0.35);
-}
-
-/* Secondary — ghost/outline pink */
-.btn-secondary {
-  border: 1.5px solid var(--color-primary);
-  color: var(--color-primary);
-  background: transparent;
-  border-radius: 12px;
-  padding: 11px 28px;
-  font-weight: 600;
-  font-size: 15px;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.btn-secondary:hover {
-  background: var(--color-primary-light);
-  transform: scale(1.02);
-}
-
-/* WhatsApp button */
-.btn-wa {
-  background: var(--color-wa);
-  color: #ffffff;
-  border-radius: 12px;
-  padding: 12px 28px;
-  font-weight: 600;
-  font-size: 15px;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.btn-wa:hover {
-  background: #1db954;
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
-}
-
-/* On-pink button (for CTA banner section) */
-.btn-on-pink {
-  background: #ffffff;
-  color: var(--color-primary);
-  border-radius: 12px;
-  padding: 12px 28px;
-  font-weight: 600;
-  font-size: 15px;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.btn-on-pink:hover {
-  background: var(--color-primary-light);
-  transform: scale(1.02);
-}
-
-/* =============================================
-   CARD
-   ============================================= */
-.card {
-  background: var(--color-bg-white);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  padding: 2rem;
-  transition: all 0.25s ease;
-}
-
-.card:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 12px 36px rgba(255, 95, 162, 0.12);
-  transform: translateY(-4px);
-}
-
-/* =============================================
-   BADGE / PILL
-   ============================================= */
-.badge-primary {
-  background: var(--color-primary);
-  color: #ffffff;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-block;
-}
-
-.badge-soft {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-block;
-}
-
-/* =============================================
-   NAVBAR
-   ============================================= */
-.navbar {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--color-border);
-}
-
-/* =============================================
-   GRADIENT TEXT (pink)
-   ============================================= */
-.gradient-text {
-  background: linear-gradient(135deg, #FF5FA2 0%, #F6B7C8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* =============================================
-   FLOATING WHATSAPP BUTTON
-   ============================================= */
+/* Base utility from existing project */
 .floating-wa {
   position: fixed;
   bottom: 24px;
@@ -294,146 +182,3 @@ h1, h2, h3, h4, h5, h6 {
   transform: scale(1.05);
 }
 
-/* =============================================
-   ANIMATIONS
-   ============================================= */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-16px); }
-}
-
-.animate-float {
-  animation: float 5s ease-in-out infinite;
-}
-
-@keyframes pulse-ring {
-  0%   { transform: scale(1);   opacity: 0.8; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-
-.nfc-ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border: 2px solid var(--color-primary-soft);
-  border-radius: 50%;
-  animation: pulse-ring 2.5s ease-out infinite;
-}
-
-.nfc-ring:nth-child(2) { animation-delay: 0.7s; }
-.nfc-ring:nth-child(3) { animation-delay: 1.4s; }
-
-/* =============================================
-   COUNTER
-   ============================================= */
-.counter {
-  font-variant-numeric: tabular-nums;
-}
-
-/* =============================================
-   FAQ ACCORDION
-   ============================================= */
-.faq-item {
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  overflow: hidden;
-  transition: border-color 0.2s ease;
-}
-
-.faq-item.open {
-  border-color: var(--color-primary-soft);
-}
-
-.faq-question {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  cursor: pointer;
-  background: var(--color-bg-white);
-  font-weight: 600;
-  color: var(--color-text-dark);
-  font-size: 15px;
-  gap: 1rem;
-}
-
-.faq-answer {
-  padding: 0 1.5rem 1.25rem;
-  background: var(--color-bg-white);
-  color: var(--color-text-muted);
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-/* =============================================
-   SCROLLBAR
-   ============================================= */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--color-bg); }
-::-webkit-scrollbar-thumb { background: var(--color-primary-soft); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
-
-/* =============================================
-   THREE.JS CANVAS (kept for hero 3D if needed)
-   ============================================= */
-.three-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* =============================================
-   CARD for /write page (keep compatibility)
-   ============================================= */
-.card-writer {
-  background: var(--color-bg-white);
-  border: 1px solid var(--color-border);
-  border-radius: 1.25rem;
-  padding: 1.5rem;
-  transition: border-color 0.2s ease;
-}
-
-/* NFC ring pulse used on /write page */
-@keyframes nfc-ring-pulse {
-  0%   { transform: scale(1);   opacity: 0.9; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-
-/* =============================================
-   STEP CONNECTOR LINE
-   ============================================= */
-.step-connector {
-  position: absolute;
-  top: 3.5rem;
-  left: 50%;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(to right, var(--color-primary-soft), transparent);
-}
-
-/* =============================================
-   HERO BLOB SHAPES
-   ============================================= */
-.blob {
-  border-radius: 50% 40% 60% 40% / 50% 60% 40% 50%;
-  filter: blur(60px);
-  opacity: 0.18;
-}
-
-/* =============================================
-   TESTIMONIAL CARD
-   ============================================= */
-.testimonial-card {
-  background: var(--color-bg-white);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  padding: 1.75rem;
-  transition: all 0.25s ease;
-}
-
-.testimonial-card:hover {
-  border-color: var(--color-primary-soft);
-  box-shadow: 0 8px 24px rgba(255, 95, 162, 0.1);
-}

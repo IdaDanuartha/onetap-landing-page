@@ -1,0 +1,246 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
+import { ArrowLeft, BarChart2, TrendingUp, MousePointer, Loader2, Zap, Layout, Share2, Activity, ChevronRight } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { motion, AnimatePresence } from 'framer-motion';
+import { iconMap } from '@/app/components/linktree/IconPicker';
+
+interface LinkStat {
+  id: string;
+  label: string;
+  url: string;
+  icon: string;
+  click_count: number;
+  is_active: boolean;
+}
+
+export default function AnalyticsPage() {
+  const router = useRouter();
+  const [stats, setStats] = useState<LinkStat[]>([]);
+  const [totalClicks, setTotalClicks] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push('/auth/login'); return; }
+
+      const { data: page } = await supabase
+        .from('linktree_pages')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (page) {
+        const { data: links } = await supabase
+          .from('linktree_links')
+          .select('id, label, url, icon, click_count, is_active')
+          .eq('page_id', page.id)
+          .order('click_count', { ascending: false });
+
+        if (links) {
+          setStats(links);
+          setTotalClicks(links.reduce((sum, l) => sum + l.click_count, 0));
+        }
+      }
+      setLoading(false);
+    }
+    load();
+  }, [router]);
+
+  const topStat = stats[0];
+  const maxClicks = topStat?.click_count || 1;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FFF8F2]">
+        <div className="relative">
+          <motion.div
+            animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute inset-0 rounded-full bg-[#FF5FA2]/20 blur-2xl"
+          />
+          <Image
+            src="/images/logo_simple.png"
+            alt="OneTap"
+            width={64}
+            height={64}
+            className="relative object-contain animate-pulse"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2]">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center gap-4">
+          <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-xl font-black text-[#18080F]">Statistik Performa</h1>
+        </div>
+      </nav>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10 relative z-10">
+        
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black text-[#FF5FA2] uppercase tracking-[0.2em] mb-2">Real-time Data</p>
+            <h2 className="text-3xl font-black text-[#18080F] tracking-tight">Overview Klik</h2>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#F6B7C8]/20 text-xs font-bold text-gray-500 shadow-sm">
+            <Activity className="w-4 h-4 text-green-500" />
+            Monitoring Aktif
+          </div>
+        </div>
+
+        {/* Summary cards */}
+        <div className="grid sm:grid-cols-2 gap-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-8 bg-white border border-[#F6B7C8]/10 rounded-[40px] shadow-sm flex items-center gap-6"
+          >
+            <div className="w-20 h-20 rounded-[32px] bg-[#FF5FA2]/5 flex items-center justify-center shadow-inner">
+              <MousePointer className="w-10 h-10 text-[#FF5FA2]" />
+            </div>
+            <div>
+              <p className="text-4xl font-black text-[#18080F] tracking-tighter">{totalClicks}</p>
+              <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">Total Interaksi</p>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="p-8 bg-white border border-[#F6B7C8]/10 rounded-[40px] shadow-sm flex items-center gap-6"
+          >
+            <div className="w-20 h-20 rounded-[32px] bg-indigo-50 flex items-center justify-center shadow-inner">
+              <TrendingUp className="w-10 h-10 text-indigo-500" />
+            </div>
+            <div>
+              <p className="text-4xl font-black text-[#18080F] tracking-tighter">{stats.filter(s => s.is_active).length}</p>
+              <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">Link Aktif</p>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Link breakdown */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="p-8 sm:p-10 bg-white border border-[#F6B7C8]/10 rounded-[48px] shadow-sm relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF5FA2]/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+          
+          <div className="flex items-center justify-between mb-10 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFF8F2] flex items-center justify-center">
+                <BarChart2 className="w-6 h-6 text-[#FF5FA2]" />
+              </div>
+              <h3 className="text-xl font-black text-[#18080F]">Detail Klik per Link</h3>
+            </div>
+            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Urutan Terpopuler</div>
+          </div>
+
+          {stats.length === 0 ? (
+            <div className="py-20 text-center bg-[#FFF8F2]/50 border-2 border-dashed border-[#F6B7C8]/20 rounded-[40px]">
+              <Share2 className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+              <p className="text-gray-400 font-bold">Belum ada data interaksi.</p>
+              <Link href="/dashboard/linktree" className="text-[#FF5FA2] text-sm font-black mt-4 inline-flex items-center gap-2 hover:gap-3 transition-all">
+                Mulai buat link <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-8 relative z-10">
+              {stats.map((link, idx) => {
+                const Icon = iconMap[link.icon];
+                return (
+                  <motion.div 
+                    key={link.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + (idx * 0.05) }}
+                    className="group"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                          link.is_active ? 'bg-white border border-[#F6B7C8]/20 shadow-sm group-hover:border-[#FF5FA2]/40' : 'bg-gray-50 grayscale'
+                        }`}>
+                          {Icon ? <Icon className="w-5 h-5 text-[#18080F]" /> : <Layout className="w-5 h-5 text-gray-300" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`text-base font-black truncate ${link.is_active ? 'text-[#18080F]' : 'text-gray-400'}`}>
+                            {link.label || 'Tanpa Label'}
+                          </p>
+                          <p className="text-xs font-medium text-gray-400 truncate">{link.url}</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xl font-black text-[#FF5FA2] tracking-tight">{link.click_count}</p>
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Klik</p>
+                      </div>
+                    </div>
+                    {/* Progress bar container */}
+                    <div className="h-2.5 bg-gray-50 rounded-full overflow-hidden p-0.5 border border-gray-100/50">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.max(2, (link.click_count / maxClicks) * 100)}%` }}
+                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                        className={`h-full rounded-full ${
+                          link.is_active 
+                            ? 'bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] shadow-[0_0_10px_rgba(255,95,162,0.3)]' 
+                            : 'bg-gray-300'
+                        }`}
+                      />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Tip section */}
+        <div className="flex items-center gap-4 p-6 bg-gradient-to-br from-[#18080F] to-[#2D1622] rounded-[32px] text-white">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-6 h-6 text-amber-400" fill="currentColor" />
+          </div>
+          <div>
+            <p className="text-sm font-bold">Tips Pro:</p>
+            <p className="text-xs text-gray-400 mt-1 font-medium">Link dengan ikon yang relevan dan label yang menarik memiliki conversion rate 30% lebih tinggi!</p>
+          </div>
+        </div>
+      </div>
+
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #F6B7C8;
+          border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #FF5FA2;
+        }
+      `}</style>
+    </div>
+  );
+}
+

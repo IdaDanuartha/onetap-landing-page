@@ -21,9 +21,10 @@ interface Props {
   children: React.ReactNode;
   className?: string;
   id?: string;
+  style?: React.CSSProperties;
 }
 
-export default function AnimatedSection({ children, className = "", id }: Props) {
+export default function AnimatedSection({ children, className = "", id, style }: Props) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
@@ -35,6 +36,7 @@ export default function AnimatedSection({ children, className = "", id }: Props)
       animate={isInView ? "visible" : "hidden"}
       variants={staggerContainer}
       className={className}
+      style={style}
     >
       {children}
     </motion.section>
