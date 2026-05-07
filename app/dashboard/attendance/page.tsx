@@ -46,6 +46,7 @@ export default function AttendanceManagementPage() {
   const [globalMessageTemplate, setGlobalMessageTemplate] = useState("Halo Pendamping {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.");
   const [user, setUser] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [isWritingNFC, setIsWritingNFC] = useState(false);
   const [writeStatus, setWriteStatus] = useState<"idle" | "writing" | "success" | "error">("idle");
   const [showNFCFallback, setShowNFCFallback] = useState(false);
@@ -169,6 +170,7 @@ export default function AttendanceManagementPage() {
         const { error } = await supabase.from("attendance_tags").insert(newTags);
         if (error) throw error;
         
+        setSuccessMessage("Berhasil mengimpor data siswa!");
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
         fetchData();
@@ -201,6 +203,7 @@ export default function AttendanceManagementPage() {
 
       if (error) throw error;
 
+      setSuccessMessage("Berhasil menghapus data terpilih!");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       setSelectedTags([]);
@@ -231,7 +234,9 @@ export default function AttendanceManagementPage() {
 
       if (error) throw error;
 
-      alert("Berhasil memperbarui nomor WhatsApp secara massal!");
+      setSuccessMessage("Berhasil memperbarui nomor WhatsApp secara massal!");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
       setBulkWAPhone("");
       setShowBulkWAModal(false);
       setSelectedTags([]);
@@ -319,7 +324,9 @@ export default function AttendanceManagementPage() {
       alert("Gagal menyimpan: " + error.message);
     } else {
       setTags(tags.map(t => ({ ...t, message_template: globalMessageTemplate })));
-      alert("Template WhatsApp berhasil disimpan!");
+      setSuccessMessage("Template WhatsApp berhasil disimpan!");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     }
   };
 
@@ -461,12 +468,24 @@ export default function AttendanceManagementPage() {
         .from("attendance_tags")
         .update(dataToSave)
         .eq("id", editingTag.id);
-      if (error) alert(error.message);
+      if (error) {
+        alert(error.message);
+      } else {
+        setSuccessMessage("Berhasil memperbarui data siswa!");
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      }
     } else {
       const { error } = await supabase
         .from("attendance_tags")
         .insert([dataToSave]);
-      if (error) alert(error.message);
+      if (error) {
+        alert(error.message);
+      } else {
+        setSuccessMessage("Berhasil menambahkan data siswa!");
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      }
     }
 
     setIsSubmitting(false);
@@ -478,7 +497,13 @@ export default function AttendanceManagementPage() {
     if (!tagToDelete) return;
     setIsSubmitting(true);
     const { error } = await supabase.from("attendance_tags").delete().eq("id", tagToDelete.id);
-    if (error) alert(error.message);
+    if (error) {
+      alert(error.message);
+    } else {
+      setSuccessMessage("Berhasil menghapus data siswa!");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }
     setIsSubmitting(false);
     setShowDeleteModal(false);
     setTagToDelete(null);
@@ -1495,6 +1520,21 @@ export default function AttendanceManagementPage() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-6 right-6 z-[200] bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm"
+          >
+            <CheckCircle2 className="w-5 h-5" />
+            {successMessage}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
