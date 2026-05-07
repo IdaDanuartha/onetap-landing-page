@@ -141,8 +141,8 @@ export default function AttendanceManagementPage() {
 
           const [name, className, subject, phone] = row.map(s => s?.trim());
           
-          if (!name || !className) {
-            setImportError(`Baris ${i + 1} tidak valid: Nama dan Kelas wajib diisi.`);
+          if (!name || !className || !phone) {
+            setImportError(`Baris ${i + 1} tidak valid: Nama, Kelas, dan Nomor WhatsApp wajib diisi.`);
             return;
           }
 
@@ -409,6 +409,12 @@ export default function AttendanceManagementPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (!formData.teacher_phone || formData.teacher_phone.trim() === "") {
+      alert("Nomor WhatsApp Orang Tua wajib diisi agar notifikasi bisa terkirim.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const dataToSave = {
@@ -812,7 +818,7 @@ export default function AttendanceManagementPage() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Lengkap <span className="text-red-500">*</span></label>
                   <input
                     required
                     type="text"
@@ -825,7 +831,7 @@ export default function AttendanceManagementPage() {
 
                 <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-[#18080F] uppercase tracking-widest ml-1">Kelas</label>
+                    <label className="text-[10px] font-black text-[#18080F] uppercase tracking-widest ml-1">Kelas <span className="text-red-500">*</span></label>
                     <input
                       required
                       list="classes-list"
@@ -856,7 +862,7 @@ export default function AttendanceManagementPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Orang Tua (Opsional)</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Orang Tua <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
