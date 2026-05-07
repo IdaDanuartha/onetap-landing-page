@@ -319,7 +319,7 @@ export default function AttendanceManagementPage() {
 
         {/* List Card */}
         <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row items-center gap-4">
+          <div className="p-6 border-b border-gray-50 flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -327,15 +327,15 @@ export default function AttendanceManagementPage() {
                 placeholder="Cari nama atau kelas..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-medium"
+                className="w-full pl-10 pr-4 py-3.5 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-medium"
               />
             </div>
             
-            <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-3">
               <select
                 value={classFilter}
                 onChange={(e) => setClassFilter(e.target.value)}
-                className="flex-1 md:flex-none px-4 py-3 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none text-sm font-bold text-gray-500"
+                className="flex-1 sm:flex-none px-4 py-3.5 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none text-sm font-bold text-gray-500 min-w-[140px]"
               >
                 <option value="">Semua Kelas</option>
                 {uniqueClasses.map(c => (
@@ -346,7 +346,7 @@ export default function AttendanceManagementPage() {
               <select
                 value={subjectFilter}
                 onChange={(e) => setSubjectFilter(e.target.value)}
-                className="flex-1 md:flex-none px-4 py-3 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none text-sm font-bold text-gray-500"
+                className="flex-1 sm:flex-none px-4 py-3.5 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none text-sm font-bold text-gray-500 min-w-[140px]"
               >
                 <option value="">Semua Mapel</option>
                 {uniqueSubjects.map(s => (
@@ -357,7 +357,7 @@ export default function AttendanceManagementPage() {
               {filteredTags.length > 0 && (
                 <button 
                   onClick={startBulkWrite}
-                  className="px-4 py-3 rounded-xl bg-[#FF5FA2]/10 text-[#FF5FA2] font-black text-sm hover:bg-[#FF5FA2]/20 transition-all flex items-center gap-2 whitespace-nowrap"
+                  className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl bg-[#FF5FA2]/10 text-[#FF5FA2] font-black text-sm hover:bg-[#FF5FA2]/20 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                   <Wifi className="w-4 h-4" />
                   Bulk Write ({filteredTags.length})

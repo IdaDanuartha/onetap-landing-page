@@ -125,8 +125,8 @@ export default function DashboardAttendanceLogsPage() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-          <div className="col-span-2 md:col-span-1 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
+          <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
