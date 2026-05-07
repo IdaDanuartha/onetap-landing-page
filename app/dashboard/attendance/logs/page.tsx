@@ -10,6 +10,7 @@ interface AttendanceLog {
   id: string;
   student_name: string;
   class_name: string;
+  subject: string;
   tapped_at: string;
   wa_sent: boolean;
 }
@@ -20,8 +21,10 @@ export default function DashboardAttendanceLogsPage() {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]);
   const [statusFilter, setStatusFilter] = useState<"all" | "success" | "failed">("all");
-  const [classFilter, setClassFilter] = useState("all");
-  const [subjectFilter, setSubjectFilter] = useState("all");
+  const [classFilter, setClassFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [uniqueClasses, setUniqueClasses] = useState<string[]>([]);
+  const [uniqueSubjects, setUniqueSubjects] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchLogs() {
@@ -40,6 +43,17 @@ export default function DashboardAttendanceLogsPage() {
           console.error("Error fetching logs:", error);
         } else {
           setLogs(data || []);
+        }
+
+        // Fetch unique classes and subjects from tags for filters
+        const { data: tags } = await supabase
+          .from("attendance_tags")
+          .select("class_name, subject")
+          .eq("created_by", user.id);
+        
+        if (tags) {
+          setUniqueClasses(Array.from(new Set(tags.map(t => t.class_name).filter(Boolean))) as string[]);
+          setUniqueSubjects(Array.from(new Set(tags.map(t => t.subject).filter(Boolean))) as string[]);
         }
       }
       setLoading(false);
@@ -72,10 +86,6 @@ export default function DashboardAttendanceLogsPage() {
     };
   }, []);
 
-  // Extract unique classes and subjects for filters
-  const uniqueClasses = Array.from(new Set(logs.map(log => log.class_name).filter(Boolean)));
-  // Note: logs table might need subject column, but we'll try to get it from logs if available
-  const uniqueSubjects = Array.from(new Set(logs.map(log => (log as any).subject).filter(Boolean)));
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = 
@@ -89,8 +99,8 @@ export default function DashboardAttendanceLogsPage() {
       (statusFilter === "success" && log.wa_sent) || 
       (statusFilter === "failed" && !log.wa_sent);
 
-    const matchesClass = classFilter === "all" || log.class_name === classFilter;
-    const matchesSubject = subjectFilter === "all" || (log as any).subject === subjectFilter;
+    const matchesClass = !classFilter || log.class_name === classFilter;
+    const matchesSubject = !subjectFilter || log.subject === subjectFilter;
     
     return matchesSearch && matchesDate && matchesStatus && matchesClass && matchesSubject;
   });
@@ -152,9 +162,9 @@ export default function DashboardAttendanceLogsPage() {
             <select
               value={classFilter}
               onChange={(e) => setClassFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-3.5 rounded-2xl bg-white border border-gray-100 shadow-sm focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-medium appearance-none"
+              className="w-full pl-10 pr-4 py-3.5 rounded-2xl bg-white border border-gray-100 shadow-sm focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-bold text-[#18080F] appearance-none"
             >
-              <option value="all">Semua Kelas</option>
+              <option value="">Semua Kelas</option>
               {uniqueClasses.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -163,9 +173,9 @@ export default function DashboardAttendanceLogsPage() {
             <select
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-3.5 rounded-2xl bg-white border border-gray-100 shadow-sm focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-medium appearance-none"
+              className="w-full pl-10 pr-4 py-3.5 rounded-2xl bg-white border border-gray-100 shadow-sm focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-bold text-[#18080F] appearance-none"
             >
-              <option value="all">Semua Mapel</option>
+              <option value="">Semua Mapel</option>
               {uniqueSubjects.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>

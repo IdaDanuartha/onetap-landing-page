@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle } from "lucide-react";
+import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
 interface Tag {
@@ -32,6 +32,15 @@ export default function AttendanceManagementPage() {
   const [schoolName, setSchoolName] = useState("Umum");
   const [user, setUser] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isWritingNFC, setIsWritingNFC] = useState(false);
+  const [writeStatus, setWriteStatus] = useState<"idle" | "writing" | "success" | "error">("idle");
+  const [showNFCFallback, setShowNFCFallback] = useState(false);
+  const [fallbackToken, setFallbackToken] = useState("");
+  const [classFilter, setClassFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [bulkWriteQueue, setBulkWriteQueue] = useState<Tag[]>([]);
+  const [currentBulkIndex, setCurrentBulkIndex] = useState(-1);
+
 
   // Form State
   const [formData, setFormData] = useState({
@@ -124,6 +133,60 @@ export default function AttendanceManagementPage() {
     }
   };
 
+  const handleWriteNFC = async (token: string, isBulk = false, studentName = "") => {
+    if (!('NDEFReader' in window)) {
+      const url = `${window.location.origin}/api/attendance/${token}`;
+      await navigator.clipboard.writeText(url);
+      setFallbackToken(token);
+      setShowNFCFallback(true);
+      return;
+    }
+
+    try {
+      setIsWritingNFC(true);
+      setWriteStatus("writing");
+      // @ts-ignore
+      const ndef = new NDEFReader();
+      await ndef.write({
+        records: [{ recordType: "url", data: `${window.location.origin}/api/attendance/${token}` }]
+      });
+      
+      setWriteStatus("success");
+      
+      if (isBulk && currentBulkIndex < bulkWriteQueue.length - 1) {
+        // Prepare for next student in bulk
+        setTimeout(() => {
+          const nextIndex = currentBulkIndex + 1;
+          setCurrentBulkIndex(nextIndex);
+          setWriteStatus("writing");
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          setIsWritingNFC(false);
+          setWriteStatus("idle");
+          setCurrentBulkIndex(-1);
+          setBulkWriteQueue([]);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error(error);
+      setWriteStatus("error");
+      if (!isBulk) {
+        setTimeout(() => {
+          setIsWritingNFC(false);
+          setWriteStatus("idle");
+        }, 3000);
+      }
+    }
+  };
+
+  const startBulkWrite = () => {
+    if (filteredTags.length === 0) return;
+    setBulkWriteQueue(filteredTags);
+    setCurrentBulkIndex(0);
+    handleWriteNFC(filteredTags[0].token, true, filteredTags[0].student_name);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -164,11 +227,16 @@ export default function AttendanceManagementPage() {
     fetchData();
   };
 
-  const filteredTags = tags.filter(
-    (t) =>
-      t.student_name.toLowerCase().includes(search.toLowerCase()) ||
-      t.class_name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredTags = tags.filter(tag => {
+    const matchesSearch = tag.student_name.toLowerCase().includes(search.toLowerCase()) || 
+                         tag.class_name?.toLowerCase().includes(search.toLowerCase());
+    const matchesClass = !classFilter || tag.class_name === classFilter;
+    const matchesSubject = !subjectFilter || tag.subject === subjectFilter;
+    return matchesSearch && matchesClass && matchesSubject;
+  });
+
+  const uniqueClasses = Array.from(new Set(tags.map(t => t.class_name).filter(Boolean)));
+  const uniqueSubjects = Array.from(new Set(tags.map(t => t.subject).filter(Boolean)));
 
   return (
     <div className="min-h-screen bg-[#FFF8F2]">
@@ -251,7 +319,7 @@ export default function AttendanceManagementPage() {
 
         {/* List Card */}
         <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-gray-50 flex items-center gap-4">
+          <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -261,6 +329,40 @@ export default function AttendanceManagementPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-medium"
               />
+            </div>
+            
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="flex-1 md:flex-none px-4 py-3 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none text-sm font-bold text-gray-500"
+              >
+                <option value="">Semua Kelas</option>
+                {uniqueClasses.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+
+              <select
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+                className="flex-1 md:flex-none px-4 py-3 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none text-sm font-bold text-gray-500"
+              >
+                <option value="">Semua Mapel</option>
+                {uniqueSubjects.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+
+              {(classFilter || subjectFilter) && filteredTags.length > 0 && (
+                <button 
+                  onClick={startBulkWrite}
+                  className="px-4 py-3 rounded-xl bg-[#FF5FA2]/10 text-[#FF5FA2] font-black text-sm hover:bg-[#FF5FA2]/20 transition-all flex items-center gap-2 whitespace-nowrap"
+                >
+                  <Wifi className="w-4 h-4" />
+                  Bulk Write ({filteredTags.length})
+                </button>
+              )}
             </div>
           </div>
 
@@ -322,10 +424,18 @@ export default function AttendanceManagementPage() {
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => handleWriteNFC(tag.token)}
+                          className="p-2 hover:bg-[#FF5FA2]/5 text-[#FF5FA2] rounded-lg transition-colors"
+                          title="Write NFC Tag"
+                        >
+                          <Wifi className="w-4 h-4" />
+                        </button>
                         <button 
                           onClick={() => handleOpenModal(tag)}
                           className="p-2 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors"
+                          title="Edit"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
@@ -393,22 +503,30 @@ export default function AttendanceManagementPage() {
                     <label className="text-[10px] font-black text-[#18080F] uppercase tracking-widest ml-1">Kelas</label>
                     <input
                       required
+                      list="classes-list"
                       type="text"
                       value={formData.class_name}
                       onChange={(e) => setFormData({...formData, class_name: e.target.value})}
                       placeholder="12 IPA 1"
                       className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold"
                     />
+                    <datalist id="classes-list">
+                      {uniqueClasses.map(c => <option key={c} value={c} />)}
+                    </datalist>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mata Pelajaran (Opsional)</label>
                     <input
+                      list="subjects-list"
                       type="text"
                       value={formData.subject}
                       onChange={(e) => setFormData({...formData, subject: e.target.value})}
                       placeholder="Matematika"
                       className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold"
                     />
+                    <datalist id="subjects-list">
+                      {uniqueSubjects.map(s => <option key={s} value={s} />)}
+                    </datalist>
                   </div>
                 </div>
 
@@ -500,6 +618,148 @@ export default function AttendanceManagementPage() {
                   {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Ya, Hapus'}
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* NFC Write Overlay */}
+      <AnimatePresence>
+        {isWritingNFC && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#18080F]/60 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[3rem] p-10 shadow-2xl relative z-10 w-full max-w-sm text-center"
+            >
+              {writeStatus === "writing" && (
+                <div className="space-y-6">
+                  {currentBulkIndex !== -1 && (
+                    <div className="flex items-center justify-center gap-2 px-3 py-1 bg-[#FF5FA2]/10 text-[#FF5FA2] rounded-full w-fit mx-auto text-[10px] font-black uppercase tracking-widest">
+                      <Users className="w-3 h-3" />
+                      Bulk Mode: {currentBulkIndex + 1} / {bulkWriteQueue.length}
+                    </div>
+                  )}
+                  <div className="relative w-24 h-24 mx-auto">
+                    <div className="absolute inset-0 rounded-full border-4 border-gray-100" />
+                    <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-0 rounded-full border-4 border-t-[#FF5FA2] border-r-transparent border-b-transparent border-l-transparent"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Wifi className="w-10 h-10 text-[#FF5FA2] animate-pulse" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-[#18080F]">
+                      {currentBulkIndex !== -1 ? bulkWriteQueue[currentBulkIndex].student_name : 'Siap Menulis...'}
+                    </h3>
+                    <p className="text-gray-400 text-sm font-medium mt-2">Tempelkan kartu NFC Anda di belakang HP sekarang.</p>
+                  </div>
+                </div>
+              )}
+
+              {writeStatus === "success" && (
+                <div className="space-y-6">
+                  <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto border-4 border-white shadow-sm">
+                    <CheckCircle2 className="w-12 h-12 text-green-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-green-600">Berhasil!</h3>
+                    <p className="text-gray-400 text-sm font-medium mt-2">
+                      {currentBulkIndex !== -1 
+                        ? `Data ${bulkWriteQueue[currentBulkIndex].student_name} tersimpan.` 
+                        : 'Data absensi telah tersimpan di kartu NFC.'}
+                    </p>
+                    {currentBulkIndex !== -1 && currentBulkIndex < bulkWriteQueue.length - 1 && (
+                      <p className="text-[#FF5FA2] font-bold text-xs mt-4 animate-bounce">
+                        Siapkan kartu untuk {bulkWriteQueue[currentBulkIndex + 1].student_name}...
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {writeStatus === "error" && (
+                <div className="space-y-6">
+                  <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto border-4 border-white shadow-sm">
+                    <AlertTriangle className="w-12 h-12 text-red-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-red-600">Gagal Menulis</h3>
+                    <p className="text-gray-400 text-sm font-medium mt-2">Pastikan NFC aktif dan kartu tidak terkunci.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {currentBulkIndex !== -1 && (
+                      <button 
+                        onClick={() => handleWriteNFC(bulkWriteQueue[currentBulkIndex].token, true)}
+                        className="flex-1 py-3 rounded-xl bg-[#18080F] text-white font-bold"
+                      >
+                        Coba Lagi
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => {
+                        setIsWritingNFC(false);
+                        setWriteStatus("idle");
+                        setCurrentBulkIndex(-1);
+                        setBulkWriteQueue([]);
+                      }}
+                      className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* NFC Fallback Modal */}
+      <AnimatePresence>
+        {showNFCFallback && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowNFCFallback(false)}
+              className="absolute inset-0 bg-[#18080F]/60 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-[3rem] p-10 shadow-2xl relative z-10 w-full max-w-sm text-center"
+            >
+              <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6 transform rotate-3 shadow-inner">
+                <Smartphone className="w-10 h-10 text-blue-500" />
+              </div>
+              
+              <h3 className="text-2xl font-black text-[#18080F] mb-3">Link Disalin!</h3>
+              <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">
+                NFC Writing tidak didukung di browser ini. URL absensi telah disalin! Silakan paste ke aplikasi 
+                <span className="text-blue-500 font-bold ml-1">NFC Tools</span> untuk menulis ke kartu.
+              </p>
+
+              <div className="bg-gray-50 p-4 rounded-2xl mb-8 border border-gray-100">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">URL Absensi</div>
+                <div className="text-[10px] font-mono text-gray-400 break-all bg-white p-2 rounded-lg border border-gray-100">
+                  {window.location.origin}/api/attendance/{fallbackToken}
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setShowNFCFallback(false)}
+                className="w-full py-4 rounded-2xl bg-[#18080F] text-white font-black hover:bg-black transition-all shadow-lg"
+              >
+                Saya Mengerti
+              </button>
             </motion.div>
           </div>
         )}
