@@ -69,15 +69,6 @@ export default function HeroSection() {
                 {t('hero.ctaPrimary')}
                 <ArrowRight className="w-4 h-4" />
               </a>
-              <a
-                href="/catalog"
-                className="inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-sm text-white font-semibold hover:bg-white/15 transition-all duration-200"
-              >
-                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                  <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
-                </div>
-                {t('hero.ctaSecondary')}
-              </a>
             </div>
 
             {/* Stats */}
@@ -111,13 +102,13 @@ export default function HeroSection() {
               </div>
 
               {/* Floating profile card */}
-              <div className="absolute -left-12 top-8 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl">
+              <div className="absolute -left-12 top-8 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5FA2] to-[#F6B7C8] flex items-center justify-center">
                     <Users className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="text-white text-sm font-semibold">Digital Profile</div>
+                    <div className="text-white text-sm font-semibold">{t('hero.floating.profile')}</div>
                     <div className="text-[#F6B7C8] text-xs">onetap-charm.com/l/yourname</div>
                   </div>
                 </div>
@@ -129,12 +120,12 @@ export default function HeroSection() {
               </div>
 
               {/* Floating attendance card */}
-              <div className="absolute -right-10 bottom-12 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl">
+              <div className="absolute -right-10 bottom-12 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-lg bg-[#FF5FA2]/20 flex items-center justify-center">
                     <CheckCircle className="w-4 h-4 text-[#FF5FA2]" />
                   </div>
-                  <span className="text-white text-sm font-semibold">Attendance Logged</span>
+                  <span className="text-white text-sm font-semibold">{t('hero.floating.attendance')}</span>
                 </div>
                 <div className="text-[#F6B7C8] text-xs">Sarah W. — 08:42 AM ✓</div>
               </div>
@@ -142,7 +133,7 @@ export default function HeroSection() {
               {/* Floating link card */}
               <div className="absolute -bottom-4 left-4 bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] rounded-2xl px-5 py-3 shadow-2xl shadow-[#FF5FA2]/40 flex items-center gap-2.5">
                 <Link2 className="w-4 h-4 text-white" />
-                <span className="text-white text-sm font-semibold">1 Link for Everything</span>
+                <span className="text-white text-sm font-semibold">{t('hero.floating.link')}</span>
               </div>
             </div>
           </div>

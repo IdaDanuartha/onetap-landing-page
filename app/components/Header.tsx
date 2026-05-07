@@ -36,7 +36,8 @@ export default function Header() {
     { label: t('nav.features'), href: "#features" },
     { label: t('nav.howItWorks'), href: "#how-it-works" },
     { label: t('products.badge'), href: "#pricing" },
-    { label: t('education.badge'), href: "#education" },
+    { label: t('nav.attendance'), href: "#attendance" },
+    { label: t('nav.checkLogs'), href: "/attendance/logs" },
   ];
 
   return (

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import Script from "next/script";
@@ -9,6 +9,12 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -68,7 +74,7 @@ export default function RootLayout({
     image: "https://onetap-landing-page.vercel.app/images/logo_simple.png",
     "@id": "https://onetap-landing-page.vercel.app",
     url: "https://onetap-landing-page.vercel.app",
-    telephone: "+6281234567890",
+    telephone: "+6283114227745",
     address: {
       "@type": "PostalAddress",
       streetAddress: "Jln. Tukad Badung, Denpasar",
@@ -108,7 +114,7 @@ export default function RootLayout({
         />
         {/* Force light mode even if OS uses dark mode — intentional brand decision */}
       </head>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} ${outfit.variable} antialiased`}>
         <LanguageProvider>
           <PageLoader />
           {children}

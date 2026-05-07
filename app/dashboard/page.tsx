@@ -412,12 +412,23 @@ export default function DashboardPage() {
               bg: 'bg-[#f5f3ff]',
               iconColor: 'text-[#8b5cf6]'
             },
+            {
+              href: '/dashboard/attendance',
+              icon: User,
+              title: 'Attendance (Absensi)',
+              desc: 'Kelola data kehadiran dan setup notifikasi WhatsApp otomatis.',
+              color: '#22c55e',
+              bg: 'bg-[#f0fdf4]',
+              iconColor: 'text-[#22c55e]'
+            },
+
           ].map((item, idx) => (
             <motion.div
               key={item.href}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + idx * 0.1 }}
+              className={item.href === '/dashboard/attendance' ? 'lg:col-span-3 sm:col-span-2' : ''}
             >
               <Link
                 href={item.href}
@@ -456,7 +467,7 @@ export default function DashboardPage() {
               <p className="text-gray-400 mt-2 font-medium max-w-md text-base">Tim support kami siap membantumu kapan saja jika ada kendala setting NFC atau linktree.</p>
             </div>
             <a
-              href="https://wa.me/628123456789"
+              href="https://wa.me/6283114227745"
               target="_blank"
               className="px-8 py-4 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all duration-300 shadow-xl shadow-[#FF5FA2]/20 flex items-center gap-3"
             >

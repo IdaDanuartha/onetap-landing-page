@@ -20,10 +20,10 @@ export default function Footer() {
       { label: "TikTok", href: "https://tiktok.com/@onetap.charm" },
       { label: "WhatsApp", href: "https://wa.me/6283114227745" },
     ],
-    Legal: [
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
-      { label: "Cookie Policy", href: "#" },
+    [t('footer.legal')]: [
+      { label: t('footer.privacy'), href: "#" },
+      { label: t('footer.terms'), href: "#" },
+      { label: t('footer.cookie'), href: "#" },
     ],
   };
 
@@ -68,7 +68,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2.5 text-[#F6B7C8]/50 text-sm">
                 <MapPin className="w-4 h-4 text-[#FF5FA2]" />
-                Jakarta, Indonesia
+                Bali, Indonesia
               </div>
             </div>
 
@@ -121,9 +121,9 @@ export default function Footer() {
             © {new Date().getFullYear()} OneTap Technologies. All rights reserved.
           </p>
           <div className="flex items-center gap-1">
-            <span className="text-[#F6B7C8]/30 text-sm">Made with</span>
+            <span className="text-[#F6B7C8]/30 text-sm">{t('footer.madeWith')}</span>
             <span className="text-[#FF5FA2] text-sm">♥</span>
-            <span className="text-[#F6B7C8]/30 text-sm">in Jakarta, Indonesia</span>
+            <span className="text-[#F6B7C8]/30 text-sm">{t('footer.in')} Bali, Indonesia</span>
           </div>
         </div>
       </div>

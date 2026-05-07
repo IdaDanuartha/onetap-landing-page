@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { sendWhatsApp } from '@/lib/fonnte';
+import { sendWhatsApp } from '@/lib/whatsapp';
 
 // Simple in-memory rate limiter: max 1 attendance per token per 60s
 const lastTapped: Record<string, number> = {};
@@ -8,7 +8,7 @@ const RATE_LIMIT_MS = 60_000;
 
 // POST /api/attendance/[token]
 // Called automatically when the /attend/[token] page loads.
-// Records attendance and sends a WhatsApp notification via Fonnte.
+// Records attendance and sends a WhatsApp notification via the configured gateway.
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ token: string }> }
@@ -48,6 +48,8 @@ export async function POST(
         token,
         student_name: tag.student_name,
         class_name: tag.class_name,
+        subject: tag.subject,
+        created_by: tag.created_by,
         tapped_at: tappedAt.toISOString(),
         wa_sent: false,
       })
@@ -78,15 +80,19 @@ export async function POST(
       .replace('{date}', date)
       .replace('{time}', time);
 
-    // Send WA via Fonnte (fully automatic)
-    const waSent = await sendWhatsApp({ target: tag.teacher_phone, message });
+    // Send WA via configured gateway (fully automatic)
+    const waSent = await sendWhatsApp({ 
+      target: tag.teacher_phone, 
+      message,
+      token: tag.whatsapp_token // Uses user's token if available, otherwise falls back to global
+    });
 
     // Update log with WA send status
     await supabase
       .from('attendance_logs')
       .update({
         wa_sent: waSent,
-        wa_error: waSent ? null : 'Fonnte failed to deliver',
+        wa_error: waSent ? null : 'WhatsApp gateway failed to deliver',
       })
       .eq('id', log.id);
 

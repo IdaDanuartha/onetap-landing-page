@@ -4,8 +4,8 @@ import FeaturesSection from "./components/FeaturesSection";
 import HowItWorksSection from "./components/HowItWorksSection";
 import ProductsSection from "./components/ProductsSection";
 import UseCasesSection from "./components/UseCasesSection";
-import NewFeaturesSection from "./components/NewFeaturesSection";
-import EducationSection from "./components/EducationSection";
+// import NewFeaturesSection from "./components/NewFeaturesSection";
+import AttendanceSection from "./components/AttendanceSection";
 import TestimonialsSection from "./components/TestimonialsSection";
 import FAQSection from "./components/FAQSection";
 import CTABannerSection from "./components/CTABannerSection";
@@ -22,9 +22,9 @@ export default function Home() {
         <ProductsSection />
         <UseCasesSection />
         {/* NEW: Feature showcase */}
-        <NewFeaturesSection />
+        {/* <NewFeaturesSection /> */}
         {/* NEW: Education / NFC Attendance showcase */}
-        <EducationSection />
+        <AttendanceSection />
         <TestimonialsSection />
         <FAQSection />
         <CTABannerSection />

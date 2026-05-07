@@ -12,67 +12,48 @@ export default function ProductsSection() {
 
   const plans = [
     {
-      name: "Starter",
+      id: "starter",
+      name: t('products.plans.starter.name'),
       tag: null,
-      price: "Free",
+      price: t('products.plans.starter.price.monthly'),
+      yearlyPrice: t('products.plans.starter.price.yearly'),
       period: "",
-      description: "Sempurna untuk memulai profil digital pertamamu.",
+      description: t('products.plans.starter.desc'),
       border: "border-gray-200",
       buttonStyle: "border-2 border-[#FF5FA2] text-[#FF5FA2] hover:bg-[#FFF8F2]",
       isPrimary: false,
-      features: [
-        "1 Digital Profile (Slug)",
-        "Custom Links & Socials",
-        "QR Code Generator",
-        "Basic Analytics",
-        "Standard Themes",
-        "Email Support",
-      ],
+      features: t('products.plans.starter.features') as unknown as string[],
     },
     {
-      name: "Professional",
-      tag: "Paling Populer",
-      price: "Rp 49K",
+      id: "professional",
+      name: t('products.plans.professional.name'),
+      tag: t('products.plans.professional.tag'),
+      price: t('products.plans.professional.price.monthly'),
+      yearlyPrice: t('products.plans.professional.price.yearly'),
       period: "/bulan",
-      description: "Untuk profesional yang ingin kontrol penuh dengan NFC.",
+      description: t('products.plans.professional.desc'),
       border: "border-[#FF5FA2]",
       buttonStyle: "bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white shadow-lg shadow-[#FF5FA2]/25",
       isPrimary: true,
-      features: [
-        "3 Digital Profiles (Multi-Slug)",
-        "Koneksi Kartu NFC OneTap",
-        "Advanced Analytics",
-        "Priority Support",
-        "Attendance Tracker (Absensi)",
-        "Custom Branding (Hapus Logo)",
-        "Bio Video & Music Player",
-        "Password Protected Links",
-      ],
+      features: t('products.plans.professional.features') as unknown as string[],
     },
     {
-      name: "Business",
+      id: "education",
+      name: t('products.plans.education.name'),
       tag: null,
-      price: "Rp 99K",
+      price: t('products.plans.education.price.monthly'),
+      yearlyPrice: t('products.plans.education.price.yearly'),
       period: "/bulan",
-      description: "Solusi lengkap untuk tim dan manajemen absensi lokasi.",
+      description: t('products.plans.education.desc'),
       border: "border-gray-200",
       buttonStyle: "border-2 border-[#FF5FA2] text-[#FF5FA2] hover:bg-[#FFF8F2]",
       isPrimary: false,
-      features: [
-        "Unlimited Digital Profiles",
-        "Team Management Dashboard",
-        "Multi-location Attendance Tracking",
-        "Export Data Excel/CSV",
-        "API Access & Webhooks",
-        "Dedicated Account Manager",
-        "Custom Domain Support",
-        "SLA Guarantee 99.9%",
-      ],
+      features: t('products.plans.education.features') as unknown as string[],
     },
   ];
 
   return (
-    <AnimatedSection id="products" className="py-24 lg:py-32 bg-[#FFF8F2]">
+    <AnimatedSection id="pricing" className="py-24 lg:py-32 bg-[#FFF8F2]">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <motion.div variants={fadeInUp} className="text-center mb-16">
@@ -84,13 +65,13 @@ export default function ProductsSection() {
             className="text-4xl lg:text-5xl text-[#18080F] mb-5 font-extrabold"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Simple, transparent{" "}
+            {t('products.title').split(' ').slice(0, -1).join(' ')}{" "}
             <span className="bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] bg-clip-text text-transparent">
-              pricing
+              {t('products.title').split(' ').pop()}
             </span>
           </h2>
           <p className="text-gray-500 text-lg max-w-xl mx-auto">
-            Start free, scale when you're ready. No hidden fees, cancel anytime.
+            {t('products.description')}
           </p>
 
           {/* Billing Toggle */}
@@ -105,7 +86,7 @@ export default function ProductsSection() {
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {b === "monthly" ? "Monthly" : "Yearly"}{" "}
+                {b === "monthly" ? t('products.billing.monthly') : t('products.billing.yearly')}{" "}
                 {b === "yearly" && <span className="text-xs text-emerald-400 ml-1">-20%</span>}
               </button>
             ))}
@@ -151,18 +132,14 @@ export default function ProductsSection() {
                     className="text-4xl text-[#18080F] font-extrabold"
                     style={{ fontFamily: "var(--font-display)" }}
                   >
-                    {billing === "yearly" && plan.price !== "Free"
-                      ? plan.name === "Professional"
-                        ? "Rp 39K"
-                        : "Rp 79K"
-                      : plan.price}
+                    {billing === "yearly" ? plan.yearlyPrice : plan.price}
                   </span>
                   {plan.period && (
                     <span className="text-gray-400 text-sm">{plan.period}</span>
                   )}
                 </div>
                 {billing === "yearly" && plan.price !== "Free" && (
-                  <p className="text-emerald-500 text-xs mt-1 font-medium">Save 20% annually</p>
+                  <p className="text-emerald-500 text-xs mt-1 font-medium">{t('products.billing.save')}</p>
                 )}
               </div>
 
@@ -179,25 +156,14 @@ export default function ProductsSection() {
               </ul>
 
               <a
-                href="https://wa.me/6281234567890"
+                href="https://wa.me/6283114227745"
                 className={`w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 text-center ${plan.buttonStyle}`}
               >
-                {plan.price === "Free" ? "Get Started Free" : "Start Now"}
+                {plan.price === "Free" ? t('products.cta.free') : t('products.cta.paid')}
               </a>
             </motion.div>
           ))}
         </div>
-
-        {/* Catalog Link */}
-        <motion.div variants={fadeInUp} className="mt-16 text-center">
-            <a 
-                href="/catalog" 
-                className="inline-flex items-center gap-2.5 text-[#FF5FA2] font-semibold hover:gap-3 transition-all duration-200 group"
-            >
-                {t('products.viewAll')}
-                <ArrowRight className="w-4 h-4" />
-            </a>
-        </motion.div>
       </div>
     </AnimatedSection>
   );

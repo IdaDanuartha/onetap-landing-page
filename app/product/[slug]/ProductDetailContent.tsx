@@ -15,7 +15,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
-const WA_NUMBER = "6281234567890";
+const WA_NUMBER = "6283114227745";
 
 function getOrderLink(productName: string, price: string, variant?: string) {
   const message = encodeURIComponent(

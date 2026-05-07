@@ -160,7 +160,7 @@ function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
 
         <p className="mt-12 text-center text-sm font-semibold relative z-10">
           <span className="text-gray-400">Kehilangan kode?</span>{" "}
-          <a href="https://wa.me/6281234567890" className="text-blue-500 hover:underline underline-offset-4">
+          <a href="https://wa.me/6283114227745" className="text-blue-500 hover:underline underline-offset-4">
             Hubungi Support
           </a>
         </p>

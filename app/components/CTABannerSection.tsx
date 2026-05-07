@@ -42,13 +42,6 @@ export default function CTABannerSection() {
                 <MessageCircle className="w-5 h-5" />
                 {t('cta.chat')}
               </a>
-              <a
-                href="/catalog"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold hover:bg-white/20 hover:-translate-y-1 transition-all duration-300"
-              >
-                {t('cta.catalog')}
-                <ArrowRight className="w-5 h-5" />
-              </a>
             </motion.div>
           </div>
         </div>

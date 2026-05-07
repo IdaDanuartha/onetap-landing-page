@@ -76,7 +76,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2.5 text-[#F6B7C8]/50 text-sm">
                 <MapPin className="w-4 h-4 text-[#FF5FA2]" />
-                Jakarta, Indonesia
+                Bali, Indonesia
               </div>
             </div>
 
@@ -131,7 +131,7 @@ export function Footer() {
           <div className="flex items-center gap-1">
             <span className="text-[#F6B7C8]/30 text-sm">Made with</span>
             <span className="text-[#FF5FA2] text-sm">♥</span>
-            <span className="text-[#F6B7C8]/30 text-sm">in Jakarta, Indonesia</span>
+            <span className="text-[#F6B7C8]/30 text-sm">in Bali, Indonesia</span>
           </div>
           <div className="flex gap-5">
             {["Privacy", "Terms", "Cookies"].map((l) => (
