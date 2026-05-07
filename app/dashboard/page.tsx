@@ -176,7 +176,6 @@ export default function DashboardPage() {
             />
           </motion.div>
           <div className="flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-[#FF5FA2]" />
             <span className="text-sm font-bold text-[#FF5FA2] uppercase tracking-widest">Loading OneTap...</span>
           </div>
         </div>

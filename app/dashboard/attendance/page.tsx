@@ -518,6 +518,7 @@ export default function AttendanceManagementPage() {
                   </th>
                   <th className="px-4 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Siswa</th>
                   <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Kelas / Mapel</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
                   <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Aksi</th>
                 </tr>
               </thead>
