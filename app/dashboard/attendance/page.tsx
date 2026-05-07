@@ -30,6 +30,7 @@ export default function AttendanceManagementPage() {
   const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
   const [presentToday, setPresentToday] = useState(0);
   const [schoolName, setSchoolName] = useState("Umum");
+  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("Halo Orang Tua {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.");
   const [user, setUser] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isWritingNFC, setIsWritingNFC] = useState(false);
@@ -48,10 +49,13 @@ export default function AttendanceManagementPage() {
   const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
 
 
-  // Form State
+  const [formData, setFormData] = useState({
+    student_name: "",
+    class_name: "",
+    teacher_phone: "",
+    token: "",
     subject: "",
     is_active: true,
-    message_template: "",
   });
 
   const supabase = createClient();
@@ -84,6 +88,10 @@ export default function AttendanceManagementPage() {
         } else if (tagsData && tagsData.length > 0 && tagsData[0].school_name) {
           setSchoolName(tagsData[0].school_name);
           localStorage.setItem('onetap_school_name', tagsData[0].school_name);
+        }
+
+        if (tagsData && tagsData.length > 0 && tagsData[0].message_template) {
+          setGlobalMessageTemplate(tagsData[0].message_template);
         }
         
         setPresentToday(count || 0);
@@ -216,7 +224,6 @@ export default function AttendanceManagementPage() {
         token: tag.token,
         subject: tag.subject || "",
         is_active: tag.is_active,
-        message_template: tag.message_template || "",
       });
     } else {
       setEditingTag(null);
@@ -227,7 +234,6 @@ export default function AttendanceManagementPage() {
         token: Math.random().toString(36).substring(2, 8).toUpperCase(),
         subject: "",
         is_active: true,
-        message_template: "Halo Orang Tua {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.",
       });
     }
     setShowModal(true);
@@ -252,6 +258,23 @@ export default function AttendanceManagementPage() {
     } else {
       localStorage.setItem('onetap_school_name', schoolName);
       setTags(tags.map(t => ({ ...t, school_name: schoolName })));
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }
+  };
+
+  const handleSaveGlobalTemplate = async () => {
+    if (!user) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("attendance_tags")
+      .update({ message_template: globalMessageTemplate })
+      .eq("created_by", user.id);
+    
+    if (error) {
+      alert("Gagal menyimpan: " + error.message);
+    } else {
+      setTags(tags.map(t => ({ ...t, message_template: globalMessageTemplate })));
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     }
@@ -320,6 +343,7 @@ export default function AttendanceManagementPage() {
       ...formData,
       created_by: user.id,
       school_name: schoolName,
+      message_template: globalMessageTemplate,
     };
 
     if (editingTag) {
@@ -448,6 +472,50 @@ export default function AttendanceManagementPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Global Settings */}
+        <div className="mb-10 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF5FA2]/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-orange-500" />
+              </div>
+              <h3 className="text-xl font-black text-[#18080F]">Pengaturan Global WhatsApp</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between ml-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Template Pesan Kehadiran</label>
+                <div className="flex gap-2">
+                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{student_name}`}</span>
+                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{date}`}</span>
+                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{time}`}</span>
+                </div>
+              </div>
+              <div className="flex flex-col md:flex-row gap-4">
+                <textarea
+                  rows={2}
+                  value={globalMessageTemplate}
+                  onChange={(e) => setGlobalMessageTemplate(e.target.value)}
+                  placeholder="Halo Orang Tua {student_name}, ananda telah hadir..."
+                  className="flex-1 px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold text-sm resize-none"
+                />
+                <button
+                  onClick={handleSaveGlobalTemplate}
+                  className="px-8 py-4 bg-[#FF5FA2] text-white font-black rounded-2xl hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 h-fit"
+                >
+                  <Save className="w-4 h-4" />
+                  Simpan Template
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium ml-1">
+                * Perubahan template ini akan berlaku untuk semua siswa yang terdaftar di bawah akun Anda.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* List Card */}
@@ -734,19 +802,6 @@ export default function AttendanceManagementPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between ml-1">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Template Pesan WhatsApp</label>
-                    <span className="text-[9px] font-bold text-[#FF5FA2]">Tags: {`{student_name}, {date}, {time}`}</span>
-                  </div>
-                  <textarea
-                    rows={3}
-                    value={formData.message_template}
-                    onChange={(e) => setFormData({...formData, message_template: e.target.value})}
-                    placeholder="Halo Orang Tua {student_name}, ananda telah hadir..."
-                    className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold text-sm resize-none"
-                  />
-                </div>
 
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
                   <div>
