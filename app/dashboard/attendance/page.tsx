@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2 } from "lucide-react";
+import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download } from "lucide-react";
 import Link from "next/link";
 
 interface Tag {
