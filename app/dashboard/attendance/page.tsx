@@ -373,6 +373,21 @@ export default function AttendanceManagementPage() {
 
   const processAttendance = async (token: string) => {
     if (processingTokens.current[token]) return;
+    
+    // Prevent double tap on the same device per day
+    const todayStr = new Date().toISOString().split('T')[0];
+    const cacheKey = `onetap_attended_${token}_${todayStr}`;
+    if (localStorage.getItem(cacheKey)) {
+      setScanLogs(prev => [{
+        student_name: "Sudah Absen",
+        class_name: "-",
+        status: "error",
+        time: new Date().toLocaleTimeString('id-ID'),
+        message: "Siswa sudah tercatat hadir hari ini."
+      }, ...prev].slice(0, 50));
+      return;
+    }
+
     processingTokens.current[token] = true;
 
     try {
@@ -391,6 +406,7 @@ export default function AttendanceManagementPage() {
       
       if (res.ok) {
         setPresentToday(prev => prev + 1);
+        localStorage.setItem(cacheKey, "1");
       }
     } catch (err) {
       console.error("Attendance processing error:", err);
