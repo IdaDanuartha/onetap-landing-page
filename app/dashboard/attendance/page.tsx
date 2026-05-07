@@ -608,10 +608,12 @@ export default function AttendanceManagementPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between ml-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Template Pesan Kehadiran</label>
-                <div className="flex gap-2">
+              <div className="flex flex-col md:flex-row md:items-center justify-between ml-1 gap-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0">Template Pesan Kehadiran</label>
+                <div className="flex flex-wrap gap-2 md:justify-end">
                   <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{student_name}`}</span>
+                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{class_name}`}</span>
+                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{subject}`}</span>
                   <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{date}`}</span>
                   <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{time}`}</span>
                 </div>
