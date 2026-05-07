@@ -222,16 +222,7 @@ export default function DashboardAttendanceLogsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="px-8 py-6"><div className="h-4 bg-gray-100 rounded w-32" /></td>
-                      <td className="px-8 py-6"><div className="h-4 bg-gray-100 rounded w-24" /></td>
-                      <td className="px-8 py-6"><div className="h-4 bg-gray-100 rounded w-40" /></td>
-                      <td className="px-8 py-6"><div className="h-6 bg-gray-100 rounded-full w-20" /></td>
-                    </tr>
-                  ))
-                ) : filteredLogs.length > 0 ? (
+                {loading ? null : filteredLogs.length > 0 ? (
                   filteredLogs.map((log) => (
                     <tr key={log.id} className="hover:bg-gray-50/30 transition-colors">
                       <td className="px-8 py-5">
