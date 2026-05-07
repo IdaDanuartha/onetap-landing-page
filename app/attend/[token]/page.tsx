@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { CheckCircle2, AlertCircle, Calendar, Clock, BookOpen, MessageSquare, Lock } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -25,8 +25,13 @@ export default function AttendancePage({ params }: AttendancePageProps) {
     waError?: string | null;
   } | null>(null);
 
+  const processedRef = useRef(false);
+
   useEffect(() => {
     async function processAttendance() {
+      if (processedRef.current) return;
+      processedRef.current = true;
+
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
