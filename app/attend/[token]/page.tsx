@@ -10,6 +10,8 @@ interface AttendancePageProps {
   params: Promise<{ token: string }>;
 }
 
+const processingLocks: Record<string, boolean> = {};
+
 export default function AttendancePage({ params }: AttendancePageProps) {
   const { token } = use(params);
   const router = useRouter();
@@ -29,8 +31,11 @@ export default function AttendancePage({ params }: AttendancePageProps) {
 
   useEffect(() => {
     async function processAttendance() {
-      if (processedRef.current) return;
-      processedRef.current = true;
+      // Prevent double execution in React Strict Mode or fast reloads
+      if (processingLocks[token]) {
+        return;
+      }
+      processingLocks[token] = true;
 
       try {
         const supabase = createClient();
@@ -38,6 +43,7 @@ export default function AttendancePage({ params }: AttendancePageProps) {
 
         if (!user) {
           setStatus('unauthorized');
+          processingLocks[token] = false;
           return;
         }
 
