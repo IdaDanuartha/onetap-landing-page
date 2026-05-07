@@ -49,13 +49,9 @@ export default function AttendanceManagementPage() {
 
 
   // Form State
-  const [formData, setFormData] = useState({
-    student_name: "",
-    class_name: "",
-    teacher_phone: "",
-    token: "",
     subject: "",
     is_active: true,
+    message_template: "",
   });
 
   const supabase = createClient();
@@ -220,6 +216,7 @@ export default function AttendanceManagementPage() {
         token: tag.token,
         subject: tag.subject || "",
         is_active: tag.is_active,
+        message_template: tag.message_template || "",
       });
     } else {
       setEditingTag(null);
@@ -230,6 +227,7 @@ export default function AttendanceManagementPage() {
         token: Math.random().toString(36).substring(2, 8).toUpperCase(),
         subject: "",
         is_active: true,
+        message_template: "Halo Orang Tua {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.",
       });
     }
     setShowModal(true);
@@ -733,6 +731,20 @@ export default function AttendanceManagementPage() {
                     onChange={(e) => setFormData({...formData, token: e.target.value})}
                     placeholder="GENERATED-ID"
                     className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-mono text-sm font-bold"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between ml-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Template Pesan WhatsApp</label>
+                    <span className="text-[9px] font-bold text-[#FF5FA2]">Tags: {`{student_name}, {date}, {time}`}</span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={formData.message_template}
+                    onChange={(e) => setFormData({...formData, message_template: e.target.value})}
+                    placeholder="Halo Orang Tua {student_name}, ananda telah hadir..."
+                    className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold text-sm resize-none"
                   />
                 </div>
 
