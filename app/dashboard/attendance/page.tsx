@@ -381,7 +381,7 @@ export default function AttendanceManagementPage() {
       setScanLogs(prev => [{
         student_name: "Sudah Absen",
         class_name: "-",
-        status: "error",
+        status: "error" as const,
         time: new Date().toLocaleTimeString('id-ID'),
         message: "Siswa sudah tercatat hadir hari ini."
       }, ...prev].slice(0, 50));
