@@ -31,11 +31,12 @@ export default function AttendancePage({ params }: AttendancePageProps) {
           setData(result);
           setStatus('success');
         } else {
-          setErrorMessage(result.error || 'Gagal mencatat kehadiran.');
+          const detailMsg = result.message ? `\n(${result.message})` : '';
+          setErrorMessage((result.error || 'Gagal mencatat kehadiran.') + detailMsg);
           setStatus('error');
         }
-      } catch {
-        setErrorMessage('Gangguan koneksi server.');
+      } catch (err: any) {
+        setErrorMessage('Gangguan koneksi server: ' + (err.message || 'Unknown error'));
         setStatus('error');
       }
     }

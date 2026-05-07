@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { sendWhatsApp } from '@/lib/whatsapp';
+
+const supabase = createSupabaseClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // Simple in-memory rate limiter: max 1 attendance per token per 60s
 const lastTapped: Record<string, number> = {};
@@ -33,7 +38,6 @@ export async function POST(
     }
     lastTapped[token] = now;
 
-    const supabase = await createClient();
 
     const { data: tag, error: tagSelectError } = await supabase
       .from('attendance_tags')
@@ -44,7 +48,11 @@ export async function POST(
 
     if (tagSelectError) {
       console.error('[attendance/token] tag selection error:', tagSelectError);
-      throw tagSelectError;
+      return NextResponse.json({ 
+        error: 'Database error (Selection)', 
+        message: tagSelectError.message,
+        code: tagSelectError.code 
+      }, { status: 500 });
     }
 
     if (!tag) {
@@ -70,7 +78,11 @@ export async function POST(
 
     if (logError) {
       console.error('[attendance/token] log insertion error:', logError);
-      throw logError;
+      return NextResponse.json({ 
+        error: 'Database error (Insertion)', 
+        message: logError.message,
+        code: logError.code 
+      }, { status: 500 });
     }
 
     if (!log) {
