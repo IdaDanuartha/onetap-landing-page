@@ -19,6 +19,7 @@ export default function AttendancePage({ params }: AttendancePageProps) {
     date: string;
     time: string;
     waSent: boolean;
+    waError?: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -234,7 +235,7 @@ export default function AttendancePage({ params }: AttendancePageProps) {
 
           {/* WA status */}
           <div
-            className="flex items-center justify-center gap-3 p-4 rounded-2xl border-2"
+            className="flex flex-col items-center justify-center gap-1 p-4 rounded-2xl border-2"
             style={
               data?.waSent
                 ? { background: '#f0fdf4', borderColor: '#86efac', color: '#15803d' }
@@ -249,6 +250,11 @@ export default function AttendancePage({ params }: AttendancePageProps) {
                   : 'Gagal Mengirim Notifikasi WA'}
               </p>
             </div>
+            {!data?.waSent && data?.waError && (
+              <p className="text-[10px] font-medium opacity-70 text-center px-2">
+                Detail: {data.waError}
+              </p>
+            )}
           </div>
 
           {/* OneTap branding */}
