@@ -69,10 +69,9 @@ export async function POST(req: Request) {
 
     // If user is logged in, save reference for tracking
     const supabase = await createClient();
+    // If user is logged in, link this reference to their profile
     const { data: { user } } = await supabase.auth.getUser();
-
     if (user) {
-      // Store in users_profile as pending
       const { error: profileError } = await supabase
         .from('users_profile')
         .update({
@@ -85,20 +84,20 @@ export async function POST(req: Request) {
       if (profileError) {
         console.error('[payment/create] Profile update error:', profileError);
       }
+    }
 
-      // Store invoice metadata for tracking
-      const { error: invoiceError } = await supabase.from('payment_invoices').insert({
-        reference_id: referenceId,
-        plan_id: planId,
-        billing_cycle: billingCycle,
-        email,
-        amount,
-        status: 'pending',
-      });
+    // ALWAYS store invoice metadata for tracking (even for guests)
+    const { error: invoiceError } = await supabase.from('payment_invoices').insert({
+      reference_id: referenceId,
+      plan_id: planId,
+      billing_cycle: billingCycle,
+      email,
+      amount,
+      status: 'pending',
+    });
 
-      if (invoiceError) {
-        console.error('[payment/create] Invoice insert error:', invoiceError);
-      }
+    if (invoiceError) {
+      console.error('[payment/create] Invoice insert error:', invoiceError);
     }
 
     return NextResponse.json({
