@@ -14,7 +14,7 @@ export default function PaymentSuccessPage() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const invoiceId = searchParams.get('invoiceId');
+  const invoiceId = searchParams.get('invoiceId') || searchParams.get('id') || searchParams.get('mayarInvoiceId');
   const ref = searchParams.get('ref');
   const [status, setStatus] = useState<InvoiceStatus>('loading');
   const [attempts, setAttempts] = useState(0);
@@ -54,7 +54,7 @@ export default function PaymentSuccessPage() {
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoiceId, ref]);
+  }, [invoiceId, ref, searchParams]);
 
   return (
     <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center px-4">

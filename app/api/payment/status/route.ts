@@ -12,21 +12,30 @@ export async function GET(req: Request) {
 
   const supabase = await createClient();
 
+  // 1. If we have both, link them in the database (First time return from Mayar)
+  if (invoiceId && ref) {
+    await supabase
+      .from('payment_invoices')
+      .update({ invoice_id: invoiceId })
+      .eq('reference_id', ref)
+      .filter('invoice_id', 'is', null);
+  }
+
+  // 2. If we only have ref, try to find the invoiceId from our DB
   if (!invoiceId && ref) {
-    // Look up invoiceId by reference
     const { data: dbInvoice } = await supabase
       .from('payment_invoices')
       .select('invoice_id')
       .eq('reference_id', ref)
-      .single();
+      .maybeSingle();
     
-    if (dbInvoice) {
+    if (dbInvoice?.invoice_id) {
       invoiceId = dbInvoice.invoice_id;
     }
   }
 
   if (!invoiceId) {
-    return NextResponse.json({ error: 'invoiceId or ref is required' }, { status: 400 });
+    return NextResponse.json({ error: 'invoiceId not found for this reference' }, { status: 400 });
   }
 
   try {

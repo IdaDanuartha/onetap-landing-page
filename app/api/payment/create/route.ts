@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
     if (user) {
       // Store in users_profile as pending
-      await supabase
+      const { error: profileError } = await supabase
         .from('users_profile')
         .update({
           pending_plan: planId,
@@ -82,8 +82,12 @@ export async function POST(req: Request) {
         })
         .eq('id', user.id);
 
+      if (profileError) {
+        console.error('[payment/create] Profile update error:', profileError);
+      }
+
       // Store invoice metadata for tracking
-      await supabase.from('payment_invoices').insert({
+      const { error: invoiceError } = await supabase.from('payment_invoices').insert({
         reference_id: referenceId,
         plan_id: planId,
         billing_cycle: billingCycle,
@@ -91,6 +95,10 @@ export async function POST(req: Request) {
         amount,
         status: 'pending',
       });
+
+      if (invoiceError) {
+        console.error('[payment/create] Invoice insert error:', invoiceError);
+      }
     }
 
     return NextResponse.json({
