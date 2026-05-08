@@ -22,6 +22,11 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', mobile: '' });
   const [error, setError] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [appliedPromo, setAppliedPromo] = useState('');
+  const [promoError, setPromoError] = useState('');
 
   const supabase = createClient();
 
@@ -78,6 +83,7 @@ export default function CheckoutPage() {
           name: form.name,
           email: form.email,
           mobile: form.mobile,
+          promoCode: appliedPromo || undefined,
         }),
       });
 
@@ -90,6 +96,31 @@ export default function CheckoutPage() {
       setError(err.message);
       setIsSubmitting(false);
     }
+  };
+
+  const handleApplyPromo = () => {
+    if (!promoCode.trim()) return;
+    setIsApplyingPromo(true);
+    setPromoError('');
+
+    // Mock promo code validation
+    // In production, this would be an API call to your backend or Mayar
+    setTimeout(() => {
+      const code = promoCode.toUpperCase();
+      if (code === 'AL7ZIPE') {
+        setDiscountPercent(99);
+        setAppliedPromo(code);
+        setPromoCode('');
+      } else {
+        setPromoError('Kode promo tidak valid');
+      }
+      setIsApplyingPromo(false);
+    }, 600);
+  };
+
+  const handleRemovePromo = () => {
+    setDiscountPercent(0);
+    setAppliedPromo('');
   };
 
   if (loading) {
@@ -137,8 +168,64 @@ export default function CheckoutPage() {
                   </span>
                 </div>
                 <div className="text-2xl font-black text-[#18080F]">
-                  Rp {(amount).toLocaleString('id-ID')}
+                  {discountPercent > 0 ? (
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-400 line-through font-bold">
+                        Rp {(amount).toLocaleString('id-ID')}
+                      </div>
+                      <div className="text-[#FF5FA2]">
+                        Rp {(amount * (1 - discountPercent / 100)).toLocaleString('id-ID')}
+                      </div>
+                    </div>
+                  ) : (
+                    `Rp ${(amount).toLocaleString('id-ID')}`
+                  )}
                 </div>
+              </div>
+
+              {/* Promo Code Input */}
+              <div className="mb-6">
+                {!appliedPromo ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value)}
+                        placeholder="Kode Promo"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:border-[#FF5FA2] outline-none transition-all"
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleApplyPromo}
+                        disabled={isApplyingPromo || !promoCode}
+                        className="px-4 py-2.5 rounded-xl bg-[#18080F] text-white text-xs font-black hover:bg-[#FF5FA2] transition-all disabled:opacity-50"
+                      >
+                        {isApplyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                      </button>
+                    </div>
+                    {promoError && <p className="text-[10px] font-bold text-red-500 ml-1">{promoError}</p>}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">{appliedPromo}</p>
+                        <p className="text-[10px] text-emerald-500 font-bold">Hemat {discountPercent}%</p>
+                      </div>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={handleRemovePromo}
+                      className="text-[10px] font-black text-red-400 hover:text-red-500 transition-colors"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                )}
               </div>
 
               <ul className="space-y-4 mb-8">

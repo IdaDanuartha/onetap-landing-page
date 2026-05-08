@@ -8,6 +8,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const planId = (body.planId as PlanId) || 'starter';
     const billingCycle = (body.billingCycle as BillingCycle) || 'monthly';
+    const promoCode = body.promoCode as string | undefined;
     const { name, email, mobile } = body as {
       name: string;
       email: string;
@@ -54,7 +55,12 @@ export async function POST(req: Request) {
       }
     }
 
-    const amount = getChargeAmount(planId, billingCycle);
+    let amount = getChargeAmount(planId, billingCycle);
+    
+    // Apply Promo Code (Mock logic, can be replaced with DB check)
+    if (promoCode?.toUpperCase() === 'AL7ZIPE') {
+      amount = Math.round(amount * 0.01); // 99% discount
+    }
     const planConfig = PLANS[planId];
     
     if (!planConfig) {
