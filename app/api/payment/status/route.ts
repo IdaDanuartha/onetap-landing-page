@@ -76,7 +76,7 @@ export async function GET(req: Request) {
         .eq('invoice_id', invoiceId)
         .single();
 
-      if (dbInvoice && dbInvoice.status !== 'paid') {
+      if (dbInvoice) {
         const planId = dbInvoice.plan_id as PlanId;
         const billingCycle = dbInvoice.billing_cycle as BillingCycle;
         
