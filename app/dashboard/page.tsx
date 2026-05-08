@@ -63,12 +63,12 @@ export default function DashboardPage() {
       if (allPages && allPages.length > 0) {
         const pageIds = allPages.map(p => p.id);
         
-        // Count active links across all pages
-        const { count: activeLinksCount } = await supabase
-          .from('linktree_links')
+        // Count published profiles
+        const { count: activeProfilesCount } = await supabase
+          .from('linktree_pages')
           .select('*', { count: 'exact', head: true })
-          .in('page_id', pageIds)
-          .eq('is_active', true);
+          .eq('user_id', authUser.id)
+          .eq('is_published', true);
 
         // Sum click counts across all pages
         const { data: linkStats } = await supabase
@@ -78,7 +78,7 @@ export default function DashboardPage() {
 
         if (linkStats) {
           setStats({
-            links: activeLinksCount || 0,
+            links: activeProfilesCount || 0,
             totalClicks: linkStats.reduce((sum, l) => sum + (l.click_count || 0), 0),
           });
         }
@@ -411,7 +411,7 @@ export default function DashboardPage() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 sm:mb-16"
         >
           {[
-            { label: 'Link Aktif', value: stats.links, icon: Layout, color: '#FF5FA2', bg: 'from-[#FFF1F7] to-[#FFF1F7]/50', border: 'border-[#FF5FA2]/10' },
+            { label: 'Profil Aktif', value: stats.links, icon: Layout, color: '#FF5FA2', bg: 'from-[#FFF1F7] to-[#FFF1F7]/50', border: 'border-[#FF5FA2]/10' },
             { label: 'Total Klik', value: stats.totalClicks, icon: BarChart2, color: '#8b5cf6', bg: 'from-[#f5f3ff] to-[#f5f3ff]/50', border: 'border-[#8b5cf6]/10' },
             { label: 'Conversion Rate', value: `${conversionRate}%`, icon: Zap, color: '#f59e0b', bg: 'from-[#fffbeb] to-[#fffbeb]/50', border: 'border-[#f59e0b]/10' },
           ].map((s, idx) => (
