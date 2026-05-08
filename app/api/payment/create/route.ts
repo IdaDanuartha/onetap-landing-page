@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { PLANS, getChargeAmount, PlanId, BillingCycle } from '@/lib/plans';
+import { createMayarInvoice } from '@/lib/mayar';
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // Starter is valid for 30 days or indefinitely? Let's say 30 days for consistency
+        // Starter is valid for 30 days
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 30);
 
@@ -56,40 +57,47 @@ export async function POST(req: Request) {
     const amount = getChargeAmount(planId, billingCycle);
     const planConfig = PLANS[planId];
     
-    if (!planConfig || !planConfig.mayarLink) {
-      return NextResponse.json({ error: 'Plan not found or missing payment link' }, { status: 404 });
+    if (!planConfig) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }
 
-    // Build Mayar link with user details for pre-filling
-    const paymentUrl = new URL(planConfig.mayarLink);
-    paymentUrl.searchParams.append('name', name);
-    paymentUrl.searchParams.append('email', email);
-    if (validMobile) paymentUrl.searchParams.append('mobile', validMobile);
-    paymentUrl.searchParams.append('ref', referenceId); // For tracking
+    // Dynamic Invoice Expiry (24 hours)
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 1);
+
+    // Create a dynamic invoice instead of using static link
+    // This bypasses the variant selection screen (Auto-Select)
+    const { paymentUrl } = await createMayarInvoice({
+      name,
+      email,
+      mobile: validMobile,
+      amount,
+      description: `OneTap ${planConfig.nameId} Plan (${billingCycle})`,
+      redirectUrl: `${appUrl}/payment/success?ref=${referenceId}`,
+      expiredAt: expiryDate.toISOString(),
+      planId,
+      billingCycle,
+      referenceId,
+    });
 
     // If user is logged in, save reference for tracking
     const supabase = await createClient();
-    // If user is logged in, link this reference to their profile
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { error: profileError } = await supabase
+      await supabase
         .from('users_profile')
         .update({
-          display_name: name,         // Update nama terbaru
-          whatsapp: mobile,           // Update nomor WhatsApp terbaru
+          display_name: name,
+          whatsapp: mobile,
           pending_plan: planId,
           pending_billing_cycle: billingCycle,
           last_payment_ref: referenceId,
         })
         .eq('id', user.id);
-
-      if (profileError) {
-        console.error('[payment/create] Profile update error:', profileError);
-      }
     }
 
-    // ALWAYS store invoice metadata for tracking (even for guests)
-    const { error: invoiceError } = await supabase.from('payment_invoices').insert({
+    // Store invoice metadata for tracking
+    await supabase.from('payment_invoices').insert({
       reference_id: referenceId,
       plan_id: planId,
       billing_cycle: billingCycle,
@@ -98,20 +106,15 @@ export async function POST(req: Request) {
       status: 'pending',
     });
 
-    if (invoiceError) {
-      console.error('[payment/create] Invoice insert error:', invoiceError);
-    }
-
     return NextResponse.json({
       success: true,
-      paymentUrl: paymentUrl.toString(),
+      paymentUrl,
       referenceId,
     });
   } catch (err: any) {
     console.error('[payment/create]', err);
     return NextResponse.json({ 
       error: err.message || 'Internal server error',
-      details: err.toString()
     }, { status: 500 });
   }
 }
