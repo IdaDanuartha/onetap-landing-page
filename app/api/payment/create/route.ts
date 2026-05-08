@@ -75,6 +75,8 @@ export async function POST(req: Request) {
       const { error: profileError } = await supabase
         .from('users_profile')
         .update({
+          display_name: name,         // Update nama terbaru
+          whatsapp: mobile,           // Update nomor WhatsApp terbaru
           pending_plan: planId,
           pending_billing_cycle: billingCycle,
           last_payment_ref: referenceId,
