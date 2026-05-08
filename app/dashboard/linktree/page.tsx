@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock } from 'lucide-react';
+import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, Layers } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { createClient } from '@/lib/supabase/client';
 import { themes, templates } from '@/lib/themes';
@@ -15,10 +15,13 @@ import { SortableLinkCard } from '@/app/components/linktree/SortableLinkCard';
 import type { LinkItem } from '@/app/components/linktree/SortableLinkCard';
 import { LinktreePreview } from '@/app/components/linktree/LinktreePreview';
 
+export const dynamic = 'force-dynamic';
+
 export default function LinktreeBuilderPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState('');
+  const [slug, setSlug] = useState('');
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [profile, setProfile] = useState({ title: '', bio: '', avatar: '' });
   const [selectedTheme, setSelectedTheme] = useState('pink');
@@ -27,46 +30,69 @@ export default function LinktreeBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
+  
+  // Multi-page state
+  const [pages, setPages] = useState<any[]>([]);
+  const [currentPageId, setCurrentPageId] = useState<string | null>(null);
 
   // Load existing data
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/auth/login'); return; }
+  const loadData = useCallback(async (pageId?: string) => {
+    setLoading(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push('/auth/login'); return; }
 
-      const res = await fetch('/api/linktree/save');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.profile) {
-          setUsername(data.profile.username ?? '');
-          setIsPro(data.profile.is_pro ?? false);
-        }
-        if (data.page) {
-          setProfile({
-            title: data.page.title ?? '',
-            bio: data.page.bio ?? '',
-            avatar: data.profile?.avatar_url ?? '',
-          });
-          setSelectedTheme(data.page.theme_id ?? 'pink');
-        }
-        if (data.links) {
-          setLinks(
-            data.links.map((l: { id: string; label: string; url: string; icon: string; is_active: boolean; click_count: number }) => ({
-              id: l.id,
-              label: l.label,
-              url: l.url,
-              icon: l.icon ?? 'link',
-              isActive: l.is_active,
-              clickCount: l.click_count,
-            }))
-          );
-        }
+    const url = pageId ? `/api/linktree/save?pageId=${pageId}` : '/api/linktree/save';
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      
+      // Handle list of pages for Pro users
+      if (data.pages) {
+        setPages(data.pages);
       }
-      setLoading(false);
+
+      if (data.profile) {
+        setUsername(data.profile.username ?? '');
+        // Professional or Education plans are considered "Pro" for templates
+        const userPlan = data.profile.plan ?? 'starter';
+        setIsPro(userPlan === 'professional' || userPlan === 'education');
+      }
+      
+      if (data.page) {
+        setCurrentPageId(data.page.id);
+        setSlug(data.page.slug ?? '');
+        setProfile({
+          title: data.page.title ?? '',
+          bio: data.page.bio ?? '',
+          avatar: data.profile?.avatar_url ?? '',
+        });
+        setSelectedTheme(data.page.theme_id ?? 'pink');
+      } else {
+        // If no page exists yet, set slug to username as default
+        setSlug(data.profile?.username ?? '');
+      }
+      
+      if (data.links) {
+        setLinks(
+          data.links.map((l: any) => ({
+            id: l.id,
+            label: l.label,
+            url: l.url,
+            icon: l.icon ?? 'link',
+            isActive: l.is_active,
+            clickCount: l.click_count,
+          }))
+        );
+      }
     }
-    load();
+    setLoading(false);
   }, [router]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const addLink = () => {
     setLinks((prev) => [
@@ -94,22 +120,73 @@ export default function LinktreeBuilderPage() {
       return;
     }
 
+    if (!slug || slug.length < 3) {
+      alert('Slug harus memiliki minimal 3 karakter.');
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch('/api/linktree/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile, links, theme: selectedTheme }),
+        body: JSON.stringify({ 
+          profile, 
+          links, 
+          theme: selectedTheme,
+          pageId: currentPageId,
+          slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+        }),
       });
+      
+      const result = await res.json();
       if (res.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
+        // Refresh page list if new page was created or slug changed
+        loadData(result.pageId);
+      } else {
+        alert(result.error || 'Gagal menyimpan perubahan.');
       }
     } catch (err) {
       console.error(err);
+      alert('Terjadi kesalahan saat menyimpan.');
     }
     setSaving(true); // Small delay
     setTimeout(() => setSaving(false), 800);
+  };
+
+  const createNewPage = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Fetch latest profile to get current plan
+    const { data: profileData } = await supabase
+      .from('users_profile')
+      .select('plan')
+      .eq('id', user.id)
+      .single();
+    
+    const currentPlan = profileData?.plan || 'starter';
+    const isProPlan = currentPlan === 'professional';
+    const isEduPlan = currentPlan === 'education';
+
+    if (!isEduPlan) {
+      const maxPages = isProPlan ? 3 : 1;
+      if (pages.length >= maxPages) {
+        const planName = isEduPlan ? 'Education' : isProPlan ? 'Professional' : 'Starter';
+        alert(`Batas maksimal halaman untuk paket ${planName} tercapai (${maxPages}). Silakan hapus halaman lain atau upgrade plan.`);
+        return;
+      }
+    }
+
+    // Reset editor for new page
+    setCurrentPageId(null);
+    setProfile({ title: 'Profil Baru', bio: '', avatar: profile.avatar });
+    setLinks([]);
+    setSelectedTheme('pink');
+    setSlug(''); // User will need to enter a new slug
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,7 +203,6 @@ export default function LinktreeBuilderPage() {
       const publicUrl = await uploadAvatar(user.id, file);
       setProfile((prev) => ({ ...prev, avatar: publicUrl }));
       
-      // Update users_profile immediately
       await supabase
         .from('users_profile')
         .update({ avatar_url: publicUrl })
@@ -134,61 +210,25 @@ export default function LinktreeBuilderPage() {
         
     } catch (err) {
       console.error('Error uploading avatar:', err);
-      alert('Gagal mengunggah foto. Pastikan Supabase Storage sudah disetup sesuai panduan.');
+      alert('Gagal mengunggah foto.');
     } finally {
       setUploading(false);
     }
   };
 
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFF8F2]">
-        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16 sm:h-20">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gray-200 rounded-xl animate-pulse" />
-                <div className="w-40 h-6 bg-gray-200 rounded-lg animate-pulse hidden sm:block" />
-              </div>
-              <div className="w-32 h-12 bg-gray-200 rounded-xl animate-pulse" />
-            </div>
-          </div>
-        </nav>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="grid lg:grid-cols-[1fr_360px] gap-12">
-            <div className="space-y-10">
-              <div className="flex justify-between items-center">
-                <div className="space-y-2">
-                  <div className="w-48 h-8 bg-gray-200 rounded-lg animate-pulse" />
-                  <div className="w-64 h-4 bg-gray-200 rounded animate-pulse" />
-                </div>
-              </div>
-              <div className="p-8 bg-white border border-gray-100 rounded-[32px] space-y-8 animate-pulse h-64" />
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
-                  <div className="w-40 h-12 bg-gray-200 rounded-xl animate-pulse" />
-                </div>
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-24 bg-white border border-gray-100 rounded-3xl animate-pulse" />
-                ))}
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <div className="sticky top-28 space-y-6">
-                <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
-                <div className="w-[320px] h-[640px] bg-gray-200 rounded-[56px] animate-pulse mx-auto" />
-              </div>
-            </div>
-          </div>
+      <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-[#FF5FA2] animate-spin" />
+          <p className="text-sm font-black text-[#FF5FA2] uppercase tracking-widest">Memuat Builder...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2]">
+    <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2] pb-24 lg:pb-0">
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -197,14 +237,15 @@ export default function LinktreeBuilderPage() {
               <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-black text-[#18080F] hidden sm:block">Edit Linktree</h1>
+              <h1 className="text-xl font-black text-[#18080F] hidden sm:block">Edit Profile Digital</h1>
+              <h1 className="text-lg font-black text-[#18080F] sm:hidden">Edit Profile</h1>
             </div>
 
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all duration-300 ${
+                className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 ${
                   saved 
                     ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
                     : 'bg-[#18080F] text-white hover:bg-[#FF5FA2] shadow-lg shadow-[#18080F]/10'
@@ -215,7 +256,7 @@ export default function LinktreeBuilderPage() {
                 ) : saved ? (
                   <><Check className="w-4 h-4" /> Tersimpan</>
                 ) : (
-                  <><Save className="w-4 h-4" /> Simpan Perubahan</>
+                  <><Save className="w-4 h-4" /> Simpan</>
                 )}
               </button>
             </div>
@@ -229,29 +270,60 @@ export default function LinktreeBuilderPage() {
           {/* ===== LEFT: Editor ===== */}
           <div className="space-y-10">
             
-            {/* Header info */}
-            <div className="flex items-center justify-between">
+            {/* Header info & Multi-page switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
-                <h2 className="text-2xl font-black text-[#18080F] tracking-tight">Profil Digital</h2>
-                <p className="text-sm font-medium text-gray-400 mt-1">Kustomisasi bagaimana dunia melihatmu.</p>
+                <h2 className="text-2xl font-black text-[#18080F] tracking-tight">Kustomisasi Profil</h2>
+                <p className="text-sm font-medium text-gray-400 mt-1">Kelola tampilan halaman digital kamu.</p>
               </div>
-              {isPro && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-black shadow-lg shadow-amber-500/20">
-                  <Zap className="w-3.5 h-3.5" fill="white" />
-                  PRO PLAN
+              
+              <div className="flex items-center gap-3">
+                {isPro && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black shadow-lg shadow-amber-500/20 uppercase tracking-widest">
+                    <Zap className="w-3.5 h-3.5" fill="white" />
+                    PRO PLAN
+                  </div>
+                )}
+                
+                <div className="relative group">
+                  <button 
+                    onClick={createNewPage}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#F6B7C8]/20 text-[#18080F] text-xs font-bold hover:bg-[#FF5FA2] hover:text-white transition-all shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Tambah Profil
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
 
+            {/* Page List (For Pro Users) */}
+            {pages.length > 1 && (
+              <div className="flex flex-wrap gap-2">
+                {pages.map((p: any) => (
+                  <button
+                    key={p.id}
+                    onClick={() => loadData(p.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      currentPageId === p.id 
+                        ? 'bg-[#FF5FA2] text-white shadow-md' 
+                        : 'bg-white text-gray-500 border border-[#F6B7C8]/10 hover:border-[#FF5FA2]/30'
+                    }`}
+                  >
+                    {p.title || 'Tanpa Judul'}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Profile section */}
-            <div className="p-8 bg-white border border-[#F6B7C8]/10 rounded-[32px] shadow-sm space-y-8">
+            <div className="p-6 sm:p-8 bg-white border border-[#F6B7C8]/10 rounded-[32px] shadow-sm space-y-8">
               <div className="flex flex-col sm:flex-row items-center gap-8">
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-[32px] bg-[#FFF8F2] border-2 border-dashed border-[#F6B7C8]/30 flex items-center justify-center overflow-hidden relative shadow-inner">
                     {uploading ? (
                       <div className="flex flex-col items-center gap-2">
                         <Loader2 className="w-8 h-8 text-[#FF5FA2] animate-spin" />
-                        <span className="text-[10px] font-black text-[#FF5FA2] uppercase">Uploading...</span>
                       </div>
                     ) : profile.avatar ? (
                       <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
@@ -268,25 +340,34 @@ export default function LinktreeBuilderPage() {
                   >
                     {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   </button>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleAvatarUpload} 
-                    className="hidden" 
-                    accept="image/*"
-                  />
+                  <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
                 </div>
 
                 <div className="flex-1 w-full space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Nama / Brand</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: Budi Santoso"
-                      value={profile.title}
-                      onChange={(e) => setProfile({ ...profile, title: e.target.value })}
-                      className="w-full h-12 px-5 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-bold text-[#18080F]"
-                    />
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Nama / Brand</label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: Budi Santoso"
+                        value={profile.title}
+                        onChange={(e) => setProfile({ ...profile, title: e.target.value })}
+                        className="w-full h-12 px-5 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-bold text-[#18080F]"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Custom Link (Slug)</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">/l/</span>
+                        <input
+                          type="text"
+                          placeholder="username-kamu"
+                          value={slug}
+                          onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                          className="w-full h-12 pl-8 pr-5 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-bold text-[#18080F]"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Bio Singkat</label>
@@ -301,22 +382,26 @@ export default function LinktreeBuilderPage() {
                 </div>
               </div>
 
-              {username && (
-                <div className="pt-6 border-t border-gray-50 flex items-center justify-between">
+              {(username || slug) && (
+                <div className="pt-6 border-t border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                       <Globe className="w-5 h-5 text-blue-500" />
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Public URL</p>
-                      <p className="text-sm font-bold text-[#18080F]">onetap-charm.com/l/{username}</p>
+                      <p className="text-sm font-bold text-[#18080F]">onetap-charm.com/l/{slug || username}</p>
                     </div>
                   </div>
                   <button 
-                    onClick={() => navigator.clipboard.writeText(`https://onetap-charm.com/l/${username}`)}
-                    className="p-3 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-[#FF5FA2] transition-all"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://onetap-charm.com/l/${slug || username}`);
+                      alert('URL disalin!');
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 text-gray-400 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all text-xs font-bold"
                   >
-                    <Copy className="w-5 h-5" />
+                    <Copy className="w-4 h-4" />
+                    Salin Link
                   </button>
                 </div>
               )}
@@ -328,10 +413,10 @@ export default function LinktreeBuilderPage() {
                 <h2 className="text-xl font-black text-[#18080F] tracking-tight">Koleksi Link</h2>
                 <button
                   onClick={addLink}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF5FA2] text-white text-sm font-bold shadow-lg shadow-[#FF5FA2]/20 hover:-translate-y-0.5 transition-all"
+                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#FF5FA2] text-white text-xs sm:text-sm font-bold shadow-lg shadow-[#FF5FA2]/20 hover:-translate-y-0.5 transition-all"
                 >
                   <Plus className="w-4 h-4" />
-                  Tambah Link Baru
+                  Tambah Link
                 </button>
               </div>
 
@@ -342,13 +427,13 @@ export default function LinktreeBuilderPage() {
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="py-20 text-center bg-white/50 border-2 border-dashed border-[#F6B7C8]/20 rounded-[40px]"
+                        className="py-16 sm:py-20 text-center bg-white/50 border-2 border-dashed border-[#F6B7C8]/20 rounded-[40px]"
                       >
                         <div className="w-20 h-20 rounded-3xl bg-white shadow-xl mx-auto flex items-center justify-center mb-6">
                           <Share2 className="w-10 h-10 text-gray-200" />
                         </div>
                         <p className="text-lg font-black text-[#18080F]">Belum ada link</p>
-                        <p className="text-sm font-medium text-gray-400 mt-1">Mulai tambahkan link sosial media atau websitemu.</p>
+                        <p className="text-sm font-medium text-gray-400 mt-1">Mulai tambahkan sosial media websitemu.</p>
                       </motion.div>
                     ) : (
                       <div className="grid gap-4">
@@ -385,24 +470,24 @@ export default function LinktreeBuilderPage() {
                 <h2 className="text-xl font-black text-[#18080F] tracking-tight">Warna & Tema</h2>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full">Standard</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
                 {themes.map((theme) => (
                   <button
                     key={theme.id}
                     onClick={() => setSelectedTheme(theme.id)}
-                    className={`group relative p-3 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center gap-3 ${
+                    className={`group relative p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 flex flex-col items-center gap-2 sm:gap-3 ${
                       selectedTheme === theme.id 
                         ? 'border-[#FF5FA2] bg-white shadow-xl shadow-[#FF5FA2]/10 -translate-y-1' 
                         : 'border-[#F6B7C8]/10 bg-white hover:border-[#FF5FA2]/30'
                     }`}
                   >
-                    <div className={`w-full h-16 rounded-2xl shadow-inner ${theme.previewBg}`} />
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${selectedTheme === theme.id ? 'text-[#FF5FA2]' : 'text-gray-400'}`}>
+                    <div className={`w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl shadow-inner ${theme.previewBg}`} />
+                    <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${selectedTheme === theme.id ? 'text-[#FF5FA2]' : 'text-gray-400'}`}>
                       {theme.name}
                     </span>
                     {selectedTheme === theme.id && (
-                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-lg">
-                        <Check className="w-3 h-3" strokeWidth={4} />
+                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-lg">
+                        <Check className="w-2.5 h-2.5" strokeWidth={5} />
                       </div>
                     )}
                   </button>
@@ -419,26 +504,23 @@ export default function LinktreeBuilderPage() {
                   <span className="text-[10px] font-black uppercase tracking-widest">Premium</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                 {templates.map((template) => (
                   <button
                     key={template.id}
                     onClick={() => setSelectedTheme(template.id)}
-                    className={`group relative p-4 rounded-[32px] border-2 transition-all duration-300 flex flex-col items-center gap-4 ${
+                    className={`group relative p-3 sm:p-4 rounded-[28px] sm:rounded-[32px] border-2 transition-all duration-300 flex flex-col items-center gap-3 sm:gap-4 ${
                       selectedTheme === template.id 
                         ? 'border-[#FF5FA2] bg-white shadow-2xl shadow-[#FF5FA2]/20 -translate-y-2' 
                         : 'border-[#F6B7C8]/10 bg-white hover:border-[#FF5FA2]/30'
                     }`}
                   >
-                    <div className={`w-full aspect-[4/5] rounded-2xl shadow-inner overflow-hidden relative ${template.previewBg}`}>
-                      {/* Mock layout inside preview */}
+                    <div className={`w-full aspect-[4/5] rounded-xl sm:rounded-2xl shadow-inner overflow-hidden relative ${template.previewBg}`}>
                       <div className="absolute inset-0 flex flex-col items-center justify-center p-4 gap-2">
                         <div className="w-6 h-6 rounded-full bg-white/20" />
                         <div className="w-full h-2 rounded-full bg-white/20" />
                         <div className="w-full h-2 rounded-full bg-white/20" />
-                        <div className="w-full h-2 rounded-full bg-white/20" />
                       </div>
-                      
                       {!isPro && (
                         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                            <div className="bg-white rounded-full p-2">
@@ -448,13 +530,13 @@ export default function LinktreeBuilderPage() {
                       )}
                     </div>
                     <div className="text-center">
-                      <p className={`text-xs font-black uppercase tracking-widest ${selectedTheme === template.id ? 'text-[#FF5FA2]' : 'text-gray-400'}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${selectedTheme === template.id ? 'text-[#FF5FA2]' : 'text-gray-400'}`}>
                         {template.name}
                       </p>
                     </div>
                     {selectedTheme === template.id && (
-                      <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-xl z-10">
-                        <Check className="w-4 h-4" strokeWidth={4} />
+                      <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-xl z-10">
+                        <Check className="w-3.5 h-3.5" strokeWidth={5} />
                       </div>
                     )}
                   </button>
@@ -477,9 +559,12 @@ export default function LinktreeBuilderPage() {
                       <Zap className="w-5 h-5 text-amber-400" fill="currentColor" />
                       Butuh Lebih Dari Satu Halaman?
                     </h3>
-                    <p className="text-gray-400 mt-2 text-sm font-medium">Upgrade ke Pro Plan untuk membuat hingga 5 halaman Linktree berbeda.</p>
+                    <p className="text-gray-400 mt-2 text-sm font-medium">Upgrade ke Professional (3 halaman) atau Education (Tanpa Batas) untuk profil lebih banyak.</p>
                   </div>
-                  <button className="px-8 py-3 rounded-2xl bg-white text-[#18080F] font-black hover:bg-[#FF5FA2] hover:text-white transition-all shadow-xl">
+                  <button 
+                    onClick={() => router.push('/checkout')}
+                    className="px-8 py-3 rounded-2xl bg-white text-[#18080F] font-black hover:bg-[#FF5FA2] hover:text-white transition-all shadow-xl"
+                  >
                     Upgrade Sekarang
                   </button>
                 </div>
@@ -487,7 +572,7 @@ export default function LinktreeBuilderPage() {
             )}
           </div>
 
-          {/* ===== RIGHT: Live Preview ===== */}
+          {/* ===== RIGHT: Live Preview (Desktop) ===== */}
           <div className="hidden lg:block">
             <div className="sticky top-28 space-y-6">
               <div className="flex items-center justify-between px-2">
@@ -495,27 +580,14 @@ export default function LinktreeBuilderPage() {
                   <Smartphone className="w-4 h-4 text-[#FF5FA2]" />
                   Live Preview
                 </h3>
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <div className="w-2 h-2 rounded-full bg-green-500/30" />
-                </div>
               </div>
 
               {/* Phone mockup */}
               <div className="relative mx-auto w-[320px] h-[640px] bg-[#18080F] rounded-[56px] p-4 shadow-[0_40px_100px_-20px_rgba(24,8,15,0.3)] ring-1 ring-gray-800">
-                {/* Notch */}
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#18080F] rounded-b-3xl z-20" />
-                
-                {/* Inner Content */}
                 <div className="w-full h-full rounded-[42px] overflow-hidden bg-white relative">
-                  <LinktreePreview
-                    profile={profile}
-                    links={links}
-                    theme={selectedTheme}
-                  />
+                  <LinktreePreview profile={profile} links={links} theme={selectedTheme} />
                 </div>
-
-                {/* Side buttons */}
                 <div className="absolute top-32 -left-1 w-1 h-12 bg-gray-800 rounded-r-lg" />
                 <div className="absolute top-48 -left-1 w-1 h-12 bg-gray-800 rounded-r-lg" />
                 <div className="absolute top-40 -right-1 w-1 h-16 bg-gray-800 rounded-l-lg" />
@@ -523,7 +595,7 @@ export default function LinktreeBuilderPage() {
 
               <div className="flex flex-col gap-3">
                 <a
-                  href={`/l/${username}`}
+                  href={`/l/${slug || username}`}
                   target="_blank"
                   className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white border border-[#F6B7C8]/20 text-[#18080F] font-bold shadow-sm hover:shadow-md transition-all group"
                 >
@@ -531,13 +603,64 @@ export default function LinktreeBuilderPage() {
                   Buka Halaman Penuh
                 </a>
                 <p className="text-[10px] text-center font-black text-gray-400 uppercase tracking-widest">
-                  onetap-charm.com/l/{username}
+                  onetap-charm.com/l/{slug || username}
                 </p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* ===== MOBILE PREVIEW BUTTON & MODAL ===== */}
+      <div className="lg:hidden fixed bottom-6 right-6 z-[60]">
+        <button
+          onClick={() => setShowMobilePreview(true)}
+          className="w-14 h-14 rounded-full bg-[#FF5FA2] text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+        >
+          <Smartphone className="w-6 h-6" />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showMobilePreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-[#18080F]/90 backdrop-blur-sm lg:hidden flex items-center justify-center p-4"
+          >
+            <button 
+              onClick={() => setShowMobilePreview(false)}
+              className="absolute top-6 right-6 p-3 rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="relative w-full max-w-[320px] h-[80vh] bg-[#18080F] rounded-[56px] p-4 shadow-2xl"
+            >
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#18080F] rounded-b-2xl z-20" />
+              <div className="w-full h-full rounded-[42px] overflow-hidden bg-white relative">
+                <LinktreePreview profile={profile} links={links} theme={selectedTheme} />
+              </div>
+              
+              <div className="absolute -bottom-16 left-0 right-0 flex flex-col items-center gap-2">
+                 <a
+                  href={`/l/${slug || username}`}
+                  target="_blank"
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#FF5FA2] text-white font-bold shadow-lg"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Buka Halaman Penuh
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style jsx global>{`
         @keyframes bounce-slow {
@@ -548,7 +671,7 @@ export default function LinktreeBuilderPage() {
           animation: bounce-slow 3s infinite ease-in-out;
         }
         ::-webkit-scrollbar {
-          width: 8px;
+          width: 6px;
         }
         ::-webkit-scrollbar-track {
           background: transparent;

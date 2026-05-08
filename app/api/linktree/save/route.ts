@@ -1,75 +1,157 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/linktree/save
-// Saves profile + links + theme for the current user's linktree page.
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { profile, links, theme } = await req.json();
+    const { profile, links, theme, pageId, slug: requestedSlug } = await req.json();
 
-    // Get or create the user's linktree page
-    let { data: page } = await supabase
+    // Check user plan for limits
+    const { data: userProfile } = await supabase
+      .from('users_profile')
+      .select('plan')
+      .eq('id', user.id)
+      .single();
+    
+    const userPlan = userProfile?.plan || 'starter';
+    const isPro = userPlan === 'professional';
+    const isEdu = userPlan === 'education';
+    
+    // Check current pages count
+    const { count } = await supabase
       .from('linktree_pages')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle();
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
 
-    if (!page) {
-      const { data: newPage, error } = await supabase
+    let page;
+
+    if (pageId) {
+      // Update existing page
+      const { data: existingPage, error: fetchError } = await supabase
         .from('linktree_pages')
-        .insert({ user_id: user.id, title: profile.title, bio: profile.bio, theme_id: theme })
         .select('id')
+        .eq('id', pageId)
+        .eq('user_id', user.id)
         .single();
-      if (error) throw error;
-      page = newPage;
-    } else {
-      // Update page metadata
-      await supabase
+      
+      if (fetchError || !existingPage) {
+        return NextResponse.json({ error: 'Page not found or unauthorized' }, { status: 404 });
+      }
+
+      const { data: updatedPage, error: updateError } = await supabase
         .from('linktree_pages')
-        .update({ title: profile.title, bio: profile.bio, theme_id: theme })
-        .eq('id', page.id);
+        .update({ 
+          title: profile.title, 
+          bio: profile.bio, 
+          theme_id: theme,
+          slug: requestedSlug,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', pageId)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
+      page = updatedPage;
+    } else {
+      // Create new page
+      // Limit check: Starter 1, Pro 3, Edu Unlimited (999)
+      const maxPages = isEdu ? 999 : isPro ? 3 : 1;
+      if ((count ?? 0) >= maxPages) {
+        const planName = isEdu ? 'Education' : isPro ? 'Professional' : 'Starter';
+        return NextResponse.json({ 
+          error: `Batas maksimal halaman untuk paket ${planName} tercapai. Paket ${planName} dibatasi maksimal ${maxPages === 999 ? 'Tak Terbatas' : maxPages} halaman.` 
+        }, { status: 403 });
+      }
+
+      const { data: newPage, error: insertError } = await supabase
+        .from('linktree_pages')
+        .insert({ 
+          user_id: user.id, 
+          title: profile.title || 'Profil Baru', 
+          bio: profile.bio, 
+          theme_id: theme || 'pink',
+          slug: requestedSlug
+        })
+        .select()
+        .single();
+      
+      if (insertError) throw insertError;
+      page = newPage;
     }
 
-    // Delete all existing links and re-insert (simpler than diff sync)
+    // Delete all existing links for THIS page and re-insert
     await supabase.from('linktree_links').delete().eq('page_id', page.id);
 
     if (links && links.length > 0) {
-      const insertLinks = links.map((l: { id: string; label: string; url: string; icon: string; isActive: boolean }, i: number) => ({
-        page_id: page!.id,
+      const insertLinks = links.map((l: any, i: number) => ({
+        page_id: page.id,
         label: l.label,
         url: l.url,
         icon: l.icon,
         sort_order: i,
-        is_active: l.isActive,
+        is_active: l.isActive !== false,
       }));
       await supabase.from('linktree_links').insert(insertLinks);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, pageId: page.id });
   } catch (err) {
-    console.error('[linktree/save]', err);
+    console.error('[linktree/save POST]', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
-// GET /api/linktree/save — load the current user's linktree data
-export async function GET() {
+// GET /api/linktree/save
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const requestedPageId = searchParams.get('pageId');
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { data: page } = await supabase
+    // 1. Get all pages for this user to show in switcher
+    const { data: pages } = await supabase
+      .from('linktree_pages')
+      .select('id, title, updated_at')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+
+    // 2. Determine which page to load
+    let targetPageId = requestedPageId;
+    if (!targetPageId && pages && pages.length > 0) {
+      targetPageId = pages[0].id;
+    }
+
+    if (!targetPageId) {
+      // No pages yet
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('username, display_name, avatar_url, plan')
+        .eq('id', user.id)
+        .single();
+      return NextResponse.json({ page: null, links: [], profile, pages: [] });
+    }
+
+    // 3. Load full data for the target page
+    const { data: page, error: pageError } = await supabase
       .from('linktree_pages')
       .select('*')
+      .eq('id', targetPageId)
       .eq('user_id', user.id)
-      .maybeSingle();
+      .single();
 
-    if (!page) return NextResponse.json({ page: null, links: [] });
+    if (pageError || !page) {
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+    }
 
     const { data: links } = await supabase
       .from('linktree_links')
@@ -79,11 +161,16 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from('users_profile')
-      .select('username, display_name, avatar_url')
+      .select('username, display_name, avatar_url, plan')
       .eq('id', user.id)
       .single();
 
-    return NextResponse.json({ page, links: links ?? [], profile });
+    return NextResponse.json({ 
+      page, 
+      links: links ?? [], 
+      profile,
+      pages: pages ?? []
+    });
   } catch (err) {
     console.error('[linktree/save GET]', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
