@@ -8,7 +8,7 @@ import { CheckCircle2, Clock, Loader2, ArrowRight, RefreshCw, AlertTriangle, Par
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
-type InvoiceStatus = 'paid' | 'unpaid' | 'expired' | 'canceled' | 'loading' | 'error';
+type InvoiceStatus = 'paid' | 'unpaid' | 'pending' | 'expired' | 'canceled' | 'loading' | 'error';
 
 export default function PaymentSuccessPage() {
   const { t } = useLanguage();
@@ -104,7 +104,7 @@ export default function PaymentSuccessPage() {
           </>
         )}
 
-        {status === 'unpaid' && (
+        {(status === 'unpaid' || status === 'pending') && (
           <>
             <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-6">
               <Clock className="w-10 h-10 text-amber-500" />
