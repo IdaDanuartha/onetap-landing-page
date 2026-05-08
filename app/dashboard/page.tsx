@@ -54,22 +54,32 @@ export default function DashboardPage() {
         setPlan((profile.plan as PlanId) ?? 'starter');
       }
 
-      // Stats
-      if (page) {
-        const { count } = await supabase
+      // Aggregate stats across all pages
+      const { data: allPages } = await supabase
+        .from('linktree_pages')
+        .select('id')
+        .eq('user_id', authUser.id);
+      
+      if (allPages && allPages.length > 0) {
+        const pageIds = allPages.map(p => p.id);
+        
+        // Count active links across all pages
+        const { count: activeLinksCount } = await supabase
           .from('linktree_links')
           .select('*', { count: 'exact', head: true })
-          .eq('page_id', page.id);
+          .in('page_id', pageIds)
+          .eq('is_active', true);
 
-        const { data: clicks } = await supabase
+        // Sum click counts across all pages
+        const { data: linkStats } = await supabase
           .from('linktree_links')
           .select('click_count')
-          .eq('page_id', page.id);
+          .in('page_id', pageIds);
 
-        if (clicks) {
+        if (linkStats) {
           setStats({
-            links: count || 0,
-            totalClicks: clicks.reduce((sum, l) => sum + (l.click_count || 0), 0),
+            links: activeLinksCount || 0,
+            totalClicks: linkStats.reduce((sum, l) => sum + (l.click_count || 0), 0),
           });
         }
       }
