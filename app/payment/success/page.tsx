@@ -26,10 +26,11 @@ export default function PaymentSuccessPage() {
     }
 
     try {
-      const url = invoiceId 
-        ? `/api/payment/status?invoiceId=${invoiceId}`
-        : `/api/payment/status?ref=${ref}`;
-      const res = await fetch(url);
+      const params = new URLSearchParams();
+      if (invoiceId) params.append('invoiceId', invoiceId);
+      if (ref) params.append('ref', ref);
+      
+      const res = await fetch(`/api/payment/status?${params.toString()}`);
       const data = await res.json();
       setStatus(data.status ?? 'error');
     } catch {
