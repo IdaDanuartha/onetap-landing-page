@@ -98,7 +98,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
     setIsApplyingPromo(true);
     setPromoError('');
