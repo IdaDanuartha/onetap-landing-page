@@ -104,16 +104,26 @@ export async function GET(req: Request) {
       const days = getDaysForCycle(billingCycle);
       const planExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
-      // Find user: Priority to logged in user, then by email
+      // Find user: Priority to logged in user, then by email, then by reference_id
       let targetUserId = authUser?.id;
       
       if (!targetUserId) {
-        const { data: userProfile } = await adminSupabase
+        const { data: userProfileByEmail } = await adminSupabase
           .from('users_profile')
           .select('id')
           .eq('email', dbInvoice.email)
           .maybeSingle();
-        targetUserId = userProfile?.id;
+        targetUserId = userProfileByEmail?.id;
+      }
+
+      if (!targetUserId) {
+        // Fallback: Find by reference_id in last_payment_ref
+        const { data: userProfileByRef } = await adminSupabase
+          .from('users_profile')
+          .select('id')
+          .eq('last_payment_ref', dbInvoice.reference_id)
+          .maybeSingle();
+        targetUserId = userProfileByRef?.id;
       }
 
       if (targetUserId) {
