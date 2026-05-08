@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getMayarInvoice } from '@/lib/mayar';
 import { getDaysForCycle, PLANS } from '@/lib/plans';
 import { sendPlanEmail } from '@/lib/email';
@@ -96,8 +97,10 @@ export async function GET(req: Request) {
         }
 
         if (targetUserId) {
-          // Update profile
-          const { error: updateErr } = await supabase
+          const adminSupabase = createAdminClient();
+          
+          // Update profile using Admin Client to bypass RLS
+          const { error: updateErr } = await adminSupabase
             .from('users_profile')
             .update({
               plan: planId,
@@ -105,6 +108,7 @@ export async function GET(req: Request) {
               mayar_invoice_id: invoiceId,
               pending_plan: null,
               pending_billing_cycle: null,
+              email: dbInvoice.email, // Sync email if it was missing
             })
             .eq('id', targetUserId);
 
@@ -112,8 +116,8 @@ export async function GET(req: Request) {
             console.error('[payment/status] Failed to update user plan:', updateErr);
           }
 
-          // Update invoice status in our DB
-          await supabase
+          // Update invoice status in our DB using Admin Client
+          await adminSupabase
             .from('payment_invoices')
             .update({ status: 'paid' })
             .eq('invoice_id', invoiceId);
