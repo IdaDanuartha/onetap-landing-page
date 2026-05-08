@@ -52,11 +52,14 @@ export default function ConnectNfcPage() {
 
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('username')
+        .select('username, whatsapp')
         .eq('id', user.id)
         .single();
 
-      if (profile) setUsername(profile.username);
+      if (profile) {
+        setUsername(profile.username);
+        if (profile.whatsapp) setWaNumber(profile.whatsapp);
+      }
       setLoading(false);
     }
     load();

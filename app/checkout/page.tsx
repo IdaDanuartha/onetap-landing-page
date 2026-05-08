@@ -37,15 +37,15 @@ export default function CheckoutPage() {
       // Fetch profile
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('display_name, email')
+        .select('display_name, email, whatsapp')
         .eq('id', authUser.id)
         .single();
 
       setUser(authUser);
       setForm({
         name: profile?.display_name || '',
-        email: authUser.email || '',
-        mobile: '',
+        email: authUser.email || profile?.email || '',
+        mobile: profile?.whatsapp || '',
       });
       setLoading(false);
     }
