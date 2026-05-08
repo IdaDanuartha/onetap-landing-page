@@ -73,8 +73,8 @@ export async function GET(req: Request) {
       const { data: dbInvoice } = await supabase
         .from('payment_invoices')
         .select('*')
-        .eq('invoice_id', invoiceId)
-        .single();
+        .or(`invoice_id.eq.${invoiceId},reference_id.eq.${ref}`)
+        .maybeSingle();
 
       if (dbInvoice) {
         const planId = dbInvoice.plan_id as PlanId;
