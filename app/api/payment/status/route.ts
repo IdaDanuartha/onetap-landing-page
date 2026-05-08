@@ -148,7 +148,6 @@ export async function GET(req: Request) {
       invoice: {
         id: invoice.id,
         amount: invoice.amount,
-        paidAt: invoice.paidAt
       }
     });
   } catch (error) {
