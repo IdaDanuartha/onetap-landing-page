@@ -123,3 +123,53 @@ export async function getMayarInvoice(invoiceId: string): Promise<MayarInvoiceDe
   const json: MayarInvoiceDetail = await res.json();
   return json.data;
 }
+
+export async function findMayarInvoice(params: {
+  referenceId?: string;
+  email?: string;
+  amount?: number;
+}): Promise<MayarInvoiceDetail['data'] | null> {
+  const { referenceId, email, amount } = params;
+  
+  // Search through first 2 pages of invoices
+  for (let page = 1; page <= 2; page++) {
+    const res = await fetch(`${MAYAR_BASE_URL}/invoice?page=${page}`, {
+      headers: {
+        Authorization: `Bearer ${getApiKey()}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) continue;
+
+    const json = await res.json();
+    const invoices = json.data as any[];
+
+    if (!invoices || invoices.length === 0) break;
+
+    const match = invoices.find((inv) => {
+      // Try matching by referenceId in description or metadata
+      const hasRef = referenceId && (
+        (inv.description && inv.description.includes(referenceId)) ||
+        (inv.transactions?.[0]?.extraData?.referenceId === referenceId)
+      );
+
+      if (hasRef) return true;
+
+      // Fallback to email + amount match if status is pending/unpaid
+      const hasEmailAmount = email && amount && 
+        inv.customer?.email === email && 
+        inv.amount === amount;
+
+      return hasEmailAmount;
+    });
+
+    if (match) {
+      // Need to fetch full detail to match the return type
+      return getMayarInvoice(match.id);
+    }
+  }
+
+  return null;
+}
+

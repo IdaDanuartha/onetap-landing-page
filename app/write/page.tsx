@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
-  SmartphoneNfc
+  SmartphoneNfc,
+  MessageCircle
 } from "lucide-react";
 
 // ─── Valid access codes ─────────────────────────────────────────────────────
@@ -33,7 +34,7 @@ function isNFCSupported(): boolean {
 }
 
 async function writeCustomRecord(
-  type: "url" | "text" | "phone" | "sms" | "email" | "erase",
+  type: "url" | "text" | "phone" | "sms" | "email" | "erase" | "whatsapp",
   data: string
 ): Promise<void> {
   if (!isNFCSupported()) throw new Error("Web NFC is not supported");
@@ -53,7 +54,7 @@ async function writeCustomRecord(
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type RecordType = "url" | "text" | "phone" | "sms" | "email" | "erase";
+type RecordType = "url" | "text" | "phone" | "sms" | "email" | "erase" | "whatsapp";
 type Screen = "gate" | "writer";
 type WriteStatus = "idle" | "waiting";
 
@@ -175,6 +176,7 @@ type IconComponent = React.FC<React.SVGProps<SVGSVGElement> & { className?: stri
 const TYPE_OPTIONS: { id: RecordType; label: string; icon: IconComponent; placeholder?: string }[] = [
   { id: "url", label: "Link/URL", icon: LinkIcon as IconComponent, placeholder: "https://instagram.com/..." },
   { id: "text", label: "Pesan Teks", icon: Type as IconComponent, placeholder: "Halo, ini keychain saya!" },
+  { id: "whatsapp", label: "WhatsApp", icon: MessageCircle as IconComponent, placeholder: "62812... (Pesan)" },
   { id: "phone", label: "Telepon", icon: Phone as IconComponent, placeholder: "+62812..." },
   { id: "sms", label: "Kirim SMS", icon: MessageSquare as IconComponent, placeholder: "+62812..." },
   { id: "email", label: "Kirim Email", icon: Mail as IconComponent, placeholder: "nama@email.com" },
@@ -185,6 +187,8 @@ function NFCWriter() {
   const [supported, setSupported] = useState(true);
   const [recordType, setRecordType] = useState<RecordType>("url");
   const [data, setData] = useState("");
+  const [waNumber, setWaNumber] = useState("");
+  const [waMessage, setWaMessage] = useState("");
   const [writeStatus, setWriteStatus] = useState<WriteStatus>("idle");
   const [lastResult, setLastResult] = useState<"success" | "error" | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -202,6 +206,9 @@ function NFCWriter() {
       if (!payload.startsWith("http://") && !payload.startsWith("https://")) {
         payload = `https://${payload}`;
       }
+    } else if (recordType === "whatsapp") {
+      const cleanNum = waNumber.replace(/[^0-9]/g, "");
+      payload = `https://wa.me/${cleanNum}${waMessage ? `?text=${encodeURIComponent(waMessage)}` : ""}`;
     } else if (recordType === "phone") {
       payload = `tel:${payload.replace(/[^0-9+]/g, "")}`;
     } else if (recordType === "sms") {
@@ -214,7 +221,7 @@ function NFCWriter() {
     setLastResult(null);
 
     try {
-      await writeCustomRecord(recordType === "phone" || recordType === "sms" || recordType === "email" ? "text" : recordType, payload);
+      await writeCustomRecord(recordType === "phone" || recordType === "sms" || recordType === "email" ? "text" : (recordType === "whatsapp" ? "url" : recordType), payload);
       setLastResult("success");
     } catch (err) {
       setLastResult("error");
@@ -327,7 +334,24 @@ function NFCWriter() {
                       <selectedType.icon className="w-4 h-4 text-primary-500" />
                       Masukkan {selectedType.label}
                     </label>
-                    {recordType === "text" ? (
+                    {recordType === "whatsapp" ? (
+                      <div className="space-y-3 flex-1 flex flex-col">
+                        <input
+                          type="text"
+                          value={waNumber}
+                          onChange={(e) => { setWaNumber(e.target.value); setLastResult(null); }}
+                          placeholder="Nomor WhatsApp (628...)"
+                          className="w-full px-5 py-4 rounded-2xl border-2 border-slate-200 focus:border-primary-500 bg-white text-slate-800 outline-none transition-all text-base shadow-sm focus:ring-4 focus:ring-primary-500/10"
+                        />
+                        <textarea
+                          value={waMessage}
+                          onChange={(e) => { setWaMessage(e.target.value); setLastResult(null); }}
+                          placeholder="Pesan otomatis (Opsional)"
+                          rows={3}
+                          className="w-full flex-1 px-5 py-4 rounded-2xl border-2 border-slate-200 focus:border-primary-500 bg-white text-slate-800 outline-none transition-all text-base resize-none shadow-sm focus:ring-4 focus:ring-primary-500/10"
+                        />
+                      </div>
+                    ) : recordType === "text" ? (
                       <textarea
                         value={data}
                         onChange={(e) => { setData(e.target.value); setLastResult(null); }}
@@ -372,7 +396,7 @@ function NFCWriter() {
 
             <motion.button
               onClick={handleWrite}
-              disabled={recordType !== "erase" && !data.trim()}
+              disabled={recordType === "whatsapp" ? !waNumber.trim() : (recordType !== "erase" && !data.trim())}
               whileHover={{ scale: 1.01, y: -2 }}
               whileTap={{ scale: 0.98 }}
               className={`w-full h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl transition-all duration-300 disabled:opacity-50 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed ${
@@ -381,7 +405,7 @@ function NFCWriter() {
                   : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/20"
               }`}
             >
-              <SmartphoneNfc className="w-6 h-6" />
+              <Image src="/images/logo_simple.png" alt="" width={24} height={24} className="invert brightness-0" />
               {recordType === "erase" ? "Mulai Proses Format" : "Tulis ke Keychain"}
             </motion.button>
           </div>
@@ -397,10 +421,10 @@ function NFCWriter() {
               className="absolute inset-0 z-50 rounded-[2.5rem] bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-8"
             >
               <div className="relative w-32 h-32 mb-6">
-                <span className="absolute inset-0 rounded-full border-[3px] border-primary-500/30" style={{ animation: "nfc-ring-pulse 2s cubic-bezier(0.16, 1, 0.3, 1) 0s infinite" }} />
-                <span className="absolute inset-0 rounded-full border-[3px] border-primary-500/20" style={{ animation: "nfc-ring-pulse 2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s infinite" }} />
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-400 to-primary-600 rounded-full shadow-2xl shadow-primary-500/40">
-                  <SmartphoneNfc className="w-12 h-12 text-white animate-pulse" />
+                <span className="absolute inset-0 rounded-full border-[1px] border-primary-500/30" style={{ animation: "nfc-ring-pulse 2s cubic-bezier(0.16, 1, 0.3, 1) 0s infinite" }} />
+                <span className="absolute inset-0 rounded-full border-[1px] border-primary-500/20" style={{ animation: "nfc-ring-pulse 2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s infinite" }} />
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-400 to-primary-600 rounded-full shadow-2xl shadow-primary-500/40 p-6">
+                  <Image src="/images/logo_simple.png" alt="OneTap" width={64} height={64} className="object-contain invert brightness-0" />
                 </div>
               </div>
               <h2 className="font-extrabold text-2xl text-slate-800 mb-2">Siap Menerima Data</h2>

@@ -141,6 +141,52 @@ export default function LinktreeBuilderPage() {
   };
 
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FFF8F2]">
+        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16 sm:h-20">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-gray-200 rounded-xl animate-pulse" />
+                <div className="w-40 h-6 bg-gray-200 rounded-lg animate-pulse hidden sm:block" />
+              </div>
+              <div className="w-32 h-12 bg-gray-200 rounded-xl animate-pulse" />
+            </div>
+          </div>
+        </nav>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="grid lg:grid-cols-[1fr_360px] gap-12">
+            <div className="space-y-10">
+              <div className="flex justify-between items-center">
+                <div className="space-y-2">
+                  <div className="w-48 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                  <div className="w-64 h-4 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+              <div className="p-8 bg-white border border-gray-100 rounded-[32px] space-y-8 animate-pulse h-64" />
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
+                  <div className="w-40 h-12 bg-gray-200 rounded-xl animate-pulse" />
+                </div>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-24 bg-white border border-gray-100 rounded-3xl animate-pulse" />
+                ))}
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <div className="sticky top-28 space-y-6">
+                <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
+                <div className="w-[320px] h-[640px] bg-gray-200 rounded-[56px] animate-pulse mx-auto" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2]">
       {/* Navbar */}

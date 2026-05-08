@@ -36,7 +36,7 @@ export default function CTABannerSection() {
             
             <motion.div variants={fadeInUp} className="flex flex-wrap justify-center gap-4">
               <a
-                href="https://wa.me/6283114227745"
+                href="/auth/register"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-xl shadow-[#FF5FA2]/20 hover:shadow-[#FF5FA2]/40 hover:-translate-y-1 transition-all duration-300"
               >
                 <MessageCircle className="w-5 h-5" />

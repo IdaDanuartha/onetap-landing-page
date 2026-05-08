@@ -31,24 +31,61 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
 
-    // Look up the invoice in our payment_invoices table
-    const { data: invoice, error: invoiceErr } = await supabase
+    // 1. Try to find by invoice_id
+    let { data: invoice, error: invoiceErr } = await supabase
       .from('payment_invoices')
       .select('*')
       .eq('invoice_id', payload.id)
-      .single();
+      .maybeSingle();
 
-    if (invoiceErr || !invoice) {
-      console.error('[webhook/mayar] Invoice not found:', payload.id);
+    // 2. If not found, try by reference_id (Mayar often sends this in extraData or description)
+    if (!invoice) {
+      // Try to extract reference_id from payload
+      const transactions = payload.transactions as any[];
+      const referenceId = 
+        (payload.extraData as any)?.referenceId || 
+        (transactions?.[0]?.extraData?.referenceId) || 
+        (payload.description as string)?.match(/REF (OT-[\w-]+)/)?.[1];
+
+      if (referenceId) {
+        const { data: refInvoice } = await supabase
+          .from('payment_invoices')
+          .select('*')
+          .eq('reference_id', referenceId)
+          .maybeSingle();
+        invoice = refInvoice;
+      }
+    }
+
+    // 3. Fallback: Try by Email + Amount + Pending status
+    if (!invoice) {
+      const { data: emailInvoice } = await supabase
+        .from('payment_invoices')
+        .select('*')
+        .eq('email', payload.customer.email)
+        .eq('amount', payload.amount)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      invoice = emailInvoice;
+    }
+
+    if (!invoice) {
+      console.error('[webhook/mayar] Invoice not found for payload:', payload.id, payload.customer.email);
       // Still return 200 to stop Mayar retrying
       return NextResponse.json({ received: true, error: 'Invoice not found' });
     }
 
-    // Mark invoice as paid
+    // Mark invoice as paid and link the invoice_id
     await supabase
       .from('payment_invoices')
-      .update({ status: 'paid', paid_at: new Date().toISOString() })
-      .eq('invoice_id', payload.id);
+      .update({ 
+        status: 'paid', 
+        paid_at: new Date().toISOString(),
+        invoice_id: payload.id // Always ensure this is set now
+      })
+      .eq('id', invoice.id); // Use internal UUID for precise update
 
     const planId = invoice.plan_id as PlanId;
     const billingCycle = invoice.billing_cycle as BillingCycle;

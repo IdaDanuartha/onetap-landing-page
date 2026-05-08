@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getMayarInvoice } from '@/lib/mayar';
+import { getMayarInvoice, findMayarInvoice } from '@/lib/mayar';
 import { getDaysForCycle, PLANS } from '@/lib/plans';
 import { sendPlanEmail } from '@/lib/email';
 import type { PlanId, BillingCycle } from '@/lib/plans';
@@ -58,12 +58,29 @@ export async function GET(req: Request) {
       dbInvoice = data;
     }
 
-    // 3. If we don't have invoiceId yet, try to get it from dbInvoice
-    if (!invoiceId && dbInvoice?.invoice_id) {
-      invoiceId = dbInvoice.invoice_id;
+    // 4. If we STILL don't have invoiceId, try to find it on Mayar (Auto-discovery)
+    if (!invoiceId && dbInvoice) {
+      try {
+        const discovered = await findMayarInvoice({
+          referenceId: dbInvoice.reference_id,
+          email: dbInvoice.email,
+          amount: dbInvoice.amount
+        });
+        
+        if (discovered) {
+          invoiceId = discovered.id;
+          // Link it in our DB so we don't have to search again
+          await adminSupabase
+            .from('payment_invoices')
+            .update({ invoice_id: invoiceId })
+            .eq('id', dbInvoice.id);
+        }
+      } catch (findErr) {
+        console.error('[payment/status] Auto-discovery error:', findErr);
+      }
     }
 
-    // 4. If we STILL don't have invoiceId, we can't check Mayar
+    // 5. If we REALLY STILL don't have invoiceId, we can't check Mayar
     if (!invoiceId) {
       if (dbInvoice) {
         return NextResponse.json({ 

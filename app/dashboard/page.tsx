@@ -160,6 +160,49 @@ export default function DashboardPage() {
     ? ((stats.totalClicks / (stats.totalClicks + 15)) * 100).toFixed(1)
     : '0';
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FFF8F2]">
+        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16 sm:h-20">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gray-200 animate-pulse" />
+                <div className="w-24 h-6 bg-gray-200 rounded-lg animate-pulse hidden sm:block" />
+              </div>
+            </div>
+          </div>
+        </nav>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="mb-14">
+            <div className="w-64 h-10 bg-gray-200 rounded-2xl animate-pulse mb-4" />
+            <div className="w-96 h-6 bg-gray-200 rounded-xl animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm flex items-center gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-gray-100 animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="w-12 h-8 bg-gray-100 rounded-lg animate-pulse" />
+                  <div className="w-24 h-4 bg-gray-100 rounded-md animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="p-8 rounded-[32px] bg-white border border-gray-100 shadow-sm h-64">
+                <div className="w-14 h-14 rounded-2xl bg-gray-100 animate-pulse mb-6" />
+                <div className="w-40 h-6 bg-gray-100 rounded-lg animate-pulse mb-4" />
+                <div className="w-full h-4 bg-gray-100 rounded-md animate-pulse mb-2" />
+                <div className="w-2/3 h-4 bg-gray-100 rounded-md animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2]">
@@ -432,13 +475,13 @@ export default function DashboardPage() {
                   </div>
                   <h3 className="text-xl font-black text-[#18080F] mb-3">{item.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed font-medium mb-6">{item.desc}</p>
-                  <Link
+                  <a
                     href="/#pricing"
-                    className="inline-flex items-center gap-2 text-[#FF5FA2] font-bold text-sm uppercase tracking-wider"
+                    className="inline-flex items-center gap-2 text-[#FF5FA2] font-bold text-sm uppercase tracking-wider cursor-pointer"
                   >
                     Upgrade Plan
                     <ChevronRight className="w-4 h-4" />
-                  </Link>
+                  </a>
                 </div>
               ) : (
                 <Link

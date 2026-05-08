@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Zap, Menu, X, ChevronRight, Globe } from "lucide-react";
+import { Zap, Menu, X, ChevronRight, Globe, Play, User, Users, LogOut, LayoutDashboard, Instagram, Twitter, Linkedin, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import Image from "next/image";
@@ -11,7 +11,9 @@ export default function Header() {
   const { t, locale, setLocale } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,14 +25,38 @@ export default function Header() {
 
   useEffect(() => {
     const supabase = createClient();
+    
+    const fetchProfile = async (userId: string) => {
+      const { data } = await supabase.from('users_profile').select('*').eq('id', userId).single();
+      setProfile(data);
+    };
+
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user || null);
+      const currentUser = data.session?.user || null;
+      setUser(currentUser);
+      if (currentUser) fetchProfile(currentUser.id);
     });
+
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
+      const currentUser = session?.user || null;
+      setUser(currentUser);
+      if (currentUser) fetchProfile(currentUser.id);
+      else setProfile(null);
     });
     return () => authListener.subscription.unsubscribe();
   }, []);
+
+  // Lock scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   const navLinks = [
     { label: t('nav.features'), href: "#features" },
@@ -91,23 +117,57 @@ export default function Header() {
             </button>
             
             {user ? (
-              <div className="flex items-center gap-4">
-                <a
-                  href="/dashboard"
-                  className={`text-sm font-semibold transition-colors duration-300 ${isScrolled ? "text-[#18080F]" : "text-white"} hover:text-[#FF5FA2]`}
-                >
-                  Dashboard
-                </a>
+              <div className="relative">
                 <button
-                  onClick={async () => {
-                    const supabase = createClient();
-                    await supabase.auth.signOut();
-                    window.location.href = "/";
-                  }}
-                  className={`text-sm font-semibold transition-colors duration-300 ${isScrolled ? "text-red-500" : "text-red-400"} hover:text-red-600`}
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className={`flex items-center cursor-pointer gap-3 px-3 py-1.5 rounded-xl transition-all duration-300 ${
+                    isScrolled ? "bg-gray-100" : "bg-white/10"
+                  } hover:bg-[#FF5FA2]/10 group`}
                 >
-                  Logout
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] flex items-center justify-center text-white">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <User className="w-4 h-4" />
+                    )}
+                  </div>
+                  <span className={`text-sm font-bold transition-colors duration-300 ${isScrolled ? "text-[#18080F]" : "text-white"} group-hover:text-[#FF5FA2]`}>
+                    {profile?.display_name || user.email?.split('@')[0]}
+                  </span>
                 </button>
+
+                <AnimatePresence>
+                  {isProfileOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setIsProfileOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl shadow-black/10 border border-gray-100 py-2 z-20 overflow-hidden"
+                      >
+                        <a
+                          href="/dashboard"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#18080F] hover:bg-gray-50 transition-colors"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-[#FF5FA2]" />
+                          Dashboard
+                        </a>
+                        <button
+                          onClick={async () => {
+                            const supabase = createClient();
+                            await supabase.auth.signOut();
+                            window.location.href = "/";
+                          }}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors w-full text-left"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               <a
@@ -118,7 +178,9 @@ export default function Header() {
               </a>
             )}
             <a
-              href="#pricing"
+              href="https://wa.me/6283114227745"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF5FA2] text-white text-sm font-bold hover:bg-[#E8457E] transition-all duration-200 shadow-lg shadow-[#FF5FA2]/25"
             >
               {t('nav.orderNow')}
@@ -159,17 +221,44 @@ export default function Header() {
               transition={{ duration: 0.2, ease: "easeOut" }}
               className="absolute top-[88px] left-5 right-5 z-50 lg:hidden origin-top"
             >
-              <div className="bg-white rounded-[1.75rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] p-7 flex flex-col gap-6">
+              <div className="bg-white rounded-[1.75rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] p-7 flex flex-col gap-6 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide">
+                {/* User Profile Header (Mobile) */}
+                {user && (
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100 mb-2">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] flex items-center justify-center text-white shadow-lg shadow-[#FF5FA2]/20">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <User className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-base font-bold text-[#18080F]">
+                        {profile?.display_name || user.email?.split('@')[0]}
+                      </span>
+                      <span className="text-xs text-[#18080F]/50 font-medium">{user.email}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Main Links */}
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
                   {navLinks.map((link) => (
                     <a
                       key={link.label}
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="text-[17px] font-bold text-[#18080F] tracking-tight"
+                      className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group"
                     >
-                      {link.label}
+                      <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-[#FF5FA2]/10 transition-colors">
+                        {link.label === t('nav.features') && <Zap className="w-4 h-4 text-[#FF5FA2]" />}
+                        {link.label === t('nav.howItWorks') && <Play className="w-4 h-4 text-[#FF5FA2]" />}
+                        {link.label === t('products.badge') && <ChevronRight className="w-4 h-4 text-[#FF5FA2]" />}
+                        {link.label === t('nav.attendance') && <Users className="w-4 h-4 text-[#FF5FA2]" />}
+                      </div>
+                      <span className="text-[17px] font-bold text-[#18080F] tracking-tight">
+                        {link.label}
+                      </span>
                     </a>
                   ))}
                 </div>
@@ -177,24 +266,34 @@ export default function Header() {
                 <div className="w-full h-[1px] bg-slate-100/60 my-1" />
 
                 {/* Secondary Actions */}
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={() => {
                       setLocale(locale === 'id' ? 'en' : 'id');
                       setIsMobileMenuOpen(false);
                     }}
-                    className="flex items-center justify-between w-full"
+                    className="flex items-center justify-between w-full px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors"
                   >
-                    <span className="text-[17px] font-bold text-[#18080F] tracking-tight">{t('common.language')}</span>
-                    <span className="text-[17px] font-bold text-[#FF5FA2] uppercase">{locale}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                        <Globe className="w-4 h-4 text-gray-400" />
+                      </div>
+                      <span className="text-[17px] font-bold text-[#18080F] tracking-tight">{t('common.language')}</span>
+                    </div>
+                    <span className="text-sm font-bold text-[#FF5FA2] uppercase bg-[#FF5FA2]/10 px-2.5 py-1 rounded-lg">{locale}</span>
                   </button>
                   
                   <a
                     href={user ? "/dashboard" : "/auth/login"}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-[17px] font-bold text-[#18080F] text-left tracking-tight"
+                    className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group"
                   >
-                    {user ? "Dashboard" : t('common.login')}
+                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-[#FF5FA2]/10 transition-colors">
+                      <LayoutDashboard className="w-4 h-4 text-gray-400 group-hover:text-[#FF5FA2]" />
+                    </div>
+                    <span className="text-[17px] font-bold text-[#18080F] tracking-tight">
+                      {user ? "Dashboard" : t('common.login')}
+                    </span>
                   </a>
                   
                   {user && (
@@ -204,9 +303,14 @@ export default function Header() {
                         await supabase.auth.signOut();
                         window.location.href = "/";
                       }}
-                      className="text-[17px] font-bold text-red-500 text-left tracking-tight"
+                      className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-red-50 transition-colors group text-left"
                     >
-                      Logout
+                      <div className="w-8 h-8 rounded-lg bg-red-50/50 flex items-center justify-center group-hover:bg-red-100 transition-colors">
+                        <LogOut className="w-4 h-4 text-red-400 group-hover:text-red-500" />
+                      </div>
+                      <span className="text-[17px] font-bold text-red-500 tracking-tight">
+                        Logout
+                      </span>
                     </button>
                   )}
                   

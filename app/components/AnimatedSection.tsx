@@ -29,16 +29,17 @@ export default function AnimatedSection({ children, className = "", id, style }:
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <motion.section
-      ref={ref}
-      id={id}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
-      variants={staggerContainer}
-      className={className}
-      style={style}
-    >
-      {children}
-    </motion.section>
+    <div id={id} className="scroll-mt-24">
+      <motion.section
+        ref={ref}
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className={className}
+        style={style}
+      >
+        {children}
+      </motion.section>
+    </div>
   );
 }

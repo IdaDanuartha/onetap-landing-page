@@ -558,6 +558,47 @@ export default function AttendanceManagementPage() {
   const uniqueClasses = Array.from(new Set(tags.map(t => t.class_name).filter(Boolean)));
   const uniqueSubjects = Array.from(new Set(tags.map(t => t.subject).filter(Boolean)));
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FFF8F2]">
+        <main className="max-w-6xl mx-auto px-6 py-12">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <div className="space-y-4">
+              <div className="w-32 h-4 bg-gray-200 rounded animate-pulse" />
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-gray-200 rounded-2xl animate-pulse" />
+                <div className="space-y-2">
+                  <div className="w-48 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                  <div className="w-32 h-4 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-32 h-12 bg-gray-200 rounded-2xl animate-pulse" />
+              <div className="w-32 h-12 bg-gray-200 rounded-2xl animate-pulse" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white p-6 rounded-[2rem] border border-gray-100 flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-gray-100 animate-pulse" />
+                <div className="space-y-2">
+                  <div className="w-12 h-8 bg-gray-100 rounded animate-pulse" />
+                  <div className="w-24 h-4 bg-gray-100 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-10 bg-white p-8 rounded-[2.5rem] border border-gray-100 h-48 animate-pulse" />
+          
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 h-96 animate-pulse" />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FFF8F2]">
       <main className="max-w-6xl mx-auto px-6 py-12">

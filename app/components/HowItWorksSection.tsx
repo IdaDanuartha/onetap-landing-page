@@ -32,7 +32,7 @@ export default function HowItWorksSection() {
   ];
 
   return (
-    <AnimatedSection id="howitworks" className="py-24 lg:py-32 bg-white">
+    <AnimatedSection id="how-it-works" className="py-24 lg:py-32 bg-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <motion.div variants={fadeInUp} className="text-center mb-16">
@@ -105,7 +105,7 @@ export default function HowItWorksSection() {
         {/* Bottom CTA */}
         <motion.div variants={fadeInUp} className="text-center mt-16">
           <a
-            href="https://wa.me/6283114227745"
+            href="/auth/register"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-semibold shadow-xl shadow-[#FF5FA2]/25 hover:shadow-[#FF5FA2]/40 hover:-translate-y-0.5 transition-all duration-200"
           >
             {t('hero.ctaPrimary')}
