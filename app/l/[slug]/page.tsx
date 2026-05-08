@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getTheme } from '@/lib/themes';
 import type { Metadata } from 'next';
-import PublicLinktreePage from './PublicLinktreePage';
+import OneTapBio from './PublicLinktreePage';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function LinktreePublicPage({ params }: PageProps) {
+export default async function OneTapPublicPage({ params }: PageProps) {
   const { slug } = await params;
   const supabase = await createClient();
 
@@ -84,7 +84,7 @@ export default async function LinktreePublicPage({ params }: PageProps) {
     .order('sort_order', { ascending: true });
 
   return (
-    <PublicLinktreePage
+    <OneTapBio
       username={profile.username}
       profile={profile}
       page={page}

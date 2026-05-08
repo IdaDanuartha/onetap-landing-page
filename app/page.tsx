@@ -5,6 +5,7 @@ import HowItWorksSection from "./components/HowItWorksSection";
 import ProductsSection from "./components/ProductsSection";
 import UseCasesSection from "./components/UseCasesSection";
 // import NewFeaturesSection from "./components/NewFeaturesSection";
+import OneTapHighlight from "./components/OneTapHighlight";
 import AttendanceSection from "./components/AttendanceSection";
 import TestimonialsSection from "./components/TestimonialsSection";
 import FAQSection from "./components/FAQSection";
@@ -22,7 +23,7 @@ export default function Home() {
         <ProductsSection />
         <UseCasesSection />
         {/* NEW: Feature showcase */}
-        {/* <NewFeaturesSection /> */}
+        <OneTapHighlight />
         {/* NEW: Education / NFC Attendance showcase */}
         <AttendanceSection />
         <TestimonialsSection />

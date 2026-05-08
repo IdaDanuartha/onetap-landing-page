@@ -2,13 +2,13 @@ import { getTheme } from '@/lib/themes';
 import type { LinkItem } from './SortableLinkCard';
 import { iconMap } from './IconPicker';
 
-interface LinktreePreviewProps {
+interface OneTapPreviewProps {
   profile: { title: string; bio: string; avatar?: string };
   links: LinkItem[];
   theme: string;
 }
 
-export function LinktreePreview({ profile, links, theme }: LinktreePreviewProps) {
+export function OneTapPreview({ profile, links, theme }: OneTapPreviewProps) {
   const t = getTheme(theme);
   const activeLinks = links.filter((l) => l.isActive);
 

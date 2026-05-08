@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, BarChart2, TrendingUp, MousePointer, Loader2, Zap, Layout, Share2, Activity, ChevronRight } from 'lucide-react';
+import { ArrowLeft, BarChart2, TrendingUp, MousePointer, Loader2, Zap, Layout, Share2, Activity, ChevronRight, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { iconMap } from '@/app/components/linktree/IconPicker';
@@ -186,11 +186,19 @@ export default function AnalyticsPage() {
 
           {stats.length === 0 ? (
             <div className="py-20 text-center bg-[#FFF8F2]/50 border-2 border-dashed border-[#F6B7C8]/20 rounded-[40px]">
-              <Share2 className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-              <p className="text-gray-400 font-bold">Belum ada data interaksi.</p>
-              <Link href="/dashboard/linktree" className="text-[#FF5FA2] text-sm font-black mt-4 inline-flex items-center gap-2 hover:gap-3 transition-all">
-                Mulai buat link <ChevronRight className="w-4 h-4" />
-              </Link>
+              <div className="flex flex-col items-center gap-6">
+                <div className="w-20 h-20 rounded-[2.5rem] bg-gray-50 flex items-center justify-center text-gray-300">
+                  <Layout className="w-10 h-10" />
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-black text-[#18080F] mb-2">Belum Ada OneTap Card</p>
+                  <p className="text-gray-400 text-sm font-medium mb-6">Kamu belum membuat halaman OneTap Card apapun.</p>
+                </div>
+                <Link href="/dashboard/linktree" className="px-8 py-3.5 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all shadow-lg shadow-[#FF5FA2]/20 flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Buat OneTap Pertama
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="space-y-8 relative z-10">

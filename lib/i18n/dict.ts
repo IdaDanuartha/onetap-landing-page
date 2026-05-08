@@ -130,7 +130,7 @@ export const translations = {
           desc: "Solusi lengkap untuk sekolah, kampus, dan manajemen absensi otomatis.",
           price: { monthly: "Rp 79K", yearly: "Rp 63K" },
           features: [
-            "Profil Digital Tanpa Batas",
+            "Profil Digital Tanpa Batas (OneTap Card)",
             "Pelacakan Kehadiran Multi-lokasi",
             "Notifikasi WhatsApp Otomatis",
             "Ekspor Data Excel/CSV",
@@ -424,6 +424,26 @@ export const translations = {
       ctaRetry: "Coba Lagi",
       ctaSupport: "Hubungi Support",
       ctaCheck: "Cek Status Ulang",
+    },
+    onetap_card: {
+      badge: "OneTap Card",
+      title1: "Satu Link,",
+      title2: "Untuk Semuanya",
+      description: "Bangun kehadiran digital Anda dengan profil yang menawan. Bagikan semua link, sosial media, dan konten Anda hanya dengan satu sentuhan.",
+      cta: "Buat Profil Sekarang",
+      features: {
+        links: "Link Tanpa Batas",
+        themes: "Kustomisasi Tema",
+        analytics: "Analitik Mendalam",
+        nfc: "Koneksi NFC",
+      },
+      mockup: {
+        name: "Andi Pratama",
+        role: "Creative Designer",
+        portfolio: "Portofolio",
+        email: "Kirim Email",
+      },
+      stats: "Klik Profil",
     },
   },
   en: {
@@ -849,6 +869,26 @@ export const translations = {
       ctaRetry: "Try Again",
       ctaSupport: "Contact Support",
       ctaCheck: "Check Status Again",
+    },
+    onetap_card: {
+      badge: "OneTap Card",
+      title1: "One Link,",
+      title2: "For Everything",
+      description: "Build your digital presence with a stunning profile. Share all your links, social media, and content with just one touch.",
+      cta: "Create Profile Now",
+      features: {
+        links: "Unlimited Links",
+        themes: "Custom Themes",
+        analytics: "Deep Analytics",
+        nfc: "NFC Connection",
+      },
+      mockup: {
+        name: "Andi Pratama",
+        role: "Creative Designer",
+        portfolio: "Portfolio",
+        email: "Send Email",
+      },
+      stats: "Profile Clicks",
     },
   },
 };

@@ -13,11 +13,11 @@ import { createClient } from '@/lib/supabase/client';
 import { themes, templates } from '@/lib/themes';
 import { SortableLinkCard } from '@/app/components/linktree/SortableLinkCard';
 import type { LinkItem } from '@/app/components/linktree/SortableLinkCard';
-import { LinktreePreview } from '@/app/components/linktree/LinktreePreview';
+import { OneTapPreview } from '@/app/components/linktree/OneTapPreview';
 
 export const dynamic = 'force-dynamic';
 
-export default function LinktreeBuilderPage() {
+export default function OneTapBuilderPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState('');
@@ -225,7 +225,7 @@ export default function LinktreeBuilderPage() {
       <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-[#FF5FA2] animate-spin" />
-          <p className="text-sm font-black text-[#FF5FA2] uppercase tracking-widest">Memuat Builder...</p>
+          <p className="text-sm font-black text-[#FF5FA2] uppercase tracking-widest">Memuat OneTap Builder...</p>
         </div>
       </div>
     );
@@ -241,8 +241,8 @@ export default function LinktreeBuilderPage() {
               <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-black text-[#18080F] hidden sm:block">Edit Profile Digital</h1>
-              <h1 className="text-lg font-black text-[#18080F] sm:hidden">Edit Profile</h1>
+              <h1 className="text-xl font-black text-[#18080F] hidden sm:block">OneTap Card Builder</h1>
+              <h1 className="text-lg font-black text-[#18080F] sm:hidden">OneTap Builder</h1>
             </div>
 
             <div className="flex items-center gap-3">
@@ -628,7 +628,7 @@ export default function LinktreeBuilderPage() {
               <div className="relative mx-auto w-[320px] h-[640px] bg-[#18080F] rounded-[56px] p-4 shadow-[0_40px_100px_-20px_rgba(24,8,15,0.3)] ring-1 ring-gray-800">
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#18080F] rounded-b-3xl z-20" />
                 <div className="w-full h-full rounded-[42px] overflow-hidden bg-white relative">
-                  <LinktreePreview profile={profile} links={links} theme={selectedTheme} />
+                <OneTapPreview profile={profile} links={links} theme={selectedTheme} />
                 </div>
                 <div className="absolute top-32 -left-1 w-1 h-12 bg-gray-800 rounded-r-lg" />
                 <div className="absolute top-48 -left-1 w-1 h-12 bg-gray-800 rounded-r-lg" />
@@ -699,7 +699,7 @@ export default function LinktreeBuilderPage() {
             >
               <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#18080F] rounded-b-2xl z-20" />
               <div className="w-full h-full rounded-[42px] overflow-hidden bg-white relative">
-                <LinktreePreview profile={profile} links={links} theme={selectedTheme} />
+                <OneTapPreview profile={profile} links={links} theme={selectedTheme} />
               </div>
               
               <div className="absolute -bottom-16 left-0 right-0 flex flex-col items-center gap-2">

@@ -442,7 +442,7 @@ export default function DashboardPage() {
             {
               href: '/dashboard/linktree',
               icon: Layout,
-              title: 'Edit Linktree',
+              title: 'Edit OneTap Card',
               desc: 'Sesuaikan link, profil, dan tema kartu digitalmu secara real-time.',
               color: '#FF5FA2',
               bg: 'bg-[#FFF1F7]',
@@ -452,7 +452,7 @@ export default function DashboardPage() {
               href: '/dashboard/nfc/connect',
               icon: Wifi,
               title: 'Connect NFC Tag',
-              desc: 'Hubungkan linktree-mu ke NFC Keychain OneTap hanya dengan sekali tempel.',
+              desc: 'Hubungkan OneTap-mu ke NFC Keychain OneTap hanya dengan sekali tempel.',
               color: '#0ea5e9',
               bg: 'bg-[#f0f9ff]',
               iconColor: 'text-[#0ea5e9]'
@@ -544,7 +544,7 @@ export default function DashboardPage() {
           <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-8">
             <div>
               <h3 className="text-2xl sm:text-3xl font-black text-white">Butuh bantuan?</h3>
-              <p className="text-gray-400 mt-2 font-medium max-w-md text-base">Tim support kami siap membantumu kapan saja jika ada kendala setting NFC atau linktree.</p>
+              <p className="text-gray-400 mt-2 font-medium max-w-md text-base">Tim support kami siap membantumu kapan saja jika ada kendala setting NFC atau OneTap Card.</p>
             </div>
             <a
               href="https://wa.me/6283114227745"

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { iconMap } from '@/app/components/linktree/IconPicker';
 
-interface PublicLinktreePageProps {
+interface OneTapBioProps {
   username: string;
   profile: {
     display_name: string | null;
@@ -26,7 +26,7 @@ interface PublicLinktreePageProps {
   }[];
 }
 
-export default function PublicLinktreePage({ username, profile, page, links }: PublicLinktreePageProps) {
+export default function OneTapBio({ username, profile, page, links }: OneTapBioProps) {
   const theme = getTheme(page.theme_id);
 
   const handleLinkClick = async (linkId: string) => {

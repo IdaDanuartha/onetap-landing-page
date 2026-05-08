@@ -28,7 +28,9 @@ export const metadata: Metadata = {
     "digital business card",
     "contactless",
     "OneTap",
-    "Linktree alternative",
+    "OneTap Card",
+    "Digital Card",
+    "OneTap Bio",
   ],
   authors: [{ name: "OneTap Indonesia" }],
   icons: {
