@@ -58,15 +58,6 @@ export async function GET(req: Request) {
       dbInvoice = data;
     }
 
-    // SHORTCUT: If our DB already says it's paid, trust it and return success
-    // This avoids 500 errors if invoiceId is missing but we know it's paid
-    if (dbInvoice?.status === 'paid') {
-      return NextResponse.json({ 
-        status: 'paid',
-        message: 'Payment verified from database'
-      });
-    }
-
     // 3. If we don't have invoiceId yet, try to get it from dbInvoice
     if (!invoiceId && dbInvoice?.invoice_id) {
       invoiceId = dbInvoice.invoice_id;
@@ -86,79 +77,97 @@ export async function GET(req: Request) {
       }, { status: 404 });
     }
 
-    // 5. Check actual status from Mayar
-    const invoice = await getMayarInvoice(invoiceId);
-    
-    // If paid, update the database manually (since webhook is disabled)
-    if (invoice.status === 'paid') {
-      if (dbInvoice) {
-        const planId = dbInvoice.plan_id as PlanId;
-        const billingCycle = dbInvoice.billing_cycle as BillingCycle;
-        
-        // Calculate expiry
-        const days = getDaysForCycle(billingCycle);
-        const planExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+    // 5. Determine current status
+    let currentStatus = dbInvoice?.status || 'pending';
+    let finalInvoiceData = null;
 
-        // Find user: Priority to logged in user, then by email
-        let targetUserId = authUser?.id;
-        
-        if (!targetUserId) {
-          const { data: userProfile } = await adminSupabase
-            .from('users_profile')
-            .select('id')
-            .eq('email', dbInvoice.email)
-            .maybeSingle();
-          targetUserId = userProfile?.id;
+    if (invoiceId) {
+      try {
+        const invoice = await getMayarInvoice(invoiceId);
+        currentStatus = invoice.status;
+        finalInvoiceData = {
+          id: invoice.id,
+          amount: invoice.amount
+        };
+      } catch (mayarErr) {
+        console.error('[payment/status] Mayar API Error:', mayarErr);
+        // Fallback to DB status if API fails
+      }
+    }
+
+    // 6. SYNC LOGIC: If paid, ensure user profile and invoice record are updated
+    if (currentStatus === 'paid' && dbInvoice) {
+      const planId = dbInvoice.plan_id as PlanId;
+      const billingCycle = dbInvoice.billing_cycle as BillingCycle;
+      
+      // Calculate expiry
+      const days = getDaysForCycle(billingCycle);
+      const planExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+
+      // Find user: Priority to logged in user, then by email
+      let targetUserId = authUser?.id;
+      
+      if (!targetUserId) {
+        const { data: userProfile } = await adminSupabase
+          .from('users_profile')
+          .select('id')
+          .eq('email', dbInvoice.email)
+          .maybeSingle();
+        targetUserId = userProfile?.id;
+      }
+
+      if (targetUserId) {
+        // Update profile using Admin Client
+        const { error: updateErr } = await adminSupabase
+          .from('users_profile')
+          .update({
+            plan: planId,
+            plan_expires_at: planExpiresAt,
+            mayar_invoice_id: invoiceId || dbInvoice.invoice_id,
+            pending_plan: null,
+            pending_billing_cycle: null,
+            email: dbInvoice.email,
+          })
+          .eq('id', targetUserId);
+
+        if (updateErr) {
+          console.error('[payment/status] Failed to update user plan:', updateErr);
         }
 
-        if (targetUserId) {
-          // Update profile using Admin Client to bypass RLS
-          const { error: updateErr } = await adminSupabase
-            .from('users_profile')
-            .update({
-              plan: planId,
-              plan_expires_at: planExpiresAt,
-              mayar_invoice_id: invoiceId,
-              pending_plan: null,
-              pending_billing_cycle: null,
-              email: dbInvoice.email, // Sync email if it was missing
-            })
-            .eq('id', targetUserId);
-
-          if (updateErr) {
-            console.error('[payment/status] Failed to update user plan:', updateErr);
-          }
-
-          // Update invoice status in our DB using Admin Client
-          await adminSupabase
-            .from('payment_invoices')
-            .update({ 
-              status: 'paid',
-              invoice_id: invoiceId 
-            })
-            .or(`invoice_id.eq.${invoiceId},reference_id.eq.${ref}`);
-          
-          // Send success email
-          try {
-            await sendPlanEmail({
-              to: dbInvoice.email,
-              subject: 'Pembayaran Berhasil - OneTap',
-              planName: PLANS[planId].nameId,
-              type: 'confirmation'
-            });
-          } catch (emailErr) {
-            console.error('[payment/status] Email error:', emailErr);
-          }
+        // Update invoice status in our DB
+        await adminSupabase
+          .from('payment_invoices')
+          .update({ 
+            status: 'paid',
+            invoice_id: invoiceId || dbInvoice.invoice_id
+          })
+          .eq('reference_id', dbInvoice.reference_id);
+        
+        // Send success email (optional)
+        try {
+          await sendPlanEmail({
+            to: dbInvoice.email,
+            subject: 'Pembayaran Berhasil - OneTap',
+            planName: PLANS[planId].nameId,
+            type: 'confirmation'
+          });
+        } catch (emailErr) {
+          console.error('[payment/status] Email error:', emailErr);
         }
       }
     }
 
+    // 7. Return final response
+    if (!invoiceId && currentStatus !== 'paid') {
+      return NextResponse.json({ 
+        status: currentStatus,
+        message: 'Waiting for invoice link from Mayar'
+      });
+    }
+
     return NextResponse.json({ 
-      status: invoice.status,
-      invoice: {
-        id: invoice.id,
-        amount: invoice.amount,
-      }
+      status: currentStatus,
+      invoice: finalInvoiceData || (invoiceId ? { id: invoiceId } : null)
     });
   } catch (error) {
     console.error('[payment/status] Global API Error:', error);
