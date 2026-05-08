@@ -127,7 +127,7 @@ export default function HeroSection() {
                   </div>
                   <span className="text-white text-sm font-semibold">{t('hero.floating.attendance')}</span>
                 </div>
-                <div className="text-[#F6B7C8] text-xs">Sarah W. — 08:42 AM ✓</div>
+                <div className="text-[#F6B7C8] text-xs">Yogik — 08:42 AM ✓</div>
               </div>
 
               {/* Floating link card */}

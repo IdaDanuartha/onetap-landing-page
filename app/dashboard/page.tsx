@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { BarChart2, ExternalLink, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Share2, CheckCircle2, X, Loader2 } from 'lucide-react';
+import { BarChart2, ExternalLink, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Share2, CheckCircle2, X, Loader2, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { canAccess, PLANS, PLAN_BADGE_COLORS } from '@/lib/plans';
+import type { PlanId } from '@/lib/plans';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ name: string; email: string; username: string; slug: string } | null>(null);
+  const [plan, setPlan] = useState<PlanId>('starter');
   const [stats, setStats] = useState({ links: 0, totalClicks: 0 });
   const [loading, setLoading] = useState(true);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -26,7 +29,7 @@ export default function DashboardPage() {
 
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('display_name, username')
+        .select('display_name, username, plan')
         .eq('id', authUser.id)
         .single();
 
@@ -44,6 +47,7 @@ export default function DashboardPage() {
           slug: page?.slug || profile.username
         });
         setNewUsername(page?.slug || profile.username);
+        setPlan((profile.plan as PlanId) ?? 'starter');
       }
 
       // Stats
@@ -191,7 +195,9 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 <div className="hidden sm:flex flex-col items-end">
                   <span className="text-sm font-bold text-[#18080F]">{user?.name}</span>
-                  <span className="text-[10px] font-bold text-[#FF5FA2] uppercase tracking-wider">Premium Member</span>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${PLAN_BADGE_COLORS[plan] || PLAN_BADGE_COLORS.starter}`}>
+                    {PLANS[plan]?.nameId || PLANS.starter.nameId}
+                  </span>
                 </div>
                 <button
                   onClick={handleLogout}
@@ -390,7 +396,7 @@ export default function DashboardPage() {
               desc: 'Analisa performa linkmu dengan data klik dan demografi pengunjung.',
               color: '#8b5cf6',
               bg: 'bg-[#f5f3ff]',
-              iconColor: 'text-[#8b5cf6]'
+              iconColor: 'text-[#8b5cf6]',
             },
             {
               href: '/dashboard/attendance',
@@ -399,7 +405,9 @@ export default function DashboardPage() {
               desc: 'Kelola data kehadiran dan setup notifikasi WhatsApp otomatis.',
               color: '#22c55e',
               bg: 'bg-[#f0fdf4]',
-              iconColor: 'text-[#22c55e]'
+              iconColor: 'text-[#22c55e]',
+              locked: !canAccess(plan, 'attendance'),
+              requiredPlan: 'Education',
             },
 
           ].map((item, idx) => (
@@ -410,7 +418,30 @@ export default function DashboardPage() {
               transition={{ delay: 0.2 + idx * 0.1 }}
               className={item.href === '/dashboard/attendance' ? 'lg:col-span-3 sm:col-span-2' : ''}
             >
-              <Link
+              {item.locked ? (
+                <div className="group relative block p-8 rounded-[32px] bg-white border border-[#F6B7C8]/10 shadow-sm overflow-hidden h-full opacity-70">
+                  <div className={`absolute top-0 right-0 w-32 h-32 ${item.bg}/30 rounded-full -mr-16 -mt-16 blur-3xl`} />
+                  <div className="absolute top-4 right-4">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FF5FA2]/10 text-[#FF5FA2] text-xs font-bold">
+                      <Lock className="w-3 h-3" />
+                      {item.requiredPlan}
+                    </div>
+                  </div>
+                  <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center mb-6`}>
+                    <item.icon className={`w-7 h-7 ${item.iconColor}`} />
+                  </div>
+                  <h3 className="text-xl font-black text-[#18080F] mb-3">{item.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed font-medium mb-6">{item.desc}</p>
+                  <Link
+                    href="/#pricing"
+                    className="inline-flex items-center gap-2 text-[#FF5FA2] font-bold text-sm uppercase tracking-wider"
+                  >
+                    Upgrade Plan
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              ) : (
+                <Link
                 href={item.href}
                 className="group relative block p-8 rounded-[32px] bg-white border border-[#F6B7C8]/10 shadow-sm hover:shadow-xl hover:shadow-[#FF5FA2]/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full"
               >
@@ -430,6 +461,7 @@ export default function DashboardPage() {
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </Link>
+              )}
             </motion.div>
           ))}
         </div>

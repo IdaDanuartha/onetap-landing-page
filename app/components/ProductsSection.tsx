@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Star, ArrowRight } from "lucide-react";
+import { Check, Star, ArrowRight, CreditCard } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import AnimatedSection, { fadeInUp } from "./AnimatedSection";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import type { PlanId } from "@/lib/plans";
 
 export default function ProductsSection() {
   const { t } = useLanguage();
@@ -12,7 +14,7 @@ export default function ProductsSection() {
 
   const plans = [
     {
-      id: "starter",
+      id: "starter" as PlanId,
       name: t('products.plans.starter.name'),
       tag: null,
       price: t('products.plans.starter.price.monthly'),
@@ -25,7 +27,7 @@ export default function ProductsSection() {
       features: t('products.plans.starter.features') as unknown as string[],
     },
     {
-      id: "professional",
+      id: "professional" as PlanId,
       name: t('products.plans.professional.name'),
       tag: t('products.plans.professional.tag'),
       price: t('products.plans.professional.price.monthly'),
@@ -38,7 +40,7 @@ export default function ProductsSection() {
       features: t('products.plans.professional.features') as unknown as string[],
     },
     {
-      id: "education",
+      id: "education" as PlanId,
       name: t('products.plans.education.name'),
       tag: null,
       price: t('products.plans.education.price.monthly'),
@@ -87,7 +89,11 @@ export default function ProductsSection() {
                 }`}
               >
                 {b === "monthly" ? t('products.billing.monthly') : t('products.billing.yearly')}{" "}
-                {b === "yearly" && <span className="text-xs text-emerald-400 ml-1">-20%</span>}
+                {b === "yearly" && (
+                  <span className={`text-xs ml-1 font-bold ${billing === b ? "text-white/90" : "text-emerald-500"}`}>
+                    -20%
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -138,29 +144,36 @@ export default function ProductsSection() {
                     <span className="text-gray-400 text-sm">{plan.period}</span>
                   )}
                 </div>
-                {billing === "yearly" && plan.price !== "Free" && (
+                {billing === "yearly" && plan.id !== "starter" && (
                   <p className="text-emerald-500 text-xs mt-1 font-medium">{t('products.billing.save')}</p>
                 )}
               </div>
 
               {/* Features */}
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((f, j) => (
+              <ul className="space-y-4 mb-8 flex-1">
+                {Array.isArray(plan.features) ? plan.features.map((f, j) => (
                   <li key={j} className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-[#FFF8F2] border border-[#F6B7C8] flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-5 h-5 rounded-full bg-[#FFF8F2] border border-[#F6B7C8] flex items-center justify-center shrink-0">
                       <Check className="w-3 h-3 text-[#FF5FA2]" />
                     </div>
-                    <span className="text-gray-600 text-sm">{f}</span>
+                    <span className="text-gray-600 text-[14px] leading-[20px]">{f}</span>
                   </li>
-                ))}
+                )) : null}
               </ul>
 
-              <a
-                href="https://wa.me/6283114227745"
-                className={`w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 text-center ${plan.buttonStyle}`}
+              <Link
+                href={plan.id === "starter" ? "/auth/register" : `/checkout?plan=${plan.id}&cycle=${billing}`}
+                className={`w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 ${plan.buttonStyle}`}
               >
-                {plan.price === "Free" ? t('products.cta.free') : t('products.cta.paid')}
-              </a>
+                {plan.id === "starter" ? (
+                  t('products.cta.free')
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    {t('products.cta.paid')}
+                  </>
+                )}
+              </Link>
             </motion.div>
           ))}
         </div>

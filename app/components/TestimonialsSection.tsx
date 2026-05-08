@@ -8,20 +8,15 @@ export default function TestimonialsSection() {
   const { t } = useLanguage();
 
   const testimonials = t('testimonials.items') as any[];
-  const gradients = [
-    "from-[#FF5FA2] to-[#FF8FC4]",
-    "from-[#E8457E] to-[#FF5FA2]",
-    "from-[#FF5FA2] to-[#F6B7C8]",
-    "from-[#FF8FC4] to-[#E8457E]",
-    "from-[#E8457E] to-[#FF8FC4]",
-    "from-[#FF5FA2] to-[#E8457E]",
-  ];
+  
+  // Duplicate testimonials for seamless loop
+  const duplicatedTestimonials = [...testimonials, ...testimonials];
 
   return (
-    <AnimatedSection id="testimonials" className="py-24 lg:py-32 bg-white">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+    <AnimatedSection id="testimonials" className="py-24 lg:py-32 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-16">
         {/* Header */}
-        <motion.div variants={fadeInUp} className="text-center mb-16">
+        <motion.div variants={fadeInUp} className="text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFF8F2] border border-[#F6B7C8] text-[#FF5FA2] text-sm font-semibold mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#FF5FA2]" />
             {t('testimonials.badge')}
@@ -40,62 +35,132 @@ export default function TestimonialsSection() {
             {t('testimonials.description')}
           </p>
         </motion.div>
+      </div>
 
-        {/* Testimonials grid */}
-        <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-          {testimonials.map((t_item, i) => (
-            <motion.div
-              key={i}
-              variants={fadeInUp}
-              className="break-inside-avoid p-7 rounded-2xl border border-gray-100 bg-white hover:shadow-xl hover:shadow-[#FF5FA2]/8 hover:border-[#F6B7C8]/50 transition-all duration-300 hover:-translate-y-1"
-            >
-              {/* Quote icon */}
-              <div className="mb-4">
-                <Quote className="w-8 h-8 text-[#F6B7C8]" fill="#FFF8F2" />
-              </div>
+      {/* Testimonials Marquee Container */}
+      <div className="relative group">
+        {/* Left and Right Overlays */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 md:w-64 bg-gradient-to-r from-white via-white/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-20 md:w-64 bg-gradient-to-l from-white via-white/80 to-transparent z-20 pointer-events-none" />
 
-              {/* Stars */}
-              <div className="flex gap-1 mb-4">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} className="w-4 h-4 text-amber-400" fill="#FBBF24" />
-                ))}
-              </div>
-
-              {/* Text */}
-              <p className="text-gray-600 leading-relaxed mb-6 text-[15px]">{t_item.text}</p>
-
-              {/* Author */}
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center shrink-0`}
-                >
-                  <span className="text-white text-sm font-bold">{t_item.name.split(' ').map((n: string) => n[0]).join('')}</span>
-                </div>
-                <div>
-                  <div
-                    className="text-[#18080F] text-sm font-bold"
-                    style={{ fontFamily: "var(--font-display)" }}
-                  >
-                    {t_item.name}
+        <div className="flex overflow-hidden py-10">
+          <div className="flex gap-6 animate-marquee">
+            {duplicatedTestimonials.map((t_item, i) => (
+              <div
+                key={i}
+                className="w-[350px] md:w-[420px] shrink-0 p-8 rounded-3xl border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:shadow-[#FF5FA2]/5 hover:border-[#F6B7C8]/40 transition-all duration-300"
+              >
+                {/* Stars & Quote */}
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, j) => (
+                      <Star key={j} className="w-4 h-4 text-amber-400" fill="#FBBF24" />
+                    ))}
                   </div>
-                  <div className="text-gray-400 text-xs">
-                    {t_item.role} · {t_item.company}
+                  <Quote className="w-6 h-6 text-[#F6B7C8]/20" fill="currentColor" />
+                </div>
+
+                {/* Text */}
+                <p className="text-gray-600 leading-relaxed mb-8 text-[15px] italic line-clamp-4">
+                  "{t_item.text}"
+                </p>
+
+                {/* Author */}
+                <div className="flex items-center gap-4 border-t border-gray-50 pt-6">
+                  <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-md shadow-gray-200 shrink-0 border border-gray-100">
+                    <img 
+                      src={`https://i.pravatar.cc/150?u=${t_item.name}`} 
+                      alt={t_item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <div
+                      className="text-[#18080F] text-[15px] font-bold truncate"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      {t_item.name}
+                    </div>
+                    <div className="text-gray-400 text-xs truncate">
+                      {t_item.role} · {t_item.company}
+                    </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
-          ))}
+            ))}
+            {/* Duplicate for seamless loop */}
+            {duplicatedTestimonials.map((t_item, i) => (
+              <div
+                key={`dup-${i}`}
+                className="w-[350px] md:w-[420px] shrink-0 p-8 rounded-3xl border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:shadow-[#FF5FA2]/5 hover:border-[#F6B7C8]/40 transition-all duration-300"
+              >
+                {/* Stars & Quote */}
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, j) => (
+                      <Star key={j} className="w-4 h-4 text-amber-400" fill="#FBBF24" />
+                    ))}
+                  </div>
+                  <Quote className="w-6 h-6 text-[#F6B7C8]/20" fill="currentColor" />
+                </div>
+
+                {/* Text */}
+                <p className="text-gray-600 leading-relaxed mb-8 text-[15px] italic line-clamp-4">
+                  "{t_item.text}"
+                </p>
+
+                {/* Author */}
+                <div className="flex items-center gap-4 border-t border-gray-50 pt-6">
+                  <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-md shadow-gray-200 shrink-0 border border-gray-100">
+                    <img 
+                      src={`https://i.pravatar.cc/150?u=${t_item.name}`} 
+                      alt={t_item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <div
+                      className="text-[#18080F] text-[15px] font-bold truncate"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      {t_item.name}
+                    </div>
+                    <div className="text-gray-400 text-xs truncate">
+                      {t_item.role} · {t_item.company}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
+      <style jsx>{`
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          display: flex;
+          animation: marquee 80s linear infinite;
+          width: max-content;
+        }
+        .group:hover .animate-marquee {
+          animation-play-state: paused;
+        }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Overall rating */}
         <motion.div variants={fadeInUp} className="text-center mt-14">
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-[#FFF8F2] border border-[#F6B7C8]/50">
+          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-[#FFF8F2] border border-[#F6B7C8]/50 shadow-sm">
             <div className="flex gap-0.5">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="w-5 h-5 text-amber-400" fill="#FBBF24" />
               ))}
             </div>
-            <span className="text-[#E8457E] font-semibold text-sm">{t('testimonials.rating')}</span>
+            <span className="text-[#E8457E] font-bold text-sm uppercase tracking-wide">{t('testimonials.rating')}</span>
           </div>
         </motion.div>
       </div>

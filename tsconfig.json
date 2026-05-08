@@ -31,7 +31,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "Redesign Company Profile Page"
+    "node_modules"    
   ]
 }
