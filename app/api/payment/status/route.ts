@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   const ref = searchParams.get('ref');
 
   const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
 
   // 1. If we have both, link them in the database (First time return from Mayar)
   if (invoiceId && ref) {
