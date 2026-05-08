@@ -384,32 +384,41 @@ export default function LinktreeBuilderPage() {
                         className="w-full px-5 py-4 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-medium text-gray-600 resize-none"
                       />
                     </div>
-                    <div className="sm:w-48 space-y-1.5">
-                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Status Publikasi</label>
-                      <button
+                    <div className="sm:w-48 flex flex-col justify-center">
+                      <label className="text-[10px] font-black text-[#FF5FA2] uppercase tracking-[0.2em] mb-3 ml-1 block">Status Publikasi</label>
+                      <div 
                         onClick={() => setIsPublished(!isPublished)}
-                        className={`w-full h-[88px] rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                        className={`group relative w-full h-[64px] rounded-2xl border-2 cursor-pointer transition-all duration-300 flex items-center px-4 gap-3 ${
                           isPublished 
-                            ? 'bg-green-50 border-green-100 text-green-600' 
-                            : 'bg-gray-50 border-gray-100 text-gray-400'
+                            ? 'bg-green-50/50 border-green-200/50' 
+                            : 'bg-gray-50 border-gray-200/60'
                         }`}
                       >
-                        {isPublished ? (
-                          <>
-                            <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                              <Check className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-xs font-black uppercase tracking-tighter">Published</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                              <EyeOff className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-xs font-black uppercase tracking-tighter">Draft Mode</span>
-                          </>
-                        )}
-                      </button>
+                        {/* Toggle Track */}
+                        <div className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${isPublished ? 'bg-green-500' : 'bg-gray-300'}`}>
+                          <motion.div 
+                            animate={{ x: isPublished ? 22 : 2 }}
+                            initial={false}
+                            className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm"
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                          />
+                        </div>
+                        
+                        {/* Label */}
+                        <div className="flex flex-col">
+                          <span className={`text-xs font-black uppercase tracking-wider ${isPublished ? 'text-green-600' : 'text-gray-500'}`}>
+                            {isPublished ? 'Live' : 'Draft'}
+                          </span>
+                          <span className="text-[9px] font-bold text-gray-400 leading-none">
+                            {isPublished ? 'Publik' : 'Privat'}
+                          </span>
+                        </div>
+
+                        {/* Decoration Icon */}
+                        <div className={`ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-all ${isPublished ? 'bg-green-500/10 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
+                          {isPublished ? <Check className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
