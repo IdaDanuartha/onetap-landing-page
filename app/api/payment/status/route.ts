@@ -7,79 +7,75 @@ import { sendPlanEmail } from '@/lib/email';
 import type { PlanId, BillingCycle } from '@/lib/plans';
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  let invoiceId = searchParams.get('invoiceId');
-  const ref = searchParams.get('ref');
+  try {
+    const { searchParams } = new URL(req.url);
+    let invoiceId = searchParams.get('invoiceId');
+    const ref = searchParams.get('ref');
 
-  const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  
-  // Use Admin Client for all DB operations to bypass RLS
-  const adminSupabase = createAdminClient();
-
-  // 1. If we have both, link them in the database (First time return from Mayar)
-  if (invoiceId && ref) {
-    await adminSupabase
-      .from('payment_invoices')
-      .update({ invoice_id: invoiceId })
-      .eq('reference_id', ref)
-      .filter('invoice_id', 'is', null);
-  }
-
-  // 2. If we only have ref, try to find the invoiceId from our DB
-  if (!invoiceId && ref) {
-    const { data: dbInvoice } = await adminSupabase
-      .from('payment_invoices')
-      .select('invoice_id')
-      .eq('reference_id', ref)
-      .maybeSingle();
+    const supabase = await createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
     
-    if (dbInvoice?.invoice_id) {
-      invoiceId = dbInvoice.invoice_id;
-    }
-  }
+    // Use Admin Client for all DB operations to bypass RLS
+    const adminSupabase = createAdminClient();
 
-  if (!invoiceId) {
-    // If we have a ref but no invoiceId yet, it might be waiting for the first link
-    if (ref) {
-      const { data: dbInvoice, error: dbError } = await adminSupabase
+    // 1. If we have both, link them in the database (First time return from Mayar)
+    if (invoiceId && ref) {
+      await adminSupabase
         .from('payment_invoices')
-        .select('status, invoice_id')
+        .update({ invoice_id: invoiceId })
         .eq('reference_id', ref)
-        .maybeSingle();
-      
-      if (dbError) {
-        console.error('[payment/status] Database error for ref:', ref, dbError);
+        .filter('invoice_id', 'is', null);
+    }
+
+    // 2. Try to find the invoice record in our DB first
+    let dbInvoice = null;
+    if (ref || invoiceId) {
+      const query = adminSupabase.from('payment_invoices').select('*');
+      if (ref && invoiceId) {
+        query.or(`invoice_id.eq.${invoiceId},reference_id.eq.${ref}`);
+      } else if (ref) {
+        query.eq('reference_id', ref);
+      } else {
+        query.eq('invoice_id', invoiceId);
       }
       
+      const { data } = await query.maybeSingle();
+      dbInvoice = data;
+    }
+
+    // SHORTCUT: If our DB already says it's paid, trust it and return success
+    // This avoids 500 errors if invoiceId is missing but we know it's paid
+    if (dbInvoice?.status === 'paid') {
+      return NextResponse.json({ 
+        status: 'paid',
+        message: 'Payment verified from database'
+      });
+    }
+
+    // 3. If we don't have invoiceId yet, try to get it from dbInvoice
+    if (!invoiceId && dbInvoice?.invoice_id) {
+      invoiceId = dbInvoice.invoice_id;
+    }
+
+    // 4. If we STILL don't have invoiceId, we can't check Mayar
+    if (!invoiceId) {
       if (dbInvoice) {
         return NextResponse.json({ 
           status: dbInvoice.status || 'pending',
           message: 'Waiting for invoice link from Mayar'
         });
-      } else {
-        console.warn('[payment/status] No record found in DB for ref:', ref);
       }
+      return NextResponse.json({ 
+        error: 'Transaction record not found',
+        debug: { ref, hasInvoiceId: !!invoiceId }
+      }, { status: 404 });
     }
-    return NextResponse.json({ 
-      error: 'invoiceId not found for this reference',
-      debug: { ref, hasInvoiceId: !!invoiceId }
-    }, { status: 400 });
-  }
 
-  try {
+    // 5. Check actual status from Mayar
     const invoice = await getMayarInvoice(invoiceId);
     
     // If paid, update the database manually (since webhook is disabled)
     if (invoice.status === 'paid') {
-      // 1. Check if we have an invoice record to get the plan details
-      // Search by both to be extra safe
-      const { data: dbInvoice } = await adminSupabase
-        .from('payment_invoices')
-        .select('*')
-        .or(`invoice_id.eq.${invoiceId},reference_id.eq.${ref}`)
-        .maybeSingle();
-
       if (dbInvoice) {
         const planId = dbInvoice.plan_id as PlanId;
         const billingCycle = dbInvoice.billing_cycle as BillingCycle;
@@ -119,7 +115,6 @@ export async function GET(req: Request) {
           }
 
           // Update invoice status in our DB using Admin Client
-          // Also make sure invoice_id is linked here if it was found via ref
           await adminSupabase
             .from('payment_invoices')
             .update({ 
@@ -128,7 +123,7 @@ export async function GET(req: Request) {
             })
             .or(`invoice_id.eq.${invoiceId},reference_id.eq.${ref}`);
           
-          // Send success email (optional, based on your logic)
+          // Send success email
           try {
             await sendPlanEmail({
               to: dbInvoice.email,
@@ -151,7 +146,10 @@ export async function GET(req: Request) {
       }
     });
   } catch (error) {
-    console.error('[payment/status] API Error:', error);
-    return NextResponse.json({ error: 'Failed to check payment status' }, { status: 500 });
+    console.error('[payment/status] Global API Error:', error);
+    return NextResponse.json({ 
+      error: 'Failed to check payment status',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
