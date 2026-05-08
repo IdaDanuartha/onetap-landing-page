@@ -17,11 +17,13 @@ export default function PaymentSuccessPage() {
   const invoiceId = searchParams.get('invoiceId') || searchParams.get('id') || searchParams.get('mayarInvoiceId');
   const ref = searchParams.get('ref');
   const [status, setStatus] = useState<InvoiceStatus>('loading');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
 
   const checkStatus = async () => {
     if (!invoiceId && !ref) {
       setStatus('error');
+      setErrorMsg('Missing invoiceId or ref');
       return;
     }
 
@@ -32,9 +34,17 @@ export default function PaymentSuccessPage() {
       
       const res = await fetch(`/api/payment/status?${params.toString()}`);
       const data = await res.json();
+      
+      if (!res.ok) {
+        setStatus('error');
+        setErrorMsg(data.message || data.error || 'Failed to check status');
+        return;
+      }
+      
       setStatus(data.status ?? 'error');
-    } catch {
+    } catch (err) {
       setStatus('error');
+      setErrorMsg(err instanceof Error ? err.message : 'Unknown network error');
     }
   };
 
@@ -145,7 +155,12 @@ export default function PaymentSuccessPage() {
               <AlertTriangle className="w-10 h-10 text-red-400" />
             </div>
             <h1 className="text-2xl font-black text-[#18080F] mb-3">{t('paymentSuccess.error')}</h1>
-            <p className="text-gray-500 text-sm mb-8">{t('paymentSuccess.errorDesc')}</p>
+            <p className="text-gray-500 text-sm mb-4">{t('paymentSuccess.errorDesc')}</p>
+            {errorMsg && (
+              <div className="mb-8 p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-500 font-mono break-all">
+                {errorMsg}
+              </div>
+            )}
             <div className="flex gap-3 justify-center">
               <button onClick={checkStatus} className="px-5 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm hover:bg-gray-200 transition-all">
                 {t('paymentSuccess.ctaRetry')}
