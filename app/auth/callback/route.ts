@@ -42,6 +42,7 @@ export async function GET(request: Request) {
           id: authUser.id,
           username,
           display_name: authUser.user_metadata.full_name || authUser.user_metadata.name || email.split('@')[0],
+          email: email,
         });
 
         // 2. Create Default Linktree Page

@@ -82,16 +82,21 @@ export async function GET(req: Request) {
         const days = getDaysForCycle(billingCycle);
         const planExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
-        // Find user by email
-        const { data: userProfile } = await supabase
-          .from('users_profile')
-          .select('id')
-          .eq('email', dbInvoice.email)
-          .maybeSingle();
+        // Find user: Priority to logged in user, then by email
+        let targetUserId = authUser?.id;
+        
+        if (!targetUserId) {
+          const { data: userProfile } = await supabase
+            .from('users_profile')
+            .select('id')
+            .eq('email', dbInvoice.email)
+            .maybeSingle();
+          targetUserId = userProfile?.id;
+        }
 
-        if (userProfile) {
+        if (targetUserId) {
           // Update profile
-          await supabase
+          const { error: updateErr } = await supabase
             .from('users_profile')
             .update({
               plan: planId,
@@ -100,7 +105,11 @@ export async function GET(req: Request) {
               pending_plan: null,
               pending_billing_cycle: null,
             })
-            .eq('id', userProfile.id);
+            .eq('id', targetUserId);
+
+          if (updateErr) {
+            console.error('[payment/status] Failed to update user plan:', updateErr);
+          }
 
           // Update invoice status in our DB
           await supabase

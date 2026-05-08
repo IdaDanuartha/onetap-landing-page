@@ -38,8 +38,8 @@ export async function POST(req: Request) {
         await supabase
           .from('users_profile')
           .update({
-            plan_id: 'starter',
-            plan_expiry: expiryDate.toISOString(),
+            plan: 'starter',
+            plan_expires_at: expiryDate.toISOString(),
             pending_plan: null,
             updated_at: new Date().toISOString(),
           })

@@ -79,6 +79,7 @@ export default function RegisterPage() {
         id: authData.user.id,
         username: form.username,
         display_name: form.name,
+        email: form.email,
       });
 
       if (profileError) {
