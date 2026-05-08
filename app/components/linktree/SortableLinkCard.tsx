@@ -36,7 +36,7 @@ export function SortableLinkCard({ link, onUpdate, onDelete }: SortableLinkCardP
     <div
       ref={setNodeRef}
       style={style}
-      className="p-5 bg-white border border-[#F6B7C8]/20 rounded-3xl shadow-sm flex items-center gap-4 group hover:shadow-md transition-shadow"
+      className="p-3.5 sm:p-5 bg-white border border-[#F6B7C8]/20 rounded-[24px] sm:rounded-3xl shadow-sm flex items-center gap-2 sm:gap-4 group hover:shadow-md transition-shadow"
     >
       {/* Drag handle */}
       <button

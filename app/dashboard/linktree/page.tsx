@@ -26,6 +26,7 @@ export default function LinktreeBuilderPage() {
   const [profile, setProfile] = useState({ title: '', bio: '', avatar: '' });
   const [selectedTheme, setSelectedTheme] = useState('pink');
   const [isPro, setIsPro] = useState(false);
+  const [isPublished, setIsPublished] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -63,6 +64,7 @@ export default function LinktreeBuilderPage() {
       if (data.page) {
         setCurrentPageId(data.page.id);
         setSlug(data.page.slug ?? '');
+        setIsPublished(data.page.is_published ?? true);
         setProfile({
           title: data.page.title ?? '',
           bio: data.page.bio ?? '',
@@ -72,6 +74,7 @@ export default function LinktreeBuilderPage() {
       } else {
         // If no page exists yet, set slug to username as default
         setSlug(data.profile?.username ?? '');
+        setIsPublished(true);
       }
       
       if (data.links) {
@@ -135,7 +138,8 @@ export default function LinktreeBuilderPage() {
           links, 
           theme: selectedTheme,
           pageId: currentPageId,
-          slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+          slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+          isPublished
         }),
       });
       
@@ -369,15 +373,44 @@ export default function LinktreeBuilderPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Bio Singkat</label>
-                    <textarea
-                      placeholder="Ceritakan tentang dirimu..."
-                      value={profile.bio}
-                      onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                      rows={2}
-                      className="w-full px-5 py-4 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-medium text-gray-600 resize-none"
-                    />
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1 space-y-1.5">
+                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Bio Singkat</label>
+                      <textarea
+                        placeholder="Ceritakan tentang dirimu..."
+                        value={profile.bio}
+                        onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                        rows={2}
+                        className="w-full px-5 py-4 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-medium text-gray-600 resize-none"
+                      />
+                    </div>
+                    <div className="sm:w-48 space-y-1.5">
+                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Status Publikasi</label>
+                      <button
+                        onClick={() => setIsPublished(!isPublished)}
+                        className={`w-full h-[88px] rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                          isPublished 
+                            ? 'bg-green-50 border-green-100 text-green-600' 
+                            : 'bg-gray-50 border-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {isPublished ? (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                              <Check className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-tighter">Published</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                              <EyeOff className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-tighter">Draft Mode</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -611,13 +644,26 @@ export default function LinktreeBuilderPage() {
         </div>
       </div>
 
-      {/* ===== MOBILE PREVIEW BUTTON & MODAL ===== */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-[60]">
+      <div className="lg:hidden fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-3">
+        {isPublished && (
+          <div className="bg-white/90 backdrop-blur-md border border-green-100 px-4 py-2 rounded-2xl shadow-xl animate-bounce-slow">
+            <p className="text-[10px] font-black text-green-600 uppercase tracking-widest flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Live Online
+            </p>
+          </div>
+        )}
         <button
           onClick={() => setShowMobilePreview(true)}
-          className="w-14 h-14 rounded-full bg-[#FF5FA2] text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+          className="group flex items-center gap-3 px-5 py-3.5 rounded-full bg-[#18080F] text-white shadow-2xl hover:scale-105 active:scale-95 transition-all"
         >
-          <Smartphone className="w-6 h-6" />
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">View Live</span>
+            <span className="text-xs font-bold text-[#FF5FA2]">Mobile Preview</span>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-[#FF5FA2] flex items-center justify-center">
+            <Smartphone className="w-5 h-5" />
+          </div>
         </button>
       </div>
 

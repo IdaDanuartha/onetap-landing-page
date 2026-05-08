@@ -33,11 +33,15 @@ export default function DashboardPage() {
         .eq('id', authUser.id)
         .single();
 
-      const { data: page } = await supabase
+      // Get the latest page for the dashboard link
+      const { data: pages } = await supabase
         .from('linktree_pages')
-        .select('slug')
+        .select('id, slug')
         .eq('user_id', authUser.id)
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      const page = pages?.[0];
 
       if (profile) {
         setUser({
@@ -51,22 +55,16 @@ export default function DashboardPage() {
       }
 
       // Stats
-      const { data: p } = await supabase
-        .from('linktree_pages')
-        .select('id')
-        .eq('user_id', authUser.id)
-        .maybeSingle();
-
-      if (p) {
+      if (page) {
         const { count } = await supabase
           .from('linktree_links')
           .select('*', { count: 'exact', head: true })
-          .eq('page_id', p.id);
+          .eq('page_id', page.id);
 
         const { data: clicks } = await supabase
           .from('linktree_links')
           .select('click_count')
-          .eq('page_id', p.id);
+          .eq('page_id', page.id);
 
         if (clicks) {
           setStats({
@@ -82,7 +80,7 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleUpdateUsername = async () => {
-    if (!newUsername || newUsername === user?.username) {
+    if (!newUsername || newUsername === user?.slug) {
       setIsEditingUsername(false);
       return;
     }
@@ -98,28 +96,45 @@ export default function DashboardPage() {
     const supabase = createClient();
 
     try {
-      // Check if slug is already taken
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      // Check if slug is already taken by someone else
       const { data: existing } = await supabase
         .from('linktree_pages')
-        .select('slug')
+        .select('id, user_id')
         .eq('slug', newUsername)
         .maybeSingle();
 
-      if (existing) {
+      if (existing && existing.user_id !== authUser.id) {
         setUsernameError('URL sudah digunakan orang lain');
         setIsUpdating(false);
         return;
       }
 
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-
-      // Update slug in linktree_pages (assumes one page for now, or the primary one)
-      const { error } = await supabase
+      // Find the first page to update its slug
+      const { data: firstPage } = await supabase
         .from('linktree_pages')
-        .update({ slug: newUsername })
-        .eq('user_id', authUser?.id);
+        .select('id')
+        .eq('user_id', authUser.id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
 
-      if (error) throw error;
+      if (firstPage) {
+        const { error } = await supabase
+          .from('linktree_pages')
+          .update({ slug: newUsername })
+          .eq('id', firstPage.id);
+        if (error) throw error;
+      } else {
+        // If no page, we might want to update username in profile instead
+        const { error } = await supabase
+          .from('users_profile')
+          .update({ username: newUsername })
+          .eq('id', authUser.id);
+        if (error) throw error;
+      }
 
       setUser(prev => prev ? { ...prev, slug: newUsername } : null);
       setIsEditingUsername(false);
@@ -138,7 +153,7 @@ export default function DashboardPage() {
   };
 
   const handleShare = async () => {
-    const shareUrl = `https://onetap-charm.com/l/${user?.username}`;
+    const shareUrl = `https://onetap-charm.com/l/${user?.slug || user?.username}`;
     if (navigator.share) {
       try {
         await navigator.share({

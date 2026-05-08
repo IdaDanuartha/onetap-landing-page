@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { profile, links, theme, pageId, slug: requestedSlug } = await req.json();
+    const { profile, links, theme, pageId, slug: requestedSlug, isPublished } = await req.json();
 
     // Check user plan for limits
     const { data: userProfile } = await supabase
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
           bio: profile.bio, 
           theme_id: theme,
           slug: requestedSlug,
+          is_published: isPublished !== false,
           updated_at: new Date().toISOString()
         })
         .eq('id', pageId)
@@ -77,7 +78,8 @@ export async function POST(req: Request) {
           title: profile.title || 'Profil Baru', 
           bio: profile.bio, 
           theme_id: theme || 'pink',
-          slug: requestedSlug
+          slug: requestedSlug,
+          is_published: isPublished !== false
         })
         .select()
         .single();
