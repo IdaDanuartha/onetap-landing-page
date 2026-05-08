@@ -651,6 +651,13 @@ export default function AttendanceManagementPage() {
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
+            <Link 
+              href="/dashboard/attendance/logs"
+              className="px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm"
+            >
+              <Calendar className="w-5 h-5 text-[#FF5FA2]" />
+              Histori Absensi
+            </Link>
             <button 
               onClick={() => setShowImportModal(true)}
               className="px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm"
