@@ -57,9 +57,19 @@ export async function POST(req: Request) {
 
     let amount = getChargeAmount(planId, billingCycle);
     
-    // Apply Promo Code (Mock logic, can be replaced with DB check)
-    if (promoCode?.toUpperCase() === 'AL7ZIPE') {
-      amount = Math.round(amount * 0.01); // 99% discount
+    // Apply Promo Code via Database
+    if (promoCode) {
+      const supabase = await createClient();
+      const { data: voucher } = await supabase
+        .from('vouchers')
+        .select('discount_percent')
+        .eq('code', promoCode.toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (voucher) {
+        amount = Math.round(amount * (1 - voucher.discount_percent / 100));
+      }
     }
     const planConfig = PLANS[planId];
     

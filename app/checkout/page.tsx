@@ -103,19 +103,27 @@ export default function CheckoutPage() {
     setIsApplyingPromo(true);
     setPromoError('');
 
-    // Mock promo code validation
-    // In production, this would be an API call to your backend or Mayar
-    setTimeout(() => {
-      const code = promoCode.toUpperCase();
-      if (code === 'AL7ZIPE') {
-        setDiscountPercent(99);
-        setAppliedPromo(code);
-        setPromoCode('');
+    // Voucher validation via Supabase
+    try {
+      const { data, error } = await supabase
+        .from('vouchers')
+        .select('code, discount_percent')
+        .eq('code', promoCode.toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        setPromoError('Kode promo tidak valid atau sudah kadaluarsa');
       } else {
-        setPromoError('Kode promo tidak valid');
+        setDiscountPercent(data.discount_percent);
+        setAppliedPromo(data.code);
+        setPromoCode('');
       }
+    } catch (err) {
+      setPromoError('Terjadi kesalahan saat mengecek voucher');
+    } finally {
       setIsApplyingPromo(false);
-    }, 600);
+    }
   };
 
   const handleRemovePromo = () => {
@@ -187,24 +195,32 @@ export default function CheckoutPage() {
               <div className="mb-6">
                 {!appliedPromo ? (
                   <div className="space-y-2">
-                    <div className="flex gap-2">
+                    <div className="relative group">
                       <input 
                         type="text" 
                         value={promoCode}
                         onChange={(e) => setPromoCode(e.target.value)}
                         placeholder="Kode Promo"
-                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:border-[#FF5FA2] outline-none transition-all"
+                        className="w-full pl-4 pr-20 py-3.5 rounded-2xl border border-[#F6B7C8]/20 bg-white text-sm font-bold placeholder:text-gray-300 focus:border-[#FF5FA2] focus:ring-4 focus:ring-[#FF5FA2]/5 outline-none transition-all shadow-sm group-hover:border-[#FF5FA2]/30"
                       />
                       <button 
                         type="button"
                         onClick={handleApplyPromo}
                         disabled={isApplyingPromo || !promoCode}
-                        className="px-4 py-2.5 rounded-xl bg-[#18080F] text-white text-xs font-black hover:bg-[#FF5FA2] transition-all disabled:opacity-50"
+                        className="absolute right-2 top-2 bottom-2 px-4 rounded-xl bg-[#18080F] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#FF5FA2] transition-all disabled:opacity-30 active:scale-95"
                       >
-                        {isApplyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                        {isApplyingPromo ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Apply'}
                       </button>
                     </div>
-                    {promoError && <p className="text-[10px] font-bold text-red-500 ml-1">{promoError}</p>}
+                    {promoError && (
+                      <motion.p 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-[10px] font-bold text-red-500 ml-2"
+                      >
+                        {promoError}
+                      </motion.p>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100">
