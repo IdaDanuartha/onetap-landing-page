@@ -13,10 +13,13 @@ export async function GET(req: Request) {
 
   const supabase = await createClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
+  
+  // Use Admin Client for all DB operations to bypass RLS
+  const adminSupabase = createAdminClient();
 
   // 1. If we have both, link them in the database (First time return from Mayar)
   if (invoiceId && ref) {
-    await supabase
+    await adminSupabase
       .from('payment_invoices')
       .update({ invoice_id: invoiceId })
       .eq('reference_id', ref)
@@ -25,7 +28,7 @@ export async function GET(req: Request) {
 
   // 2. If we only have ref, try to find the invoiceId from our DB
   if (!invoiceId && ref) {
-    const { data: dbInvoice } = await supabase
+    const { data: dbInvoice } = await adminSupabase
       .from('payment_invoices')
       .select('invoice_id')
       .eq('reference_id', ref)
@@ -39,7 +42,7 @@ export async function GET(req: Request) {
   if (!invoiceId) {
     // If we have a ref but no invoiceId yet, it might be waiting for the first link
     if (ref) {
-      const { data: dbInvoice, error: dbError } = await supabase
+      const { data: dbInvoice, error: dbError } = await adminSupabase
         .from('payment_invoices')
         .select('status, invoice_id')
         .eq('reference_id', ref)
@@ -70,7 +73,8 @@ export async function GET(req: Request) {
     // If paid, update the database manually (since webhook is disabled)
     if (invoice.status === 'paid') {
       // 1. Check if we have an invoice record to get the plan details
-      const { data: dbInvoice } = await supabase
+      // Search by both to be extra safe
+      const { data: dbInvoice } = await adminSupabase
         .from('payment_invoices')
         .select('*')
         .or(`invoice_id.eq.${invoiceId},reference_id.eq.${ref}`)
@@ -88,7 +92,7 @@ export async function GET(req: Request) {
         let targetUserId = authUser?.id;
         
         if (!targetUserId) {
-          const { data: userProfile } = await supabase
+          const { data: userProfile } = await adminSupabase
             .from('users_profile')
             .select('id')
             .eq('email', dbInvoice.email)
@@ -97,8 +101,6 @@ export async function GET(req: Request) {
         }
 
         if (targetUserId) {
-          const adminSupabase = createAdminClient();
-          
           // Update profile using Admin Client to bypass RLS
           const { error: updateErr } = await adminSupabase
             .from('users_profile')
@@ -117,36 +119,40 @@ export async function GET(req: Request) {
           }
 
           // Update invoice status in our DB using Admin Client
+          // Also make sure invoice_id is linked here if it was found via ref
           await adminSupabase
             .from('payment_invoices')
-            .update({ status: 'paid' })
-            .eq('invoice_id', invoiceId);
-
-          // Send confirmation email
+            .update({ 
+              status: 'paid',
+              invoice_id: invoiceId 
+            })
+            .or(`invoice_id.eq.${invoiceId},reference_id.eq.${ref}`);
+          
+          // Send success email (optional, based on your logic)
           try {
             await sendPlanEmail({
               to: dbInvoice.email,
-              subject: `Pembayaran OneTap ${PLANS[planId as PlanId]?.nameId || 'Premium'} Berhasil!`,
-              planName: PLANS[planId as PlanId]?.nameId || 'Premium',
-              type: 'confirmation'
+              subject: 'Pembayaran Berhasil - OneTap',
+              planName: PLANS[planId].nameId,
+              type: 'success'
             });
           } catch (emailErr) {
-            console.error('[status/sync] Email error:', emailErr);
+            console.error('[payment/status] Email error:', emailErr);
           }
-
-          console.log(`[status/sync] Database updated for ${dbInvoice.email} (Manual Sync)`);
         }
       }
     }
 
-    return NextResponse.json({
+    return NextResponse.json({ 
       status: invoice.status,
-      amount: invoice.amount,
-      paymentUrl: invoice.paymentUrl,
+      invoice: {
+        id: invoice.id,
+        amount: invoice.amount,
+        paidAt: invoice.paidAt
+      }
     });
-  } catch (err) {
-    console.error('[payment/status]', err);
-    return NextResponse.json({ error: 'Failed to fetch invoice status' }, { status: 500 });
+  } catch (error) {
+    console.error('[payment/status] API Error:', error);
+    return NextResponse.json({ error: 'Failed to check payment status' }, { status: 500 });
   }
 }
-
