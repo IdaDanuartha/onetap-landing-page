@@ -96,7 +96,7 @@ export default function CheckoutPage() {
       setError(err.message);
       setIsSubmitting(false);
     }
-  };
+  }; 
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
