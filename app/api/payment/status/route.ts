@@ -15,6 +15,21 @@ export async function GET(req: Request) {
     const supabase = await createClient();
     const { data: { user: authUser } } = await supabase.auth.getUser();
     
+    // Check for required ENV variables
+    const requiredEnv = {
+      SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      MAYAR_API_KEY: !!process.env.MAYAR_API_KEY,
+      NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    };
+
+    if (!requiredEnv.SUPABASE_SERVICE_ROLE_KEY || !requiredEnv.MAYAR_API_KEY) {
+      return NextResponse.json({ 
+        error: 'Configuration Error', 
+        message: 'Missing required environment variables on server',
+        debug: requiredEnv
+      }, { status: 500 });
+    }
+
     // Use Admin Client for all DB operations to bypass RLS
     const adminSupabase = createAdminClient();
 
