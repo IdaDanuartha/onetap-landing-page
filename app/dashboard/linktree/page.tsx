@@ -14,6 +14,7 @@ import { themes, templates } from '@/lib/themes';
 import { SortableLinkCard } from '@/app/components/linktree/SortableLinkCard';
 import type { LinkItem } from '@/app/components/linktree/SortableLinkCard';
 import { OneTapPreview } from '@/app/components/linktree/OneTapPreview';
+import Toast from '@/app/components/Toast';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,9 @@ export default function OneTapBuilderPage() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
   
   // Multi-page state
   const [pages, setPages] = useState<any[]>([]);
@@ -119,12 +123,16 @@ export default function OneTapBuilderPage() {
     // Check if user is trying to save a Pro template without being Pro
     const selectedTemplate = templates.find(t => t.id === selectedTheme);
     if (selectedTemplate?.isPro && !isPro) {
-      alert('Maaf, Anda perlu upgrade ke Pro Plan untuk menggunakan dan menyimpan template premium ini! Silakan gunakan tema standard atau upgrade sekarang.');
+      setToastMsg('Maaf, Anda perlu upgrade ke Pro Plan untuk menggunakan dan menyimpan template premium ini! Silakan gunakan tema standard atau upgrade sekarang.');
+      setToastType('warning');
+      setShowToast(true);
       return;
     }
 
     if (!slug || slug.length < 3) {
-      alert('Slug harus memiliki minimal 3 karakter.');
+      setToastMsg('Slug harus memiliki minimal 3 karakter.');
+      setToastType('error');
+      setShowToast(true);
       return;
     }
 
@@ -147,17 +155,23 @@ export default function OneTapBuilderPage() {
       if (res.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
+        setToastMsg('Perubahan berhasil disimpan!');
+        setToastType('success');
+        setShowToast(true);
         // Refresh page list if new page was created or slug changed
         loadData(result.pageId);
       } else {
-        alert(result.error || 'Gagal menyimpan perubahan.');
+        setToastMsg(result.error || 'Gagal menyimpan perubahan.');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (err) {
       console.error(err);
-      alert('Terjadi kesalahan saat menyimpan.');
+      setToastMsg('Terjadi kesalahan saat menyimpan.');
+      setToastType('error');
+      setShowToast(true);
     }
-    setSaving(true); // Small delay
-    setTimeout(() => setSaving(false), 800);
+    setSaving(false);
   };
 
   const createNewPage = async () => {
@@ -180,7 +194,9 @@ export default function OneTapBuilderPage() {
       const maxPages = isProPlan ? 3 : 1;
       if (pages.length >= maxPages) {
         const planName = isEduPlan ? 'Education' : isProPlan ? 'Professional' : 'Starter';
-        alert(`Batas maksimal halaman untuk paket ${planName} tercapai (${maxPages}). Silakan hapus halaman lain atau upgrade plan.`);
+        setToastMsg(`Batas maksimal halaman untuk paket ${planName} tercapai (${maxPages}). Silakan hapus halaman lain atau upgrade plan.`);
+        setToastType('warning');
+        setShowToast(true);
         return;
       }
     }
@@ -205,6 +221,12 @@ export default function OneTapBuilderPage() {
       if (!user) return;
 
       const publicUrl = await uploadAvatar(user.id, file);
+      if (!publicUrl) {
+        setToastMsg('Gagal mengunggah foto.');
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
       setProfile((prev) => ({ ...prev, avatar: publicUrl }));
       
       await supabase
@@ -214,7 +236,9 @@ export default function OneTapBuilderPage() {
         
     } catch (err) {
       console.error('Error uploading avatar:', err);
-      alert('Gagal mengunggah foto.');
+      setToastMsg('Gagal mengunggah foto.');
+      setToastType('error');
+      setShowToast(true);
     } finally {
       setUploading(false);
     }
@@ -438,7 +462,9 @@ export default function OneTapBuilderPage() {
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText(`https://onetap-charm.com/l/${slug || username}`);
-                      alert('URL disalin!');
+                      setToastMsg('URL disalin ke clipboard!');
+                      setToastType('success');
+                      setShowToast(true);
                     }}
                     className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 text-gray-400 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all text-xs font-bold"
                   >
@@ -739,6 +765,12 @@ export default function OneTapBuilderPage() {
           background: #FF5FA2;
         }
       `}</style>
+      <Toast 
+        isVisible={showToast} 
+        message={toastMsg} 
+        type={toastType} 
+        onClose={() => setShowToast(false)} 
+      />
     </div>
   );
 }

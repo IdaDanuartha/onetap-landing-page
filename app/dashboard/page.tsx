@@ -6,9 +6,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { BarChart2, ExternalLink, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Share2, CheckCircle2, X, Loader2, Lock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { canAccess, PLANS, PLAN_BADGE_COLORS } from '@/lib/plans';
 import type { PlanId } from '@/lib/plans';
+import Toast from '@/app/components/Toast';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,6 +17,8 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState<PlanId>('starter');
   const [stats, setStats] = useState({ links: 0, totalClicks: 0 });
   const [loading, setLoading] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [usernameError, setUsernameError] = useState('');
@@ -176,7 +179,8 @@ export default function DashboardPage() {
       }
     } else {
       navigator.clipboard.writeText(shareUrl);
-      alert('Link disalin ke clipboard!');
+      setToastMsg('Link disalin ke clipboard!');
+      setShowToast(true);
     }
   };
 
@@ -571,6 +575,11 @@ export default function DashboardPage() {
           animation: bounce-slow 3s infinite ease-in-out;
         }
       `}</style>
+      <Toast 
+        isVisible={showToast} 
+        message={toastMsg} 
+        onClose={() => setShowToast(false)} 
+      />
     </div>
   );
 }
