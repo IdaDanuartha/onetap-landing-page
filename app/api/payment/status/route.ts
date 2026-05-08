@@ -37,20 +37,29 @@ export async function GET(req: Request) {
   if (!invoiceId) {
     // If we have a ref but no invoiceId yet, it might be waiting for the first link
     if (ref) {
-      const { data: dbInvoice } = await supabase
+      const { data: dbInvoice, error: dbError } = await supabase
         .from('payment_invoices')
-        .select('status')
+        .select('status, invoice_id')
         .eq('reference_id', ref)
         .maybeSingle();
+      
+      if (dbError) {
+        console.error('[payment/status] Database error for ref:', ref, dbError);
+      }
       
       if (dbInvoice) {
         return NextResponse.json({ 
           status: dbInvoice.status || 'pending',
           message: 'Waiting for invoice link from Mayar'
         });
+      } else {
+        console.warn('[payment/status] No record found in DB for ref:', ref);
       }
     }
-    return NextResponse.json({ error: 'invoiceId not found for this reference' }, { status: 400 });
+    return NextResponse.json({ 
+      error: 'invoiceId not found for this reference',
+      debug: { ref, hasInvoiceId: !!invoiceId }
+    }, { status: 400 });
   }
 
   try {
