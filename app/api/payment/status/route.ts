@@ -134,7 +134,7 @@ export async function GET(req: Request) {
               to: dbInvoice.email,
               subject: 'Pembayaran Berhasil - OneTap',
               planName: PLANS[planId].nameId,
-              type: 'success'
+              type: 'confirmation'
             });
           } catch (emailErr) {
             console.error('[payment/status] Email error:', emailErr);
