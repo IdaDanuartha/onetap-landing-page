@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { PLANS, getChargeAmount, PlanId, BillingCycle } from '@/lib/plans';
 import { createMayarInvoice } from '@/lib/mayar';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();

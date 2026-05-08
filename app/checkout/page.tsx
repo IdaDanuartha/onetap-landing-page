@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -96,7 +98,7 @@ export default function CheckoutPage() {
       setError(err.message);
       setIsSubmitting(false);
     }
-  }; 
+  };
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
