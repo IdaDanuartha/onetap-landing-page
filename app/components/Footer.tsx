@@ -118,7 +118,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-white/5 py-7 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <p className="text-[#F6B7C8]/30 text-sm">
-            © {new Date().getFullYear()} OneTap Technologies. All rights reserved.
+            © {new Date().getFullYear()} OneTap Charm. All rights reserved.
           </p>
           <div className="flex items-center gap-1">
             <span className="text-[#F6B7C8]/30 text-sm">{t('footer.madeWith')}</span>

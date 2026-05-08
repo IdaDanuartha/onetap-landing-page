@@ -119,7 +119,7 @@ export default function Header() {
             )}
             <a
               href="#pricing"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#18080F] text-white text-sm font-bold hover:bg-[#FF5FA2] transition-all duration-200 shadow-lg shadow-[#18080F]/10"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF5FA2] text-white text-sm font-bold hover:bg-[#E8457E] transition-all duration-200 shadow-lg shadow-[#FF5FA2]/25"
             >
               {t('nav.orderNow')}
               <ChevronRight className="w-4 h-4" />

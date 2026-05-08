@@ -29,6 +29,12 @@ export default function AttendanceSection() {
     },
   ];
 
+  const formatMessage = (text: string) => {
+    return text.split('**').map((part, i) => 
+      i % 2 === 1 ? <span key={i} className="font-black text-[#18080F]">{part}</span> : part
+    );
+  };
+
   return (
     <AnimatedSection id="attendance" className="py-24 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -63,17 +69,11 @@ export default function AttendanceSection() {
 
             <div className="flex flex-wrap gap-4">
               <a
-                href="/attendance/logs"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#18080F] text-white font-bold hover:bg-blue-600 transition-all shadow-xl shadow-gray-200"
-              >
-                {t('attendanceSection.ctaPrimary')}
-                <ArrowRight className="w-5 h-5" />
-              </a>
-              <a
                 href="https://wa.me/6283114227745"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-gray-100 text-gray-600 font-bold hover:border-blue-200 transition-all"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
               >
                 {t('attendanceSection.ctaSecondary')}
+                <ArrowRight className="w-5 h-5" />
               </a>
             </div>
           </motion.div>
@@ -92,7 +92,9 @@ export default function AttendanceSection() {
                   
                   {/* WA Interface Mockup */}
                   <div className="p-4 bg-[#075E54] text-white flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200" />
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center p-1.5 overflow-hidden shadow-inner shrink-0">
+                      <img src="/images/logo_simple.png" alt="OneTap" className="w-full h-full object-contain" />
+                    </div>
                     <div className="flex-1">
                       <p className="text-xs font-bold leading-none">OneTap Attendance</p>
                       <p className="text-[10px] opacity-70">Online</p>
@@ -107,7 +109,7 @@ export default function AttendanceSection() {
                     >
                       <p className="text-[11px] font-bold text-blue-600 mb-1">{t('attendanceSection.mock.title')}</p>
                       <p className="text-[10px] text-gray-700 leading-relaxed">
-                        {t('attendanceSection.mock.body1')}
+                        {formatMessage(t('attendanceSection.mock.body1'))}
                       </p>
                       <p className="text-[9px] text-gray-400 mt-1 text-right">07:15</p>
                     </motion.div>
@@ -120,7 +122,7 @@ export default function AttendanceSection() {
                     >
                       <p className="text-[11px] font-bold text-blue-600 mb-1">{t('attendanceSection.mock.title')}</p>
                       <p className="text-[10px] text-gray-700 leading-relaxed">
-                        {t('attendanceSection.mock.body2')}
+                        {formatMessage(t('attendanceSection.mock.body2'))}
                       </p>
                       <p className="text-[9px] text-gray-400 mt-1 text-right">07:20</p>
                     </motion.div>

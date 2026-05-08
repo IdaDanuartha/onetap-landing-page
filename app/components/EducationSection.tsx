@@ -130,14 +130,8 @@ export default function EducationSection() {
                 href="https://wa.me/6283114227745"
                 className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-semibold shadow-lg shadow-[#FF5FA2]/25 hover:shadow-[#FF5FA2]/40 hover:-translate-y-0.5 transition-all duration-200"
               >
-                {t('education.ctaPrimary')}
-                <ArrowRight className="w-4 h-4" />
-              </a>
-              <a
-                href="https://wa.me/6283114227745"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-[#F6B7C8] text-[#FF5FA2] font-semibold hover:bg-[#FFF8F2] transition-all duration-200"
-              >
                 {t('education.ctaSecondary')}
+                <ArrowRight className="w-4 h-4" />
               </a>
             </div>
           </div>

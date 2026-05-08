@@ -911,11 +911,7 @@ export default function AttendanceManagementPage() {
             </table>
           </div>
           
-          <div className="p-6 bg-gray-50/30 text-center">
-            <Link href="/dashboard/attendance/logs" className="text-sm font-bold text-[#FF5FA2] hover:underline">
-              Lihat Histori Lengkap →
-            </Link>
-          </div>
+
         </div>
       </main>
 
