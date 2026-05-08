@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb } from "lucide-react";
 import Link from "next/link";
+import Toast from "@/app/components/Toast";
 
 interface Tag {
   id: string;
@@ -48,6 +49,9 @@ export default function AttendanceManagementPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [isWritingNFC, setIsWritingNFC] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "warning" | "info">("success");
   const [writeStatus, setWriteStatus] = useState<"idle" | "writing" | "success" | "error">("idle");
   const [showNFCFallback, setShowNFCFallback] = useState(false);
   const [fallbackToken, setFallbackToken] = useState("");
@@ -87,12 +91,12 @@ export default function AttendanceManagementPage() {
         .eq("created_by", user.id)
         .order("created_at", { ascending: false });
         
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
         const { count } = await supabase
         .from("attendance_logs")
         .select("*", { count: 'exact', head: true })
         .eq("created_by", user.id)
-        .gte("tapped_at", `${today}T00:00:00Z`);
+        .gte("tapped_at", `${today}T00:00:00+07:00`);
 
         setTags(tagsData || []);
         
@@ -220,7 +224,9 @@ export default function AttendanceManagementPage() {
 
   const handleBulkUpdateWA = async () => {
     if (!bulkWAPhone || bulkWAPhone.trim() === "") {
-      alert("Nomor WhatsApp wajib diisi.");
+      setToastMsg("Nomor WhatsApp wajib diisi.");
+      setToastType("warning");
+      setShowToast(true);
       return;
     }
 
@@ -241,9 +247,14 @@ export default function AttendanceManagementPage() {
       setShowBulkWAModal(false);
       setSelectedTags([]);
       fetchData();
+      setToastMsg("Nomor WhatsApp berhasil diperbarui.");
+      setToastType("success");
+      setShowToast(true);
     } catch (err) {
       console.error("Bulk update WA failed:", err);
-      alert("Gagal memperbarui nomor WhatsApp.");
+      setToastMsg("Gagal memperbarui nomor WhatsApp.");
+      setToastType("error");
+      setShowToast(true);
     } finally {
       setIsSubmittingBulkWA(false);
       setIsSubmitting(false);
@@ -333,7 +344,9 @@ export default function AttendanceManagementPage() {
 
   const startBulkScan = async () => {
     if (!('NDEFReader' in window)) {
-      alert("Browser Anda tidak mendukung NFC. Gunakan Chrome di Android.");
+      setToastMsg("Browser Anda tidak mendukung NFC. Gunakan Chrome di Android.");
+      setToastType("warning");
+      setShowToast(true);
       return;
     }
 
@@ -375,7 +388,9 @@ export default function AttendanceManagementPage() {
       console.error("Bulk scan error:", error);
       setIsBulkScanning(false);
       setShowScanModal(false);
-      alert("Gagal memulai scan massal. Pastikan NFC aktif.");
+      setToastMsg("Gagal memulai scan massal. Pastikan NFC aktif.");
+      setToastType("error");
+      setShowToast(true);
     }
   };
 
@@ -384,20 +399,9 @@ export default function AttendanceManagementPage() {
   const processAttendance = async (token: string) => {
     if (processingTokens.current[token]) return;
     
-    // Prevent double tap on the same device per day
     const todayStr = new Date().toISOString().split('T')[0];
     const cacheKey = `onetap_attended_${token}_${todayStr}`;
-    if (localStorage.getItem(cacheKey)) {
-      setScanLogs(prev => [{
-        student_name: "Sudah Absen",
-        class_name: "-",
-        status: "error",
-        time: new Date().toLocaleTimeString('id-ID'),
-        message: "Siswa sudah tercatat hadir hari ini."
-      } as ScanLog, ...prev].slice(0, 50));
-      return;
-    }
-
+    
     processingTokens.current[token] = true;
 
     try {
@@ -416,7 +420,6 @@ export default function AttendanceManagementPage() {
       
       if (res.ok) {
         setPresentToday(prev => prev + 1);
-        localStorage.setItem(cacheKey, "1");
       }
     } catch (err) {
       console.error("Attendance processing error:", err);
@@ -487,7 +490,9 @@ export default function AttendanceManagementPage() {
     if (!user) return;
 
     if (editingTag && (!formData.teacher_phone || formData.teacher_phone.trim() === "")) {
-      alert("Nomor WhatsApp Pendamping wajib diisi agar notifikasi bisa terkirim.");
+      setToastMsg("Nomor WhatsApp Pendamping wajib diisi agar notifikasi bisa terkirim.");
+      setToastType("warning");
+      setShowToast(true);
       return;
     }
 
@@ -506,7 +511,9 @@ export default function AttendanceManagementPage() {
         .update(dataToSave)
         .eq("id", editingTag.id);
       if (error) {
-        alert(error.message);
+        setToastMsg(error.message);
+        setToastType("error");
+        setShowToast(true);
       } else {
         setSuccessMessage("Berhasil memperbarui data siswa!");
         setShowSuccess(true);
@@ -517,7 +524,9 @@ export default function AttendanceManagementPage() {
         .from("attendance_tags")
         .insert([dataToSave]);
       if (error) {
-        alert(error.message);
+        setToastMsg(error.message);
+        setToastType("error");
+        setShowToast(true);
       } else {
         setSuccessMessage("Berhasil menambahkan data siswa!");
         setShowSuccess(true);
@@ -535,7 +544,9 @@ export default function AttendanceManagementPage() {
     setIsSubmitting(true);
     const { error } = await supabase.from("attendance_tags").delete().eq("id", tagToDelete.id);
     if (error) {
-      alert(error.message);
+      setToastMsg(error.message);
+      setToastType("error");
+      setShowToast(true);
     } else {
       setSuccessMessage("Berhasil menghapus data siswa!");
       setShowSuccess(true);
@@ -650,31 +661,31 @@ export default function AttendanceManagementPage() {
             </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="grid grid-cols-2 lg:flex lg:items-center gap-3 w-full lg:w-auto">
             <Link 
               href="/dashboard/attendance/logs"
-              className="px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm"
+              className="px-4 sm:px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-base"
             >
               <Calendar className="w-5 h-5 text-[#FF5FA2]" />
               Histori Absensi
             </Link>
             <button 
               onClick={() => setShowImportModal(true)}
-              className="px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm"
+              className="px-4 sm:px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-base"
             >
               <Download className="w-5 h-5 rotate-180" />
               Import CSV
             </button>
             <button 
               onClick={startBulkScan}
-              className="px-6 py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20"
+              className="px-4 sm:px-6 py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 text-xs sm:text-base"
             >
               <Radio className="w-5 h-5 animate-pulse" />
               Scan Massal
             </button>
             <button 
               onClick={() => handleOpenModal()}
-              className="px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all flex items-center gap-2 shadow-lg shadow-[#FF5FA2]/20"
+              className="px-4 sm:px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 text-xs sm:text-base"
             >
               <Plus className="w-5 h-5" />
               Tambah Siswa
@@ -724,7 +735,7 @@ export default function AttendanceManagementPage() {
                   <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{time}`}</span>
                 </div>
               </div>
-              <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex flex-col lg:flex-row gap-4">
                 <textarea
                   rows={5}
                   value={globalMessageTemplate}
@@ -734,7 +745,7 @@ export default function AttendanceManagementPage() {
                 />
                 <button
                   onClick={handleSaveGlobalTemplate}
-                  className="px-8 py-4 bg-[#FF5FA2] text-white font-black rounded-2xl hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 h-fit"
+                  className="px-8 py-4 bg-[#FF5FA2] text-white font-black rounded-2xl hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 w-full lg:w-fit h-fit"
                 >
                   <Save className="w-4 h-4" />
                   Simpan Template
@@ -1618,6 +1629,12 @@ export default function AttendanceManagementPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <Toast 
+        isVisible={showToast} 
+        message={toastMsg} 
+        type={toastType} 
+        onClose={() => setShowToast(false)} 
+      />
     </div>
   );
 }

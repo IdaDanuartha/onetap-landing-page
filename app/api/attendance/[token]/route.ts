@@ -78,17 +78,28 @@ export async function POST(
     }
 
     // Check if student already attended today (prevent duplicates)
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
+    // Use Asia/Jakarta timezone for "today" boundaries
+    const formatter = new Intl.DateTimeFormat('en-CA', { 
+      timeZone: 'Asia/Jakarta', 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit' 
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parts.find(p => p.type === 'year')?.value;
+    const month = parts.find(p => p.type === 'month')?.value;
+    const day = parts.find(p => p.type === 'day')?.value;
+    
+    const todayJakarta = `${year}-${month}-${day}`;
+    const gte = `${todayJakarta}T00:00:00+07:00`;
+    const lte = `${todayJakarta}T23:59:59+07:00`;
 
     const { data: existingLogs, error: checkError } = await supabaseAdmin
       .from('attendance_logs')
       .select('id, tapped_at')
       .eq('token', token)
-      .gte('tapped_at', startOfToday.toISOString())
-      .lte('tapped_at', endOfToday.toISOString())
+      .gte('tapped_at', gte)
+      .lte('tapped_at', lte)
       .limit(1);
 
     if (checkError) {
