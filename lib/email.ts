@@ -10,6 +10,12 @@ interface EmailParams {
   type: 'confirmation' | 'reminder';
 }
 
+interface ResetEmailParams {
+  to: string;
+  subject: string;
+  resetLink: string;
+}
+
 export async function sendPlanEmail({ to, subject, planName, daysLeft, type }: EmailParams) {
   if (!process.env.RESEND_API_KEY) {
     console.warn('[email] RESEND_API_KEY is not set. Email not sent:', { to, subject });
@@ -27,9 +33,9 @@ export async function sendPlanEmail({ to, subject, planName, daysLeft, type }: E
   <style>
     body { font-family: 'Inter', Helvetica, Arial, sans-serif; background-color: #FFF8F2; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
     .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 32px; overflow: hidden; box-shadow: 0 20px 40px rgba(255, 95, 162, 0.05); border: 1px solid #F6B7C8; }
-    .header { background: linear-gradient(135deg, #FF5FA2 0%, #E8457E 100%); padding: 40px; text-align: center; }
-    .header img { width: 48px; height: 48px; filter: brightness(0) invert(1); }
-    .header h1 { color: #ffffff; margin: 20px 0 0; font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
+    .header { background-color: #ffffff; padding: 40px; text-align: center; border-bottom: 1px solid #F6B7C8; }
+    .header img { width: 48px; height: 48px; }
+    .header h1 { color: #FF5FA2; margin: 12px 0 0; font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
     .content { padding: 40px; color: #18080F; line-height: 1.6; }
     .content h2 { font-size: 20px; font-weight: 800; margin-bottom: 16px; color: #18080F; }
     .content p { font-size: 15px; color: #6b7280; margin-bottom: 24px; }
@@ -44,7 +50,7 @@ export async function sendPlanEmail({ to, subject, planName, daysLeft, type }: E
 <body>
   <div class="container">
     <div class="header">
-      <img src="${appUrl}/images/logo_simple.png" alt="OneTap">
+      <img src="https://onetap-charm.com/images/logo_simple.png" alt="OneTap" width="48" height="48">
       <h1>OneTap</h1>
     </div>
     <div class="content">
@@ -85,7 +91,7 @@ export async function sendPlanEmail({ to, subject, planName, daysLeft, type }: E
 
   try {
     const data = await resend.emails.send({
-      from: 'OneTap <noreply@onetap-charm.com>', // Ensure domain is verified in Resend
+      from: 'OneTap <noreply@onetap-charm.com>',
       to,
       subject,
       html,
@@ -93,6 +99,72 @@ export async function sendPlanEmail({ to, subject, planName, daysLeft, type }: E
     return data;
   } catch (error) {
     console.error('[email] Error sending email:', error);
+    throw error;
+  }
+}
+
+export async function sendResetPasswordEmail({ to, subject, resetLink }: ResetEmailParams) {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('[email] RESEND_API_KEY is not set. Reset email not sent:', { to, subject });
+    return;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://onetap-charm.com';
+  
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: 'Inter', Helvetica, Arial, sans-serif; background-color: #FFF8F2; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 32px; overflow: hidden; box-shadow: 0 20px 40px rgba(255, 95, 162, 0.05); border: 1px solid #F6B7C8; }
+    .header { background-color: #ffffff; padding: 40px; text-align: center; border-bottom: 1px solid #F6B7C8; }
+    .header img { width: 48px; height: 48px; }
+    .header h1 { color: #FF5FA2; margin: 12px 0 0; font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
+    .content { padding: 40px; color: #18080F; line-height: 1.6; }
+    .content h2 { font-size: 20px; font-weight: 800; margin-bottom: 16px; color: #18080F; }
+    .content p { font-size: 15px; color: #6b7280; margin-bottom: 24px; }
+    .cta-button { display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #FF5FA2 0%, #E8457E 100%); color: #ffffff !important; text-decoration: none; border-radius: 16px; font-weight: 800; font-size: 15px; box-shadow: 0 10px 20px rgba(255, 95, 162, 0.2); }
+    .footer { padding: 40px; text-align: center; border-top: 1px solid #f3f4f6; background-color: #fafafa; }
+    .footer p { font-size: 12px; color: #9ca3af; margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="https://onetap-charm.com/images/logo_simple.png" alt="OneTap" width="48" height="48">
+      <h1>OneTap</h1>
+    </div>
+    <div class="content">
+      <h2>Atur Ulang Password Kamu</h2>
+      <p>Halo! Kami menerima permintaan untuk mengatur ulang password akun OneTap kamu. Jika kamu tidak melakukan permintaan ini, abaikan saja email ini.</p>
+      <p>Klik tombol di bawah ini untuk melanjutkan proses pengaturan ulang password:</p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${resetLink}" class="cta-button">Atur Ulang Password</a>
+      </div>
+      <p style="font-size: 13px; color: #9ca3af;">Link ini akan kadaluarsa dalam 1 jam demi keamanan akun kamu.</p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2026 OneTap. All rights reserved.</p>
+      <p>Banjarmasin, Indonesia</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    const data = await resend.emails.send({
+      from: 'OneTap <noreply@onetap-charm.com>',
+      to,
+      subject,
+      html,
+    });
+    return data;
+  } catch (error) {
+    console.error('[email] Error sending reset email:', error);
     throw error;
   }
 }

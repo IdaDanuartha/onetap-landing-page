@@ -16,11 +16,20 @@ interface LinkStat {
   icon: string;
   click_count: number;
   is_active: boolean;
+  page_id: string;
+}
+
+interface PageInfo {
+  id: string;
+  title: string;
+  slug: string;
 }
 
 export default function AnalyticsPage() {
   const router = useRouter();
   const [stats, setStats] = useState<LinkStat[]>([]);
+  const [pagesInfo, setPagesInfo] = useState<Record<string, PageInfo>>({});
+  const [selectedPageId, setSelectedPageId] = useState<string>('all');
   const [totalClicks, setTotalClicks] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -30,22 +39,26 @@ export default function AnalyticsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/auth/login'); return; }
 
-      const { data: page } = await supabase
+      const { data: pages } = await supabase
         .from('linktree_pages')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+        .select('id, title, slug')
+        .eq('user_id', user.id);
 
-      if (page) {
+      if (pages && pages.length > 0) {
+        const info: Record<string, PageInfo> = {};
+        pages.forEach(p => { info[p.id] = p; });
+        setPagesInfo(info);
+
+        const pageIds = pages.map(p => p.id);
         const { data: links } = await supabase
           .from('linktree_links')
-          .select('id, label, url, icon, click_count, is_active')
-          .eq('page_id', page.id)
+          .select('id, label, url, icon, click_count, is_active, page_id')
+          .in('page_id', pageIds)
           .order('click_count', { ascending: false });
 
         if (links) {
           setStats(links);
-          setTotalClicks(links.reduce((sum, l) => sum + l.click_count, 0));
+          setTotalClicks(links.reduce((sum, l) => sum + (l.click_count || 0), 0));
         }
       }
       setLoading(false);
@@ -53,7 +66,13 @@ export default function AnalyticsPage() {
     load();
   }, [router]);
 
-  const topStat = stats[0];
+  const filteredStats = selectedPageId === 'all' 
+    ? stats 
+    : stats.filter(s => s.page_id === selectedPageId);
+
+  const displayTotalClicks = filteredStats.reduce((sum, l) => sum + (l.click_count || 0), 0);
+  const displayActiveLinks = filteredStats.filter(s => s.is_active).length;
+  const topStat = filteredStats[0];
   const maxClicks = topStat?.click_count || 1;
 
   if (loading) {
@@ -144,7 +163,7 @@ export default function AnalyticsPage() {
               <MousePointer className="w-10 h-10 text-[#FF5FA2]" />
             </div>
             <div>
-              <p className="text-4xl font-black text-[#18080F] tracking-tighter">{totalClicks}</p>
+              <p className="text-4xl font-black text-[#18080F] tracking-tighter">{displayTotalClicks}</p>
               <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">Total Interaksi</p>
             </div>
           </motion.div>
@@ -159,7 +178,7 @@ export default function AnalyticsPage() {
               <TrendingUp className="w-10 h-10 text-indigo-500" />
             </div>
             <div>
-              <p className="text-4xl font-black text-[#18080F] tracking-tighter">{stats.filter(s => s.is_active).length}</p>
+              <p className="text-4xl font-black text-[#18080F] tracking-tighter">{displayActiveLinks}</p>
               <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">Link Aktif</p>
             </div>
           </motion.div>
@@ -174,35 +193,61 @@ export default function AnalyticsPage() {
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF5FA2]/5 rounded-full blur-[100px] -mr-32 -mt-32" />
           
-          <div className="flex items-center justify-between mb-10 relative z-10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-[#FFF8F2] flex items-center justify-center">
-                <BarChart2 className="w-6 h-6 text-[#FF5FA2]" />
+          <div className="flex flex-col gap-8 mb-10 relative z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#FFF8F2] flex items-center justify-center">
+                  <BarChart2 className="w-6 h-6 text-[#FF5FA2]" />
+                </div>
+                <h3 className="text-xl font-black text-[#18080F]">Detail Klik per Link</h3>
               </div>
-              <h3 className="text-xl font-black text-[#18080F]">Detail Klik per Link</h3>
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Urutan Terpopuler</div>
             </div>
-            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Urutan Terpopuler</div>
+
+            {Object.keys(pagesInfo).length > 1 && (
+              <div className="flex flex-wrap gap-2 p-1 bg-gray-50 rounded-2xl w-fit">
+                <button
+                  onClick={() => setSelectedPageId('all')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    selectedPageId === 'all' 
+                      ? 'bg-white text-[#FF5FA2] shadow-sm' 
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  Semua Profil
+                </button>
+                {Object.values(pagesInfo).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedPageId(p.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      selectedPageId === p.id 
+                        ? 'bg-white text-[#FF5FA2] shadow-sm' 
+                        : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                  >
+                    {p.title || p.slug}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {stats.length === 0 ? (
+          {filteredStats.length === 0 ? (
             <div className="py-20 text-center bg-[#FFF8F2]/50 border-2 border-dashed border-[#F6B7C8]/20 rounded-[40px]">
               <div className="flex flex-col items-center gap-6">
                 <div className="w-20 h-20 rounded-[2.5rem] bg-gray-50 flex items-center justify-center text-gray-300">
                   <Layout className="w-10 h-10" />
                 </div>
                 <div className="text-center">
-                  <p className="text-xl font-black text-[#18080F] mb-2">Belum Ada OneTap Card</p>
-                  <p className="text-gray-400 text-sm font-medium mb-6">Kamu belum membuat halaman OneTap Card apapun.</p>
+                  <p className="text-xl font-black text-[#18080F] mb-2">Belum Ada Data</p>
+                  <p className="text-gray-400 text-sm font-medium mb-6">Tidak ada statistik untuk filter yang dipilih.</p>
                 </div>
-                <Link href="/dashboard/linktree" className="px-8 py-3.5 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all shadow-lg shadow-[#FF5FA2]/20 flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
-                  Buat OneTap Pertama
-                </Link>
               </div>
             </div>
           ) : (
             <div className="space-y-8 relative z-10">
-              {stats.map((link, idx) => {
+              {filteredStats.map((link, idx) => {
                 const Icon = iconMap[link.icon];
                 return (
                   <motion.div 
@@ -220,9 +265,16 @@ export default function AnalyticsPage() {
                           {Icon ? <Icon className="w-5 h-5 text-[#18080F]" /> : <Layout className="w-5 h-5 text-gray-300" />}
                         </div>
                         <div className="min-w-0">
-                          <p className={`text-base font-black truncate ${link.is_active ? 'text-[#18080F]' : 'text-gray-400'}`}>
-                            {link.label || 'Tanpa Label'}
-                          </p>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className={`text-base font-black truncate ${link.is_active ? 'text-[#18080F]' : 'text-gray-400'}`}>
+                              {link.label || 'Tanpa Label'}
+                            </p>
+                            {link.page_id && pagesInfo[link.page_id] && (
+                              <span className="px-2 py-0.5 rounded-md bg-gray-100 text-[9px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                                {pagesInfo[link.page_id].title || pagesInfo[link.page_id].slug}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs font-medium text-gray-400 truncate">{link.url}</p>
                         </div>
                       </div>
@@ -235,7 +287,7 @@ export default function AnalyticsPage() {
                     <div className="h-2.5 bg-gray-50 rounded-full overflow-hidden p-0.5 border border-gray-100/50">
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: `${Math.max(2, (link.click_count / maxClicks) * 100)}%` }}
+                        animate={{ width: link.click_count === 0 ? 0 : `${Math.max(2, (link.click_count / maxClicks) * 100)}%` }}
                         transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
                         className={`h-full rounded-full ${
                           link.is_active 

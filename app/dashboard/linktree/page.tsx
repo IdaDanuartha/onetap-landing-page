@@ -98,8 +98,17 @@ export default function OneTapBuilderPage() {
   }, [router]);
 
   useEffect(() => {
-    loadData();
+    // Check for persisted page ID
+    const savedPageId = typeof window !== 'undefined' ? localStorage.getItem('onetap_last_active_page_id') : null;
+    loadData(savedPageId || undefined);
   }, [loadData]);
+
+  // Update storage when currentPageId changes
+  useEffect(() => {
+    if (currentPageId) {
+      localStorage.setItem('onetap_last_active_page_id', currentPageId);
+    }
+  }, [currentPageId]);
 
   const addLink = () => {
     setLinks((prev) => [

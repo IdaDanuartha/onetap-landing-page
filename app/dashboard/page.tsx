@@ -254,12 +254,11 @@ export default function DashboardPage() {
 
             <div className="flex items-center gap-2 sm:gap-4">
               <Link
-                href={`/l/${user?.username}`}
-                target="_blank"
-                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[#FF5FA2] bg-[#FF5FA2]/5 hover:bg-[#FF5FA2]/10 transition-all duration-200"
+                href="/dashboard/settings"
+                className="p-2.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-200 group"
+                title="Settings"
               >
-                <ExternalLink className="w-4 h-4" />
-                Lihat Halaman
+                <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform" />
               </Link>
 
               <div className="h-8 w-px bg-gray-200 hidden sm:block mx-1" />
@@ -481,6 +480,15 @@ export default function DashboardPage() {
               locked: !canAccess(plan, 'attendance'),
               requiredPlan: 'Education',
             },
+            {
+              href: '/dashboard/settings',
+              icon: Settings,
+              title: 'Pengaturan Akun',
+              desc: 'Update profil, ganti password, dan kelola keamanan akun kamu.',
+              color: '#475569',
+              bg: 'bg-gray-100',
+              iconColor: 'text-gray-600',
+            },
 
           ].map((item, idx) => (
             <motion.div
@@ -488,7 +496,7 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + idx * 0.1 }}
-              className={item.href === '/dashboard/attendance' ? 'lg:col-span-3 sm:col-span-2' : ''}
+              className=""
             >
               {item.locked ? (
                 <div className="group relative block p-8 rounded-[32px] bg-white border border-[#F6B7C8]/10 shadow-sm overflow-hidden h-full opacity-70">
