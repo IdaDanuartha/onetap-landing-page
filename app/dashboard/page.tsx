@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { BarChart2, ExternalLink, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Share2, CheckCircle2, X, Loader2, Lock, Calendar, ShieldCheck, Clock } from 'lucide-react';
+import { BarChart2, ExternalLink, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Share2, CheckCircle2, X, Loader2, Lock, Calendar, ShieldCheck, Clock, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { canAccess, PLANS, PLAN_BADGE_COLORS, isExpired, getPlan } from '@/lib/plans';
 import type { PlanId } from '@/lib/plans';
@@ -14,7 +14,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { t, locale } = useLanguage();
+  const { t, locale, setLocale } = useLanguage();
   const [user, setUser] = useState<{ name: string; email: string; username: string; slug: string } | null>(null);
   const [plan, setPlan] = useState<PlanId>('starter');
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
@@ -248,7 +248,18 @@ export default function DashboardPage() {
               <span className="text-xl font-extrabold text-[#18080F] tracking-tight hidden sm:block">OneTap</span>
             </Link>
 
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Language Switcher */}
+              <button
+                onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+              >
+                <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+                {locale}
+              </button>
+
+              <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
+
               <Link
                 href="/dashboard/settings"
                 className="p-2.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-200 group"

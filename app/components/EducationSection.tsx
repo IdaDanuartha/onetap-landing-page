@@ -82,7 +82,7 @@ export default function EducationSection() {
                 </div>
                 <span className="text-[#18080F] text-sm font-bold" style={{ fontFamily: "var(--font-display)" }}>87%</span>
               </div>
-              <div className="text-gray-400 text-xs mt-1.5">43 of 50 {t('education.presentLabel')}</div>
+              <div className="text-gray-400 text-xs mt-1.5">{t('education.presentStat')}</div>
             </div>
           </motion.div>
 

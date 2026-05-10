@@ -10,58 +10,58 @@ export default function UseCasesSection() {
   const useCases = [
     {
       icon: Briefcase,
-      title: "Corporate Professionals",
-      description: "Replace paper business cards with a smart digital profile that updates in real-time.",
-      tag: "Business",
+      title: t('useCases.items.corporate.title'),
+      description: t('useCases.items.corporate.desc'),
+      tag: t('useCases.items.corporate.tag'),
       tagColor: "bg-[#FF5FA2]/20 text-[#FF5FA2]",
     },
     {
       icon: Music,
-      title: "Musicians & Artists",
-      description: "Share your Spotify, SoundCloud, booking info, and merch — all from one tap.",
-      tag: "Creative",
+      title: t('useCases.items.artist.title'),
+      description: t('useCases.items.artist.desc'),
+      tag: t('useCases.items.artist.tag'),
       tagColor: "bg-[#F6B7C8]/30 text-white",
     },
     {
       icon: Camera,
-      title: "Content Creators",
-      description: "Drive followers across all platforms with a single link that works on every device.",
-      tag: "Creator",
+      title: t('useCases.items.creator.title'),
+      description: t('useCases.items.creator.desc'),
+      tag: t('useCases.items.creator.tag'),
       tagColor: "bg-[#FF5FA2]/20 text-[#FF5FA2]",
     },
     {
       icon: Building2,
-      title: "Real Estate Agents",
-      description: "Share your portfolio, listings, and contact info instantly at every open house.",
-      tag: "Property",
+      title: t('useCases.items.property.title'),
+      description: t('useCases.items.property.desc'),
+      tag: t('useCases.items.property.tag'),
       tagColor: "bg-[#F6B7C8]/30 text-white",
     },
     {
       icon: Stethoscope,
-      title: "Healthcare Providers",
-      description: "Digital patient cards, appointment links, and clinic info — paperless and instant.",
-      tag: "Health",
+      title: t('useCases.items.health.title'),
+      description: t('useCases.items.health.desc'),
+      tag: t('useCases.items.health.tag'),
       tagColor: "bg-[#FF5FA2]/20 text-[#FF5FA2]",
     },
     {
       icon: GraduationCap,
-      title: "Educators & Students",
-      description: "Share research profiles, class materials, and academic portfolios with one tap.",
-      tag: "Education",
+      title: t('useCases.items.education.title'),
+      description: t('useCases.items.education.desc'),
+      tag: t('useCases.items.education.tag'),
       tagColor: "bg-[#F6B7C8]/30 text-white",
     },
     {
       icon: Utensils,
-      title: "Restaurant & F&B",
-      description: "Digital menus, reviews link, reservation booking — all contactless and smart.",
-      tag: "F&B",
+      title: t('useCases.items.fnb.title'),
+      description: t('useCases.items.fnb.desc'),
+      tag: t('useCases.items.fnb.tag'),
       tagColor: "bg-[#FF5FA2]/20 text-[#FF5FA2]",
     },
     {
       icon: Dumbbell,
-      title: "Fitness & Wellness",
-      description: "Trainers and coaches share schedules, class bookings, and diet plans instantly.",
-      tag: "Fitness",
+      title: t('useCases.items.fitness.title'),
+      description: t('useCases.items.fitness.desc'),
+      tag: t('useCases.items.fitness.tag'),
       tagColor: "bg-[#F6B7C8]/30 text-white",
     },
   ];
@@ -94,13 +94,25 @@ export default function UseCasesSection() {
             className="text-4xl lg:text-5xl text-white mb-5 font-extrabold"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Built for{" "}
-            <span className="bg-gradient-to-r from-[#F6B7C8] to-[#FF5FA2] bg-clip-text text-transparent">
-              every profession
-            </span>
+            {(t('useCases.title') as string).split(' ').map((word: string, i, arr) => {
+              // Highlight the last 2 words with gradient
+              const isHighlight = i >= arr.length - 2;
+              return (
+                <span key={i}>
+                  {isHighlight ? (
+                    <span className="bg-gradient-to-r from-[#F6B7C8] to-[#FF5FA2] bg-clip-text text-transparent">
+                      {word}
+                    </span>
+                  ) : (
+                    word
+                  )}
+                  {i < arr.length - 1 ? ' ' : ''}
+                </span>
+              );
+            })}
           </h2>
           <p className="text-[#F6B7C8]/70 text-lg max-w-xl mx-auto">
-            Whether you're a solo creator or an enterprise team, OneTap adapts to your needs.
+            {t('useCases.description')}
           </p>
         </motion.div>
 
@@ -119,9 +131,9 @@ export default function UseCasesSection() {
             {/* Floating stat */}
             <div className="absolute bottom-6 left-6 right-6 bg-white/10 backdrop-blur-xl border border-[#FF5FA2]/20 rounded-2xl p-5">
               <div className="text-white text-3xl mb-1 font-extrabold" style={{ fontFamily: "var(--font-display)" }}>
-                20+ Industries
+                {t('useCases.statTitle')}
               </div>
-              <div className="text-[#F6B7C8] text-sm">served across Southeast Asia</div>
+              <div className="text-[#F6B7C8] text-sm">{t('useCases.statLabel')}</div>
             </div>
           </motion.div>
 

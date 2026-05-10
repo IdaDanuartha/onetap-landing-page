@@ -22,9 +22,7 @@ export default function Home() {
         <HowItWorksSection />
         <ProductsSection />
         <UseCasesSection />
-        {/* NEW: Feature showcase */}
         <OneTapHighlight />
-        {/* NEW: Education / NFC Attendance showcase */}
         <AttendanceSection />
         <TestimonialsSection />
         <FAQSection />

@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   Trash2,
   X,
-  LogOut
+  LogOut,
+  Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Toast from "@/app/components/Toast";
@@ -33,7 +34,8 @@ export default function SettingsPage() {
   const [isChangingPass, setIsChangingPass] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
-  const { locale: language } = useLanguage();
+  const { locale, setLocale } = useLanguage();
+  const language = locale;
   const d = dict[language].dashboard.settings;
   
   // Profile state
@@ -227,7 +229,15 @@ export default function SettingsPage() {
               </div>
               <span className="text-lg font-black text-[#18080F]">{d.title}</span>
             </div>
-            <div className="w-20" /> {/* Spacer */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+              >
+                <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+                {locale}
+              </button>
+            </div>
           </div>
         </div>
       </nav>

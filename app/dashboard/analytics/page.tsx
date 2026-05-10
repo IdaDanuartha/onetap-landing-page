@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, BarChart2, TrendingUp, MousePointer, Loader2, Zap, Layout, Share2, Activity, ChevronRight, Plus } from 'lucide-react';
+import { ArrowLeft, BarChart2, TrendingUp, MousePointer, Loader2, Zap, Layout, Share2, Activity, ChevronRight, Plus, Globe } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { iconMap } from '@/app/components/linktree/IconPicker';
@@ -34,8 +34,8 @@ export default function AnalyticsPage() {
   const [selectedPageId, setSelectedPageId] = useState<string>('all');
   const [totalClicks, setTotalClicks] = useState(0);
   const [loading, setLoading] = useState(true);
-  const { locale: language } = useLanguage();
-  const d = dict[language].dashboard.analytics;
+  const { locale, setLocale } = useLanguage();
+  const d = dict[locale].dashboard.analytics;
 
   useEffect(() => {
     async function load() {
@@ -134,11 +134,20 @@ export default function AnalyticsPage() {
     <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2]">
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center gap-4">
-          <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-xl font-black text-[#18080F]">{d.title}</h1>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <h1 className="text-xl font-black text-[#18080F]">{d.title}</h1>
+          </div>
+          <button
+            onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+          >
+            <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+            {locale}
+          </button>
         </div>
       </nav>
 

@@ -21,12 +21,15 @@ export const translations = {
       ctaPrimary: "Mulai Gratis",
       ctaSecondary: "Tonton Demo",
       ctaCatalog: "Lihat Katalog",
+      imageAlt: "Pengalaman OneTap NFC",
       statHappy: "Pengguna Aktif",
       statRating: "Uptime SLA",
       statApps: "Integrasi",
       floating: {
         profile: "Profil Digital",
+        profileAlt: "Avatar Yogik Pratama",
         attendance: "Absensi Tercatat",
+        attendanceTime: "Yogik — 08:42 WIB ✓",
         link: "1 Link untuk Semuanya",
       },
     },
@@ -92,6 +95,8 @@ export const translations = {
         monthly: "Bulanan",
         yearly: "Tahunan",
         save: "Hemat 20% per tahun",
+        period: "/bulan",
+        saveTag: "-20%",
       },
       cta: {
         free: "Mulai Gratis",
@@ -147,6 +152,8 @@ export const translations = {
       title: "Dibangun untuk setiap profesi",
       description:
         "Baik Anda seorang kreator solo atau tim perusahaan, OneTap beradaptasi dengan kebutuhan Anda.",
+      statTitle: "20+ Industri",
+      statLabel: "melayani seluruh Asia Tenggara",
       items: {
         corporate: {
           title: "Profesional Korporat",
@@ -249,6 +256,7 @@ export const translations = {
       live: "Live",
       attendanceLabel: "Absensi Hari Ini",
       presentLabel: "siswa hadir",
+      presentStat: "43 dari 50 siswa hadir",
     },
     attendanceSection: {
       badge: "Sistem Absensi NFC",
@@ -270,6 +278,7 @@ export const translations = {
       },
       ctaPrimary: "Cek Log Absen",
       ctaSecondary: "Konsultasi Setup",
+      waMessage: "Halo OneTap, saya ingin konsultasi mengenai setup sistem absensi NFC OneTap untuk instansi/sekolah saya.",
       mock: {
         title: "Notifikasi Kehadiran",
         body1: "Halo Bapak/Ibu, Siswa **Budi Santoso** telah hadir di sekolah pada pukul **07:15 WIB**.",
@@ -387,6 +396,9 @@ export const translations = {
       dashboard: "Masuk ke Dashboard",
       language: "Bahasa",
       consultation: "Konsultasi Gratis",
+      chatWa: "Chat WA",
+      waTooltip: "Butuh Bantuan? Chat Kami",
+      waMessage: "Halo OneTap, saya ingin bertanya mengenai detail produk NFC OneTap yang tersedia.",
     },
     checkout: {
       title: "Penyelesaian Pembayaran",
@@ -448,6 +460,10 @@ export const translations = {
       stats: "Klik Profil",
     },
     dashboard: {
+      title: "Dashboard",
+      nfc: {
+        title: "NFC Activator",
+      },
       welcome: "Halo",
       manageLink: "Kelola kartu digitalmu di",
       copyLink: "Link disalin ke clipboard!",
@@ -757,12 +773,15 @@ export const translations = {
       ctaPrimary: "Get Started Free",
       ctaSecondary: "Watch Demo",
       ctaCatalog: "View Catalog",
+      imageAlt: "OneTap NFC Experience",
       statHappy: "Active Users",
       statRating: "Uptime SLA",
       statApps: "Integrations",
       floating: {
         profile: "Digital Profile",
+        profileAlt: "Yogik Pratama Avatar",
         attendance: "Attendance Logged",
+        attendanceTime: "Yogik — 08:42 AM ✓",
         link: "1 Link for Everything",
       },
     },
@@ -828,6 +847,8 @@ export const translations = {
         monthly: "Monthly",
         yearly: "Yearly",
         save: "Save 20% annually",
+        period: "/month",
+        saveTag: "-20%",
       },
       cta: {
         free: "Get Started Free",
@@ -883,6 +904,8 @@ export const translations = {
       title: "Built for every profession",
       description:
         "Whether you're a solo creator or an enterprise team, OneTap adapts to your needs.",
+      statTitle: "20+ Industries",
+      statLabel: "served across Southeast Asia",
       items: {
         corporate: {
           title: "Corporate Professionals",
@@ -985,6 +1008,7 @@ export const translations = {
       live: "Live",
       attendanceLabel: "Today's Attendance",
       presentLabel: "students present",
+      presentStat: "43 of 50 students present",
     },
     attendanceSection: {
       badge: "NFC Attendance System",
@@ -1005,7 +1029,8 @@ export const translations = {
         },
       },
       ctaPrimary: "Check Attendance Logs",
-      ctaSecondary: "Setup Consultation",
+      ctaSecondary: "Consultation Setup",
+      waMessage: "Hello OneTap, I would like to consult about setting up the OneTap NFC attendance system for my institution/school.",
       mock: {
         title: "Attendance Notification",
         body1: "Hello Parent, Student **Budi Santoso** has arrived at school at **07:15 AM**.",
@@ -1123,6 +1148,9 @@ export const translations = {
       dashboard: "Go to Dashboard",
       language: "Language",
       consultation: "Free Consultation",
+      chatWa: "Chat WA",
+      waTooltip: "Need Help? Chat with Us",
+      waMessage: "Hello OneTap, I would like to ask about the details of available OneTap NFC products.",
     },
     checkout: {
       title: "Checkout",
@@ -1184,6 +1212,10 @@ export const translations = {
       stats: "Profile Clicks",
     },
     dashboard: {
+      title: "Dashboard",
+      nfc: {
+        title: "NFC Activator",
+      },
       welcome: "Hello",
       manageLink: "Manage your digital card at",
       copyLink: "Link copied to clipboard!",

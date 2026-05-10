@@ -32,7 +32,7 @@ export default function HowItWorksSection() {
   ];
 
   return (
-    <AnimatedSection id="how-it-works" className="py-24 lg:py-32 bg-white">
+    <AnimatedSection id="how-it-works" className="py-8 bg-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <motion.div variants={fadeInUp} className="text-center mb-16">
@@ -46,7 +46,7 @@ export default function HowItWorksSection() {
           >
             {t('howItWorks.title').split(' 3 ')[0]} {" "}
             <span className="bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] bg-clip-text text-transparent">
-              3 simple steps
+              {t('howItWorks.title').split(' 3 ')[1] ? `3 ${t('howItWorks.title').split(' 3 ')[1]}` : '3 simple steps'}
             </span>
           </h2>
           <p className="text-gray-500 text-lg max-w-xl mx-auto">

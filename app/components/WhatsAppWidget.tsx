@@ -3,8 +3,10 @@
 import { MessageCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function WhatsAppWidget() {
+  const { t } = useLanguage();
   const pathname = usePathname();
 
   // Hide on dashboard pages
@@ -13,8 +15,7 @@ export default function WhatsAppWidget() {
   }
 
   const phoneNumber = '6283114227745';
-  const defaultMessage = 'Halo OneTap, saya ingin bertanya mengenai detail produk NFC OneTap yang tersedia.';
-  const encodedMessage = encodeURIComponent(defaultMessage);
+  const encodedMessage = encodeURIComponent(t('common.waMessage'));
   const waUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
   return (
@@ -38,7 +39,7 @@ export default function WhatsAppWidget() {
           whileHover={{ opacity: 1, x: 0 }}
           className="absolute right-16 px-4 py-2 bg-white text-[#18080F] text-xs font-black rounded-xl shadow-xl border border-gray-100 whitespace-nowrap pointer-events-none"
         >
-          Butuh Bantuan? Chat Kami
+          {t('common.waTooltip')}
           <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-white border-r border-t border-gray-100 rotate-45" />
         </motion.div>
       </motion.a>

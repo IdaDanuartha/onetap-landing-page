@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Zap, Smartphone, ArrowRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Zap, Smartphone, ArrowRight, Loader2, CheckCircle2, AlertCircle, Globe } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { dict } from "@/lib/i18n/dict";
 import Link from "next/link";
 
 export default function WhatsAppSetupPage() {
@@ -10,6 +12,8 @@ export default function WhatsAppSetupPage() {
   const [isLoadingQr, setIsLoadingQr] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [deviceStatus, setDeviceStatus] = useState("checking...");
+  const { locale, setLocale } = useLanguage();
+  const d_dashboard = dict[locale].dashboard;
 
   // Check initial status
   useEffect(() => {
@@ -57,10 +61,19 @@ export default function WhatsAppSetupPage() {
   return (
     <div className="min-h-screen bg-[#FFF8F2]">
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <Link href="/dashboard" className="text-gray-400 hover:text-[#FF5FA2] flex items-center gap-2 mb-8 font-bold transition-all">
-          <ArrowRight className="w-4 h-4 rotate-180" />
-          Kembali ke Dashboard
-        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/dashboard" className="text-gray-400 hover:text-[#FF5FA2] flex items-center gap-2 font-bold transition-all">
+            <ArrowRight className="w-4 h-4 rotate-180" />
+            {d_dashboard.title}
+          </Link>
+          <button
+            onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+          >
+            <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+            {locale}
+          </button>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

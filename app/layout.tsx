@@ -120,10 +120,10 @@ export default function RootLayout({
       <body className={`${inter.variable} ${outfit.variable} antialiased`}>
         <LanguageProvider>
           {children}
+          <WhatsAppWidget />
         </LanguageProvider>
 
         {/* <TawkTo /> */}
-        <WhatsAppWidget />
       </body>
     </html>
   );

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { motion } from 'framer-motion';
@@ -15,6 +14,7 @@ export default function DashboardLoading() {
               <div className="w-24 h-6 bg-gray-200 rounded-lg animate-pulse hidden sm:block" />
             </div>
             <div className="flex items-center gap-4">
+              <div className="w-16 h-8 bg-gray-100 rounded-xl animate-pulse" />
               <div className="w-32 h-8 bg-gray-200 rounded-xl animate-pulse hidden md:block" />
               <div className="w-32 h-10 bg-gray-200 rounded-full animate-pulse" />
             </div>

@@ -69,7 +69,7 @@ export default function AttendanceSection() {
 
             <div className="flex flex-wrap gap-4">
               <a
-                href="https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia."
+                href={`https://wa.me/6283114227745?text=${encodeURIComponent(t('attendanceSection.waMessage'))}`}
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#FF5FA2] text-white font-bold hover:bg-[#E8457E] transition-all shadow-xl shadow-[#FF5FA2]/20"
               >
                 {t('attendanceSection.ctaSecondary')}

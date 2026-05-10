@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic';
 
 export default function OneTapBuilderPage() {
   const router = useRouter();
-  const { t, locale } = useLanguage();
+  const { t, locale, setLocale } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState('');
   const [slug, setSlug] = useState('');
@@ -43,7 +43,7 @@ export default function OneTapBuilderPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
-  const { locale: language } = useLanguage();
+  const language = locale;
   const d = dict[language].dashboard.builder;
   
   // Multi-page state
@@ -292,7 +292,17 @@ export default function OneTapBuilderPage() {
               <h1 className="text-lg font-black text-[#18080F] sm:hidden">OneTap Builder</h1>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+              >
+                <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+                {locale}
+              </button>
+
+              <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
+
               <button
                 onClick={handleSave}
                 disabled={saving || currentIsDisabled}

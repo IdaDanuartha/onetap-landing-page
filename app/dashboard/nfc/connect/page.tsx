@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { dict } from '@/lib/i18n/dict';
 
 type Mode = 'profile' | 'url' | 'text' | 'phone' | 'sms' | 'email' | 'whatsapp' | 'erase';
 
@@ -37,6 +39,8 @@ export default function ConnectNfcPage() {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const { locale, setLocale } = useLanguage();
+  const d = dict[locale].dashboard.nfc || { title: 'NFC Activator' };
   
   // Security states
   const [showSecurity, setShowSecurity] = useState(false);
@@ -158,11 +162,20 @@ export default function ConnectNfcPage() {
     <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2]">
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center gap-4">
-          <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-xl font-black text-[#18080F]">NFC Activator</h1>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <h1 className="text-xl font-black text-[#18080F]">NFC Activator</h1>
+          </div>
+          <button
+            onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+          >
+            <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+            {locale}
+          </button>
         </div>
       </nav>
 

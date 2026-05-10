@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb } from "lucide-react";
+import { User, Users, Globe, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import Toast from "@/app/components/Toast";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -69,8 +69,8 @@ export default function AttendanceManagementPage() {
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
   const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
-  const { locale: language } = useLanguage();
-  const d = dict[language].dashboard.attendance;
+  const { locale, setLocale } = useLanguage();
+  const d = dict[locale].dashboard.attendance;
 
   const [plan, setPlan] = useState<string>("starter");
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
@@ -527,11 +527,11 @@ export default function AttendanceManagementPage() {
     if (!user) return;
 
     if (editingTag && (!formData.teacher_phone || formData.teacher_phone.trim() === "")) {
-      setToastMsg(language === 'id' ? "Nomor WhatsApp Pendamping wajib diisi agar notifikasi bisa terkirim." : "Parent WhatsApp number is required for notifications to be sent.");
+      setToastMsg(locale === 'id' ? "Nomor WhatsApp Pendamping wajib diisi agar notifikasi bisa terkirim." : "Parent WhatsApp number is required for notifications to be sent.");
       setToastType("warning");
       setShowToast(true);
       return;
-    }
+    } 
 
     setIsSubmitting(true);
 
@@ -581,7 +581,7 @@ export default function AttendanceManagementPage() {
       setToastType("error");
       setShowToast(true);
     } else {
-      setSuccessMessage(language === 'id' ? "Berhasil menghapus data siswa!" : "Successfully deleted student data!");
+      setSuccessMessage(locale === 'id' ? "Berhasil menghapus data siswa!" : "Successfully deleted student data!");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     }
@@ -725,6 +725,14 @@ export default function AttendanceManagementPage() {
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto mt-4 lg:mt-0">
+            <button
+              onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+            >
+              <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+              {locale}
+            </button>
+            <div className="h-8 w-px bg-gray-100 mx-1 hidden lg:block" />
             <Link 
               href="/dashboard/attendance/logs"
               className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-sm"

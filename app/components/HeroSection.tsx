@@ -7,9 +7,9 @@ export default function HeroSection() {
   const { t } = useLanguage();
 
   const stats = [
-    { value: "50K+", label: t('hero.statHappy') || "Active Users" },
-    { value: "120+", label: t('hero.statApps') || "Integrations" },
-    { value: "99.9%", label: t('hero.statRating') || "Uptime SLA" },
+    { value: "50K+", label: t('hero.statHappy') },
+    { value: "120+", label: t('hero.statApps') },
+    { value: "99.9%", label: t('hero.statRating') },
   ];
 
   return (
@@ -152,8 +152,8 @@ export default function HeroSection() {
               {/* Hero image illustration */}
               <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl shadow-[#FF5FA2]/10 bg-[#2D1020]/50 backdrop-blur-sm">
                 <img
-                  src="/images/hero-illustration.png"
-                  alt="OneTap NFC Experience"
+                  src="https://images.unsplash.com/photo-1720135885007-454165745e21?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBTYWFTJTIwZGFzaGJvYXJkJTIwYXBwJTIwZGFyayUyMGludGVyZmFjZXxlbnwxfHx8fDE3NzgxNDg5ODh8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                  alt={t('hero.imageAlt')}
                   className="w-full h-auto object-cover scale-105 hover:scale-110 transition-transform duration-700"
                   loading="lazy"
                 />
@@ -170,7 +170,7 @@ export default function HeroSection() {
                   <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 shadow-lg">
                     <img
                       src="/images/yogik_avatar.png"
-                      alt="Yogik Pratama Avatar"
+                      alt={t('hero.floating.profileAlt')}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -205,7 +205,7 @@ export default function HeroSection() {
                   </div>
                   <span className="text-white text-sm font-semibold">{t('hero.floating.attendance')}</span>
                 </div>
-                <div className="text-[#F6B7C8] text-xs">Yogik — 08:42 AM ✓</div>
+                <div className="text-[#F6B7C8] text-xs">{t('hero.floating.attendanceTime')}</div>
               </motion.div>
 
               {/* Floating link card */}

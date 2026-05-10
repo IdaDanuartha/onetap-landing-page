@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle2, XCircle, Search, Calendar, User, ArrowRight, Filter, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Search, Calendar, User, ArrowRight, Filter, Download, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { dict } from "@/lib/i18n/dict";
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +21,8 @@ interface AttendanceLog {
 
 export default function DashboardAttendanceLogsPage() {
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
+  const { locale, setLocale } = useLanguage();
+  const d_attendance = dict[locale].dashboard.attendance;
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }));
@@ -110,18 +114,26 @@ export default function DashboardAttendanceLogsPage() {
   return (
     <div className="min-h-screen bg-[#FFF8F2]">
       <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
           <div>
             <Link href="/dashboard/attendance" className="text-gray-400 hover:text-[#FF5FA2] flex items-center gap-2 mb-4 font-bold transition-all">
               <ArrowRight className="w-4 h-4 rotate-180" />
-              Kembali ke Manajemen
+              {d_attendance.back}
             </Link>
-            <h1 className="text-3xl font-black text-[#18080F] tracking-tight">Histori Absensi</h1>
+            <h1 className="text-3xl font-black text-[#18080F] tracking-tight">{d_attendance.actions.history}</h1>
             <p className="text-gray-500 font-medium">Log kehadiran lengkap dengan status pengiriman WhatsApp.</p>
           </div>
           
-          <button 
-            onClick={() => {
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+            >
+              <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+              {locale}
+            </button>
+            <div className="h-8 w-px bg-gray-200 mx-1" />
+            <button             onClick={() => {
               if (filteredLogs.length === 0) return;
               
               const headers = ["Nama Siswa", "Kelas", "Mapel", "Waktu Tap", "Status WA"];
@@ -153,6 +165,7 @@ export default function DashboardAttendanceLogsPage() {
             Ekspor CSV
           </button>
         </div>
+      </div>
 
         {/* Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-8">

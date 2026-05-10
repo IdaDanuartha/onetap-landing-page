@@ -1,11 +1,12 @@
 "use client";
 import { MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
-
-const WA_LINK =
-  "https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia.";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function FloatingWA() {
+  const { t } = useLanguage();
+  const WA_LINK = `https://wa.me/6283114227745?text=${encodeURIComponent(t('common.waMessage'))}`;
+
   return (
     <motion.a
       href={WA_LINK}
@@ -21,7 +22,7 @@ export default function FloatingWA() {
       whileTap={{ scale: 0.94 }}
     >
       <MessageCircle className="w-5 h-5" />
-      <span>Chat WA</span>
+      <span>{t('common.chatWa')}</span>
     </motion.a>
   );
 }

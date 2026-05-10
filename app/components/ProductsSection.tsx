@@ -36,7 +36,7 @@ export default function ProductsSection() {
       yearlyPrice: t('products.plans.professional.price.yearly'),
       originalPrice: t('products.plans.professional.price.originalMonthly'),
       originalYearlyPrice: t('products.plans.professional.price.originalYearly'),
-      period: "/bulan",
+      period: t('products.billing.period'),
       description: t('products.plans.professional.desc'),
       border: "border-[#FF5FA2]",
       buttonStyle: "bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white shadow-lg shadow-[#FF5FA2]/25",
@@ -51,7 +51,7 @@ export default function ProductsSection() {
       yearlyPrice: t('products.plans.education.price.yearly'),
       originalPrice: t('products.plans.education.price.originalMonthly'),
       originalYearlyPrice: t('products.plans.education.price.originalYearly'),
-      period: "/bulan",
+      period: t('products.billing.period'),
       description: t('products.plans.education.desc'),
       border: "border-gray-200",
       buttonStyle: "bg-[#FF5FA2] text-white shadow-md shadow-[#FF5FA2]/15 hover:bg-[#E8457E]",
@@ -97,7 +97,7 @@ export default function ProductsSection() {
                 {b === "monthly" ? t('products.billing.monthly') : t('products.billing.yearly')}{" "}
                 {b === "yearly" && (
                   <span className={`text-xs ml-1 font-bold ${billing === b ? "text-white/90" : "text-emerald-500"}`}>
-                    -20%
+                    {t('products.billing.saveTag')}
                   </span>
                 )}
               </button>
