@@ -8,7 +8,7 @@ export const translations = {
       howItWorks: "Cara Kerja",
       features: "Fitur",
       orderNow: "Order Sekarang",
-      attendance: "Attendance",
+      pricing: "Paket & Harga",
       products: "Produk Kami",
     },
     hero: {
@@ -744,7 +744,7 @@ export const translations = {
       howItWorks: "How It Works",
       features: "Features",
       orderNow: "Order Now",
-      attendance: "Attendance",
+      pricing: "Pricing",
       products: "Our Products",
     },
     hero: {

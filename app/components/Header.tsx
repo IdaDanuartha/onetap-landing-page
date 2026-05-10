@@ -62,7 +62,7 @@ export default function Header() {
     { label: t('nav.features'), href: "/#features" },
     { label: t('nav.howItWorks'), href: "/#how-it-works" },
     { label: t('nav.products'), href: "https://lynk.id/onetap.charm" },
-    { label: t('nav.attendance'), href: "/#pricing" },
+    { label: t('nav.pricing'), href: "/#pricing" },
   ];
 
   return (
@@ -254,7 +254,7 @@ export default function Header() {
                         {link.label === t('nav.features') && <Zap className="w-4 h-4 text-[#FF5FA2]" />}
                         {link.label === t('nav.howItWorks') && <Play className="w-4 h-4 text-[#FF5FA2]" />}
                         {link.label === t('nav.products') && <Link2 className="w-4 h-4 text-[#FF5FA2]" />}
-                        {link.label === t('nav.attendance') && <Users className="w-4 h-4 text-[#FF5FA2]" />}
+                        {link.label === t('nav.pricing') && <Users className="w-4 h-4 text-[#FF5FA2]" />}
                       </div>
                       <span className="text-[17px] font-bold text-[#18080F] tracking-tight">
                         {link.label}
