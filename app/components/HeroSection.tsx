@@ -98,12 +98,19 @@ export default function HeroSection() {
             >
               <a
                 href="/auth/register"
-                target="_blank"
-                rel="noreferrer"
                 className="inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-semibold shadow-2xl shadow-[#FF5FA2]/30 hover:shadow-[#FF5FA2]/50 hover:-translate-y-0.5 transition-all duration-200"
               >
                 {t('hero.ctaPrimary')}
                 <ArrowRight className="w-4 h-4" />
+              </a>
+              <a
+                href="https://lynk.id/onetap.charm"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                {t('hero.ctaCatalog')}
+                <Link2 className="w-4 h-4" />
               </a>
             </motion.div>
 
