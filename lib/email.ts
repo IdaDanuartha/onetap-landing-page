@@ -80,7 +80,7 @@ export async function sendPlanEmail({ to, subject, planName, daysLeft, type }: E
       <p>&copy; 2026 OneTap. All rights reserved.</p>
       <p>Banjarmasin, Indonesia</p>
       <div class="social-links">
-        <a href="https://instagram.com/onetap">Instagram</a>
+        <a href="https://instagram.com/onetap.charm">Instagram</a>
         <a href="https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia.">WhatsApp</a>
       </div>
     </div>
