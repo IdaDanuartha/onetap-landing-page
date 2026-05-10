@@ -61,8 +61,8 @@ export default function Header() {
   const navLinks = [
     { label: t('nav.features'), href: "/#features" },
     { label: t('nav.howItWorks'), href: "/#how-it-works" },
-    { label: t('products.badge'), href: "/#pricing" },
-    { label: t('nav.attendance'), href: "/#attendance" },
+    { label: t('nav.products'), href: "https://lynk.id/onetap.charm" },
+    { label: t('nav.attendance'), href: "/#pricing" },
   ];
 
   return (
@@ -253,7 +253,7 @@ export default function Header() {
                       <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-[#FF5FA2]/10 transition-colors">
                         {link.label === t('nav.features') && <Zap className="w-4 h-4 text-[#FF5FA2]" />}
                         {link.label === t('nav.howItWorks') && <Play className="w-4 h-4 text-[#FF5FA2]" />}
-                        {link.label === t('products.badge') && <ChevronRight className="w-4 h-4 text-[#FF5FA2]" />}
+                        {link.label === t('nav.products') && <Link2 className="w-4 h-4 text-[#FF5FA2]" />}
                         {link.label === t('nav.attendance') && <Users className="w-4 h-4 text-[#FF5FA2]" />}
                       </div>
                       <span className="text-[17px] font-bold text-[#18080F] tracking-tight">

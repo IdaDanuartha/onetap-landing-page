@@ -8,7 +8,8 @@ export const translations = {
       howItWorks: "Cara Kerja",
       features: "Fitur",
       orderNow: "Order Sekarang",
-      attendance: "Absensi",
+      attendance: "Attendance",
+      products: "Produk Kami",
     },
     hero: {
       badge: "New: Smart NFC Cards Now Available",
@@ -81,7 +82,7 @@ export const translations = {
       cta: "Coba Sekarang Gratis",
     },
     products: {
-      badge: "Produk Kami",
+      badge: "Paket & Harga",
       title: "Harga Sederhana & Transparan",
       description:
         "Mulai gratis, tingkatkan saat Anda siap. Tanpa biaya tersembunyi, batalkan kapan saja.",
@@ -744,6 +745,7 @@ export const translations = {
       features: "Features",
       orderNow: "Order Now",
       attendance: "Attendance",
+      products: "Our Products",
     },
     hero: {
       badge: "New: Smart NFC Cards Now Available",
@@ -816,7 +818,7 @@ export const translations = {
       cta: "Try Now for Free",
     },
     products: {
-      badge: "Our Products",
+      badge: "Plans & Pricing",
       title: "Simple, Transparent Pricing",
       description:
         "Start free, scale when you're ready. No hidden fees, cancel anytime.",
