@@ -9,7 +9,15 @@ export interface PlanConfig {
   priceYearly: number;  // in Rupiah (per month, billed annually)
   amountYearly: number; // total annual charge
   mayarLink?: string;
-  features: Record<string, boolean>;
+  features: {
+    linktree: boolean;
+    nfcConnect: boolean;
+    analytics: boolean;
+    attendance: boolean;
+    customBranding: boolean;
+    passwordLinks: boolean;
+    maxProfiles: number;
+  };
 }
 
 export const PLANS: Record<PlanId, PlanConfig> = {
@@ -27,15 +35,16 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       attendance: false,
       customBranding: true,
       passwordLinks: true,
+      maxProfiles: 1,
     },
   },
   professional: {
     id: 'professional',
     nameId: 'Professional',
     nameEn: 'Professional',
-    priceMonthly: 25000,
-    priceYearly: 20000,
-    amountYearly: 240000, // 20K × 12
+    priceMonthly: 20000,
+    priceYearly: 16000,
+    amountYearly: 192000, // 16K × 12
     mayarLink: 'https://codewithdanu.myr.id/m/onetap-professional-plan',
     features: {
       linktree: true,
@@ -44,6 +53,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       attendance: false,
       customBranding: true,
       passwordLinks: true,
+      maxProfiles: 3,
     },
   },
   education: {
@@ -61,21 +71,38 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       attendance: true,
       customBranding: true,
       passwordLinks: true,
+      maxProfiles: 9999, // Effectively unlimited
     },
   },
 };
 
 export type FeatureKey = keyof (typeof PLANS)['starter']['features'];
 
+/** Check if a plan is expired */
+export function isExpired(expiresAt: string | null | undefined): boolean {
+  if (!expiresAt) return false;
+  return new Date(expiresAt) < new Date();
+}
+
 /** Check if a plan has access to a specific feature */
-export function canAccess(plan: string | null | undefined, feature: FeatureKey): boolean {
-  const resolvedPlan = (plan && PLANS[plan as PlanId]) ? (plan as PlanId) : 'starter';
+export function canAccess(
+  plan: string | null | undefined, 
+  feature: FeatureKey, 
+  expiresAt?: string | null | undefined
+): any {
+  // If expired, revert to starter plan features
+  const resolvedPlan = (plan && PLANS[plan as PlanId] && !isExpired(expiresAt)) 
+    ? (plan as PlanId) 
+    : 'starter';
+  
   return PLANS[resolvedPlan].features[feature] ?? false;
 }
 
 /** Get plan config */
-export function getPlan(plan: string | null | undefined): PlanConfig {
-  const resolvedPlan = (plan && PLANS[plan as PlanId]) ? (plan as PlanId) : 'starter';
+export function getPlan(plan: string | null | undefined, expiresAt?: string | null | undefined): PlanConfig {
+  const resolvedPlan = (plan && PLANS[plan as PlanId] && !isExpired(expiresAt)) 
+    ? (plan as PlanId) 
+    : 'starter';
   return PLANS[resolvedPlan];
 }
 
@@ -96,3 +123,4 @@ export const PLAN_BADGE_COLORS: Record<PlanId, string> = {
   professional: 'bg-[#FFF1F7] text-[#FF5FA2]',
   education: 'bg-purple-50 text-purple-600',
 };
+

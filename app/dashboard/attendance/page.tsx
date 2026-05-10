@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { User, Users, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import Toast from "@/app/components/Toast";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { dict } from "@/lib/i18n/dict";
+import { canAccess, isExpired } from "@/lib/plans";
 
 interface Tag {
   id: string;
@@ -66,6 +69,12 @@ export default function AttendanceManagementPage() {
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
   const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
+  const { locale: language } = useLanguage();
+  const d = dict[language].dashboard.attendance;
+
+  const [plan, setPlan] = useState<string>("starter");
+  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
+  const [hasAccess, setHasAccess] = useState(true);
 
 
   const [formData, setFormData] = useState({
@@ -81,10 +90,24 @@ export default function AttendanceManagementPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-    
     if (user) {
+        // Fetch user profile for plan info
+        const { data: profile } = await supabase
+          .from("users_profile")
+          .select("plan, plan_expires_at")
+          .eq("id", user.id)
+          .single();
+
+        const currentPlan = profile?.plan || "starter";
+        const expiresAt = profile?.plan_expires_at;
+        
+        setPlan(currentPlan);
+        setPlanExpiresAt(expiresAt);
+
+        // Attendance is only for Education plan
+        const access = canAccess(currentPlan, "attendance") && !isExpired(expiresAt);
+        setHasAccess(access);
+
         const { data: tagsData } = await supabase
         .from("attendance_tags")
         .select("*")
@@ -135,7 +158,7 @@ export default function AttendanceManagementPage() {
         const lines = text.split(/\r?\n/).filter(line => line.trim());
         
         if (lines.length === 0) {
-          setImportError("File kosong atau tidak valid.");
+          setImportError(d.import.error);
           return;
         }
 
@@ -174,14 +197,14 @@ export default function AttendanceManagementPage() {
         const { error } = await supabase.from("attendance_tags").insert(newTags);
         if (error) throw error;
         
-        setSuccessMessage("Berhasil mengimpor data siswa!");
+        setSuccessMessage(d.import.success);
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
         fetchData();
         setShowImportModal(false);
       } catch (err) {
         console.error("Import failed:", err);
-        setImportError("Gagal mengimpor data. Pastikan format CSV benar dan gunakan koma sebagai pemisah.");
+        setImportError(d.import.error);
       } finally {
         setImportLoading(false);
         if (e.target) e.target.value = "";
@@ -207,7 +230,7 @@ export default function AttendanceManagementPage() {
 
       if (error) throw error;
 
-      setSuccessMessage("Berhasil menghapus data terpilih!");
+      setSuccessMessage(d.table.delete + " Success!");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       setSelectedTags([]);
@@ -240,7 +263,7 @@ export default function AttendanceManagementPage() {
 
       if (error) throw error;
 
-      setSuccessMessage("Berhasil memperbarui nomor WhatsApp secara massal!");
+      setSuccessMessage("Bulk Update Success!");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       setBulkWAPhone("");
@@ -318,7 +341,7 @@ export default function AttendanceManagementPage() {
     } else {
       localStorage.setItem('onetap_school_name', schoolName);
       setTags(tags.map(t => ({ ...t, school_name: schoolName })));
-      setSuccessMessage("Nama Sekolah/Instansi berhasil disimpan!");
+      setSuccessMessage(d.school.saveSuccess);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     }
@@ -336,7 +359,7 @@ export default function AttendanceManagementPage() {
       alert("Gagal menyimpan: " + error.message);
     } else {
       setTags(tags.map(t => ({ ...t, message_template: globalMessageTemplate })));
-      setSuccessMessage("Template WhatsApp berhasil disimpan!");
+      setSuccessMessage(d.globalSettings.saveSuccess);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     }
@@ -490,7 +513,7 @@ export default function AttendanceManagementPage() {
     if (!user) return;
 
     if (editingTag && (!formData.teacher_phone || formData.teacher_phone.trim() === "")) {
-      setToastMsg("Nomor WhatsApp Pendamping wajib diisi agar notifikasi bisa terkirim.");
+      setToastMsg(language === 'id' ? "Nomor WhatsApp Pendamping wajib diisi agar notifikasi bisa terkirim." : "Parent WhatsApp number is required for notifications to be sent.");
       setToastType("warning");
       setShowToast(true);
       return;
@@ -515,9 +538,7 @@ export default function AttendanceManagementPage() {
         setToastType("error");
         setShowToast(true);
       } else {
-        setSuccessMessage("Berhasil memperbarui data siswa!");
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
+        setSuccessMessage(d.modal.save + " Success!");
       }
     } else {
       const { error } = await supabase
@@ -528,9 +549,7 @@ export default function AttendanceManagementPage() {
         setToastType("error");
         setShowToast(true);
       } else {
-        setSuccessMessage("Berhasil menambahkan data siswa!");
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
+        setSuccessMessage(d.modal.save + " Success!");
       }
     }
 
@@ -548,7 +567,7 @@ export default function AttendanceManagementPage() {
       setToastType("error");
       setShowToast(true);
     } else {
-      setSuccessMessage("Berhasil menghapus data siswa!");
+      setSuccessMessage(language === 'id' ? "Berhasil menghapus data siswa!" : "Successfully deleted student data!");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     }
@@ -610,6 +629,36 @@ export default function AttendanceManagementPage() {
     );
   }
 
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-[#FFF8F2]">
+        <main className="max-w-6xl mx-auto px-6 py-24 flex flex-col items-center text-center">
+          <div className="w-24 h-24 bg-red-50 rounded-3xl flex items-center justify-center mb-8">
+            <AlertTriangle className="w-12 h-12 text-red-500" />
+          </div>
+          <h1 className="text-4xl font-black text-[#18080F] mb-4">{d.locked.title}</h1>
+          <p className="text-gray-500 max-w-md mb-10 font-medium">
+            {d.locked.desc}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link 
+              href="/#pricing" 
+              className="px-8 py-4 bg-[#FF5FA2] text-white font-black rounded-2xl hover:bg-[#E8457E] transition-all shadow-lg shadow-[#FF5FA2]/20"
+            >
+              {d.locked.upgrade}
+            </Link>
+            <Link 
+              href="/dashboard" 
+              className="px-8 py-4 bg-white border border-gray-100 text-[#18080F] font-black rounded-2xl hover:bg-gray-50 transition-all shadow-sm"
+            >
+              {d.back}
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FFF8F2]">
       <main className="max-w-6xl mx-auto px-6 py-12">
@@ -617,14 +666,14 @@ export default function AttendanceManagementPage() {
           <div>
             <Link href="/dashboard" className="text-gray-400 hover:text-[#FF5FA2] flex items-center gap-2 mb-4 font-bold transition-all">
               <ArrowRight className="w-4 h-4 rotate-180" />
-              Kembali ke Dashboard
+              {d.back}
             </Link>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-[#FF5FA2]/10 rounded-2xl flex items-center justify-center">
                 <Users className="w-7 h-7 text-[#FF5FA2]" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-[#18080F] tracking-tight leading-none">Manajemen Absensi</h1>
+                <h1 className="text-3xl font-black text-[#18080F] tracking-tight leading-none">{d.title}</h1>
                 <div className="flex items-center gap-3 mt-3">
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm group/school focus-within:ring-2 focus-within:ring-[#FF5FA2]/20 transition-all">
                     <School className="w-3.5 h-3.5 text-[#FF5FA2]" />
@@ -637,14 +686,14 @@ export default function AttendanceManagementPage() {
                           handleSaveSchoolName();
                         }
                       }}
-                      placeholder="Nama Instansi..."
+                      placeholder={d.school.placeholder}
                       className="text-[10px] font-black text-[#18080F] bg-transparent border-none outline-none w-32 focus:w-48 transition-all p-0 placeholder:text-gray-300 uppercase tracking-widest"
                     />
                     {user && tags.length > 0 && tags[0].school_name !== schoolName && (
                       <button 
                         onClick={handleSaveSchoolName}
                         className="p-1 hover:bg-[#FF5FA2]/10 text-[#FF5FA2] rounded-full transition-colors"
-                        title="Simpan (Enter)"
+                        title={d.table.saveTooltip}
                       >
                         <Save className="w-3 h-3" />
                       </button>
@@ -653,7 +702,7 @@ export default function AttendanceManagementPage() {
                   <div className="flex items-center gap-1.5 min-w-[70px]">
                     <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${showSuccess ? 'bg-blue-500' : 'bg-green-500'}`} />
                     <span className={`text-[10px] font-bold uppercase tracking-tighter transition-colors ${showSuccess ? 'text-blue-500' : 'text-gray-400'}`}>
-                      {showSuccess ? 'Tersimpan!' : 'Live Sync'}
+                      {showSuccess ? d.table.saved : d.table.liveSync}
                     </span>
                   </div>
                 </div>
@@ -667,28 +716,28 @@ export default function AttendanceManagementPage() {
               className="px-4 sm:px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-base"
             >
               <Calendar className="w-5 h-5 text-[#FF5FA2]" />
-              Histori Absensi
+              {d.actions.history}
             </Link>
             <button 
               onClick={() => setShowImportModal(true)}
               className="px-4 sm:px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-base"
             >
               <Download className="w-5 h-5 rotate-180" />
-              Import CSV
+              {d.actions.importCsv}
             </button>
             <button 
               onClick={startBulkScan}
               className="px-4 sm:px-6 py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 text-xs sm:text-base"
             >
               <Radio className="w-5 h-5 animate-pulse" />
-              Scan Massal
+              {d.actions.bulkScan}
             </button>
             <button 
               onClick={() => handleOpenModal()}
               className="px-4 sm:px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 text-xs sm:text-base"
             >
               <Plus className="w-5 h-5" />
-              Tambah Siswa
+              {d.actions.addStudent}
             </button>
           </div>
         </div>
@@ -696,9 +745,9 @@ export default function AttendanceManagementPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           {[
-            { label: 'Total Siswa', value: tags.length, icon: Users, color: 'text-blue-500', bg: 'bg-blue-50' },
-            { label: 'Hadir Hari Ini', value: presentToday, icon: Calendar, color: 'text-green-500', bg: 'bg-green-50' },
-            { label: 'Tag Aktif', value: tags.filter(t => t.is_active).length, icon: User, color: 'text-purple-500', bg: 'bg-purple-50' },
+            { label: d.stats.totalStudents, value: tags.length, icon: Users, color: 'text-blue-500', bg: 'bg-blue-50' },
+            { label: d.stats.presentToday, value: presentToday, icon: Calendar, color: 'text-green-500', bg: 'bg-green-50' },
+            { label: d.stats.activeTags, value: tags.filter(t => t.is_active).length, icon: User, color: 'text-purple-500', bg: 'bg-purple-50' },
           ].map((s, i) => (
             <div key={i} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex items-center gap-5">
               <div className={`w-14 h-14 rounded-2xl ${s.bg} flex items-center justify-center`}>
@@ -721,12 +770,12 @@ export default function AttendanceManagementPage() {
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Zap className="w-5 h-5 text-orange-500" />
               </div>
-              <h3 className="text-xl font-black text-[#18080F]">Pengaturan Global WhatsApp</h3>
+              <h3 className="text-xl font-black text-[#18080F]">{d.globalSettings.title}</h3>
             </div>
 
             <div className="space-y-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between ml-1 gap-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0">Template Pesan Kehadiran</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0">{d.globalSettings.templateLabel}</label>
                 <div className="flex flex-wrap gap-2 md:justify-end">
                   <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{student_name}`}</span>
                   <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{class_name}`}</span>
@@ -748,11 +797,11 @@ export default function AttendanceManagementPage() {
                   className="px-8 py-4 bg-[#FF5FA2] text-white font-black rounded-2xl hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 w-full lg:w-fit h-fit"
                 >
                   <Save className="w-4 h-4" />
-                  Simpan Template
+                  {d.globalSettings.saveTemplate}
                 </button>
               </div>
               <p className="text-[10px] text-gray-400 font-medium ml-1">
-                * Perubahan template ini akan berlaku untuk semua siswa yang terdaftar di bawah akun Anda.
+                {d.globalSettings.templateNotice}
               </p>
             </div>
           </div>
@@ -770,12 +819,12 @@ export default function AttendanceManagementPage() {
                 <AlertCircle className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-base font-black text-amber-900">Beberapa siswa belum memiliki nomor WhatsApp</p>
-                <p className="text-sm font-bold text-amber-700/80">Sistem tidak bisa mengirim notifikasi ke pendamping jika nomor WA kosong.</p>
+                <p className="text-base font-black text-amber-900">{d.warning.waMissing}</p>
+                <p className="text-sm font-bold text-amber-700/80">{d.warning.waMissingDesc}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-black shadow-lg shadow-amber-600/20">
-              <Lightbulb className="w-4 h-4" /> Gunakan Bulk Update WA di tabel
+              <Lightbulb className="w-4 h-4" /> {d.warning.bulkWaUpdate}
             </div>
           </motion.div>
         )}
@@ -787,7 +836,7 @@ export default function AttendanceManagementPage() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Cari nama atau kelas..."
+                placeholder={d.table.searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-3.5 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-medium"
@@ -800,7 +849,7 @@ export default function AttendanceManagementPage() {
                 onChange={(e) => setClassFilter(e.target.value)}
                 className="flex-1 sm:flex-none px-4 py-3.5 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none text-sm font-bold text-gray-500 min-w-[140px]"
               >
-                <option value="">Semua Kelas</option>
+                <option value="">{d.table.allClasses}</option>
                 {uniqueClasses.map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -811,7 +860,7 @@ export default function AttendanceManagementPage() {
                 onChange={(e) => setSubjectFilter(e.target.value)}
                 className="flex-1 sm:flex-none px-4 py-3.5 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none text-sm font-bold text-gray-500 min-w-[140px]"
               >
-                <option value="">Semua Mapel</option>
+                <option value="">{d.table.allSubjects}</option>
                 {uniqueSubjects.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -847,10 +896,10 @@ export default function AttendanceManagementPage() {
                       className="w-4 h-4 rounded border-gray-300 text-[#FF5FA2] focus:ring-[#FF5FA2]"
                     />
                   </th>
-                  <th className="px-4 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Siswa</th>
-                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Kelas / Mapel</th>
-                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
-                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Aksi</th>
+                  <th className="px-4 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">{d.table.student}</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">{d.table.classSubject}</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">{d.table.status}</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">{d.table.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -859,7 +908,7 @@ export default function AttendanceManagementPage() {
                     <td colSpan={5} className="px-6 py-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-[#FF5FA2]">
-                          {selectedTags.length} Siswa Terpilih
+                          {selectedTags.length} {d.table.student} {d.table.selected}
                         </span>
                         <div className="flex gap-3">
                           <button 
@@ -875,7 +924,7 @@ export default function AttendanceManagementPage() {
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50 shadow-lg shadow-red-500/20"
                           >
                             {isDeletingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                            Hapus Terpilih
+                            {d.table.delete} {d.table.selected}
                           </button>
                         </div>
                       </div>
@@ -899,7 +948,7 @@ export default function AttendanceManagementPage() {
                         <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-2">
                           <Users className="w-8 h-8 text-gray-200" />
                         </div>
-                        <p className="text-lg font-bold text-[#18080F]">Data Tidak Ditemukan</p>
+                        <p className="text-lg font-bold text-[#18080F]">{d.table.noDataFound}</p>
                         <p className="text-gray-400 text-sm font-medium max-w-xs mx-auto">
                           {search ? `Tidak ada hasil untuk "${search}". Coba kata kunci lain.` : "Belum ada data siswa yang ditambahkan."}
                         </p>
@@ -908,7 +957,7 @@ export default function AttendanceManagementPage() {
                             onClick={() => handleOpenModal()}
                             className="mt-4 text-[#FF5FA2] font-black text-sm hover:underline"
                           >
-                            Tambah Siswa Pertama →
+                            {d.table.addFirst} →
                           </button>
                         )}
                       </div>
@@ -937,7 +986,7 @@ export default function AttendanceManagementPage() {
                     <td className="px-8 py-5 text-gray-500 font-medium">{tag.class_name || "-"}</td>
                     <td className="px-8 py-5">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${tag.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {tag.is_active ? 'Aktif' : 'Nonaktif'}
+                        {tag.is_active ? d.table.active : d.table.inactive}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
@@ -991,7 +1040,7 @@ export default function AttendanceManagementPage() {
             >
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-black text-[#18080F] tracking-tight">
-                  {editingTag ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}
+                  {editingTag ? d.modal.editTitle : d.modal.addTitle}
                 </h2>
                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                   <X className="w-6 h-6 text-gray-400" />
@@ -1000,7 +1049,7 @@ export default function AttendanceManagementPage() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Lengkap <span className="text-red-500">*</span></label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{d.modal.name} <span className="text-red-500">*</span></label>
                   <input
                     required
                     type="text"
@@ -1013,7 +1062,7 @@ export default function AttendanceManagementPage() {
 
                 <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-[#18080F] uppercase tracking-widest ml-1">Kelas <span className="text-red-500">*</span></label>
+                    <label className="text-[10px] font-black text-[#18080F] uppercase tracking-widest ml-1">{d.modal.class} <span className="text-red-500">*</span></label>
                     <input
                       required
                       list="classes-list"
@@ -1028,7 +1077,7 @@ export default function AttendanceManagementPage() {
                     </datalist>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mata Pelajaran (Opsional)</label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{d.modal.subject}</label>
                     <input
                       list="subjects-list"
                       type="text"
@@ -1045,7 +1094,7 @@ export default function AttendanceManagementPage() {
 
                 {editingTag ? (
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Pendamping <span className="text-red-500">*</span></label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{d.modal.wa} <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
@@ -1084,7 +1133,7 @@ export default function AttendanceManagementPage() {
 
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
                   <div>
-                    <div className="text-sm font-bold text-[#18080F]">Status Aktif</div>
+                    <div className="text-sm font-bold text-[#18080F]">{d.modal.active}</div>
                     <div className="text-[10px] text-gray-400 font-medium">Siswa tidak aktif tidak dapat melakukan absensi.</div>
                   </div>
                   <button
@@ -1104,7 +1153,7 @@ export default function AttendanceManagementPage() {
                     onClick={() => setShowModal(false)}
                     className="flex-1 py-4 rounded-2xl bg-gray-100 text-gray-500 font-black hover:bg-gray-200 transition-all"
                   >
-                    Batal
+                    {d.table.cancel}
                   </button>
                   <button
                     type="submit"
@@ -1112,7 +1161,7 @@ export default function AttendanceManagementPage() {
                     className="flex-[2] py-4 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
-                    {editingTag ? 'Simpan Perubahan' : 'Tambah Siswa'}
+                    {editingTag ? d.modal.save : d.actions.addStudent}
                   </button>
                 </div>
               </form>
@@ -1141,7 +1190,7 @@ export default function AttendanceManagementPage() {
               </div>
               
               <h3 className="text-2xl font-black text-[#18080F] mb-3">
-                {deleteMode === "bulk" ? `Hapus ${selectedTags.length} Siswa?` : "Hapus Data Siswa?"}
+                {deleteMode === "bulk" ? `${d.table.delete} ${selectedTags.length} ${d.table.student}?` : `${d.table.delete} ${d.table.student}?`}
               </h3>
               <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">
                 {deleteMode === "bulk" 
@@ -1155,14 +1204,14 @@ export default function AttendanceManagementPage() {
                   onClick={() => setShowDeleteModal(false)}
                   className="flex-1 py-4 rounded-2xl bg-gray-50 text-gray-500 font-black hover:bg-gray-100 transition-all"
                 >
-                  Batal
+                  {d.table.cancel}
                 </button>
                 <button
                   onClick={deleteMode === "bulk" ? confirmBulkDelete : confirmDelete}
                   disabled={isSubmitting}
                   className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-black hover:bg-red-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 disabled:opacity-50"
                 >
-                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Ya, Hapus'}
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : d.table.confirmDelete}
                 </button>
               </div>
             </motion.div>
@@ -1190,7 +1239,7 @@ export default function AttendanceManagementPage() {
               </div>
               
               <h3 className="text-2xl font-black text-[#18080F] mb-3 text-center">
-                Update WA Masal
+                {d.warning.bulkWaUpdate}
               </h3>
               <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8 text-center">
                 Masukkan nomor WhatsApp baru untuk <span className="text-blue-600 font-bold">{selectedTags.length} siswa</span> terpilih.
@@ -1214,14 +1263,14 @@ export default function AttendanceManagementPage() {
                   onClick={() => setShowBulkWAModal(false)}
                   className="flex-1 py-4 rounded-2xl bg-gray-50 text-gray-500 font-black hover:bg-gray-100 transition-all"
                 >
-                  Batal
+                  {d.table.cancel}
                 </button>
                 <button
                   onClick={handleBulkUpdateWA}
                   disabled={isSubmittingBulkWA}
                   className="flex-[2] py-4 rounded-2xl bg-blue-500 text-white font-black hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-50"
                 >
-                  {isSubmittingBulkWA ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Perbarui Semua'}
+                  {isSubmittingBulkWA ? <Loader2 className="w-5 h-5 animate-spin" /> : d.table.updateAll}
                 </button>
               </div>
             </motion.div>
@@ -1263,9 +1312,9 @@ export default function AttendanceManagementPage() {
                   </div>
                   <div>
                     <h3 className="text-xl font-black text-[#18080F]">
-                      {currentBulkIndex !== -1 ? bulkWriteQueue[currentBulkIndex].student_name : 'Siap Menulis...'}
+                      {currentBulkIndex !== -1 ? bulkWriteQueue[currentBulkIndex].student_name : d.nfc.writing}
                     </h3>
-                    <p className="text-gray-400 text-sm font-medium mt-2">Tempelkan kartu NFC Anda di belakang HP sekarang.</p>
+                    <p className="text-gray-400 text-sm font-medium mt-2">{d.nfc.tap}</p>
                   </div>
                 </div>
               )}
@@ -1276,7 +1325,7 @@ export default function AttendanceManagementPage() {
                     <CheckCircle2 className="w-12 h-12 text-green-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-green-600">Berhasil!</h3>
+                    <h3 className="text-xl font-black text-green-600">{d.table.success}</h3>
                     <p className="text-gray-400 text-sm font-medium mt-2">
                       {currentBulkIndex !== -1 
                         ? `Data ${bulkWriteQueue[currentBulkIndex].student_name} tersimpan.` 
@@ -1297,7 +1346,7 @@ export default function AttendanceManagementPage() {
                     <AlertTriangle className="w-12 h-12 text-red-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-red-600">Gagal Menulis</h3>
+                    <h3 className="text-xl font-black text-red-600">{d.nfc.error}</h3>
                     <p className="text-gray-400 text-sm font-medium mt-2">Pastikan NFC aktif dan kartu tidak terkunci.</p>
                   </div>
                   <div className="flex gap-2">
@@ -1347,10 +1396,9 @@ export default function AttendanceManagementPage() {
                 <Smartphone className="w-10 h-10 text-blue-500" />
               </div>
               
-              <h3 className="text-2xl font-black text-[#18080F] mb-3">Link Disalin!</h3>
+              <h3 className="text-2xl font-black text-[#18080F] mb-3">{d.table.linkCopied}</h3>
               <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">
-                NFC Writing tidak didukung di browser ini. URL absensi telah disalin! Silakan paste ke aplikasi 
-                <span className="text-blue-500 font-bold ml-1">NFC Tools</span> untuk menulis ke kartu.
+                {d.bulkScan.nfcFallbackDesc}
               </p>
 
               <div className="bg-gray-50 p-4 rounded-2xl mb-8 border border-gray-100">
@@ -1364,7 +1412,7 @@ export default function AttendanceManagementPage() {
                 onClick={() => setShowNFCFallback(false)}
                 className="w-full py-4 rounded-2xl bg-[#18080F] text-white font-black hover:bg-black transition-all shadow-lg"
               >
-                Saya Mengerti
+                {d.table.understand}
               </button>
             </motion.div>
           </div>
@@ -1381,7 +1429,7 @@ export default function AttendanceManagementPage() {
               className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-black text-[#18080F]">Import Siswa</h3>
+                <h3 className="text-2xl font-black text-[#18080F]">{d.import.title}</h3>
                 <button onClick={() => setShowImportModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                   <X className="w-6 h-6 text-gray-400" />
                 </button>
@@ -1395,73 +1443,6 @@ export default function AttendanceManagementPage() {
                   </div>
                 )}
 
-                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                  <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    Format File CSV:
-                  </h4>
-                  <p className="text-sm text-blue-800 leading-relaxed">
-                    Gunakan koma (,) sebagai pemisah. Urutan kolom:<br/>
-                    <code className="bg-white/50 px-1 rounded font-bold">Nama, Kelas, Mapel, WhatsApp</code>
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={downloadTemplate}
-                    className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 font-bold hover:border-[#FF5FA2] hover:text-[#FF5FA2] transition-all flex flex-col items-center gap-1"
-                  >
-                    <Download className="w-6 h-6" />
-                    <span>Download Template CSV</span>
-                  </button>
-
-                  <label className="block">
-                    <div className={`w-full py-4 rounded-2xl bg-[#18080F] text-white font-black text-center cursor-pointer hover:bg-[#FF5FA2] transition-all flex items-center justify-center gap-2 ${importLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      {importLoading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <>
-                          <Plus className="w-5 h-5" />
-                          Pilih File & Import
-                        </>
-                      )}
-                      <input
-                        type="file"
-                        accept=".csv"
-                        className="hidden"
-                        onChange={handleImportCSV}
-                        disabled={importLoading}
-                      />
-                    </div>
-                  </label>
-                </div>
-
-                <p className="text-center text-xs text-gray-400 font-medium">
-                  Token absensi akan digenerate secara otomatis untuk setiap siswa.
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-      {/* Import Modal */}
-      <AnimatePresence>
-        {showImportModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#18080F]/40 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-black text-[#18080F]">Import Siswa</h3>
-                <button onClick={() => setShowImportModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <X className="w-6 h-6 text-gray-400" />
-                </button>
-              </div>
-
-              <div className="space-y-6">
                 <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
                   <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
@@ -1534,10 +1515,10 @@ export default function AttendanceManagementPage() {
                 <div>
                   <div className="flex items-center gap-2 text-orange-500 mb-1">
                     <Signal className="w-3.5 h-3.5 animate-ping" />
-                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Sistem Aktif</span>
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{d.bulkScan.activeSystem}</span>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-black text-[#18080F]">Absensi Massal</h3>
-                  <p className="text-xs md:text-sm text-gray-400 font-medium">Dekatkan kartu siswa ke sensor NFC perangkat Anda.</p>
+                  <h3 className="text-2xl md:text-3xl font-black text-[#18080F]">{d.bulkScan.title}</h3>
+                  <p className="text-xs md:text-sm text-gray-400 font-medium">{d.bulkScan.instruction}</p>
                 </div>
                 <button 
                   onClick={() => {
@@ -1566,19 +1547,19 @@ export default function AttendanceManagementPage() {
                     />
                   </div>
                   <Radio className="w-12 h-12 md:w-16 md:h-16 text-orange-500 relative z-10 mb-3 md:mb-4" />
-                  <p className="text-xs md:text-sm font-bold text-gray-400 animate-pulse uppercase tracking-widest">Menunggu Tap...</p>
+                  <p className="text-xs md:text-sm font-bold text-gray-400 animate-pulse uppercase tracking-widest">{d.bulkScan.waiting}</p>
                 </div>
 
                 {/* Scan Logs */}
                 <div className="flex flex-col h-[250px] md:h-[300px]">
                   <div className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-4 flex justify-between">
-                    <span>Aktivitas</span>
-                    <span className="text-orange-500">{scanLogs.length} Terdeteksi</span>
+                    <span>{d.bulkScan.activity}</span>
+                    <span className="text-orange-500">{scanLogs.length} {d.bulkScan.detected}</span>
                   </div>
                   <div className="flex-1 overflow-y-auto space-y-2.5 md:space-y-3 pr-2 custom-scrollbar">
                     {scanLogs.length === 0 ? (
                       <div className="h-full flex items-center justify-center text-center p-6 border-2 border-dashed border-gray-100 rounded-2xl md:rounded-3xl">
-                        <p className="text-xs md:text-sm text-gray-300 font-medium italic">Belum ada aktivitas</p>
+                        <p className="text-xs md:text-sm text-gray-300 font-medium italic">{d.bulkScan.noActivity}</p>
                       </div>
                     ) : (
                       scanLogs.map((log, i) => (
@@ -1607,7 +1588,7 @@ export default function AttendanceManagementPage() {
                   <Smartphone className="w-4 h-4 md:w-5 md:h-5" />
                 </div>
                 <p className="text-[10px] md:text-xs text-orange-800 font-medium leading-relaxed">
-                  <strong>Tips:</strong> Pastikan layar HP menyala. Tempelkan kartu di area sensor NFC (biasanya di belakang atas).
+                  <strong>Tips:</strong> {d.bulkScan.tips}
                 </p>
               </div>
             </motion.div>

@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, EyeOff, Layers } from 'lucide-react';
+import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, EyeOff, Layers, AlertCircle } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { createClient } from '@/lib/supabase/client';
 import { themes, templates } from '@/lib/themes';
@@ -15,11 +15,16 @@ import { SortableLinkCard } from '@/app/components/linktree/SortableLinkCard';
 import type { LinkItem } from '@/app/components/linktree/SortableLinkCard';
 import { OneTapPreview } from '@/app/components/linktree/OneTapPreview';
 import Toast from '@/app/components/Toast';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { dict } from '@/lib/i18n/dict';
+import { canAccess, isExpired, getPlan } from '@/lib/plans';
+import type { PlanId } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
 
 export default function OneTapBuilderPage() {
   const router = useRouter();
+  const { t, locale } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState('');
   const [slug, setSlug] = useState('');
@@ -27,6 +32,8 @@ export default function OneTapBuilderPage() {
   const [profile, setProfile] = useState({ title: '', bio: '', avatar: '' });
   const [selectedTheme, setSelectedTheme] = useState('pink');
   const [isPro, setIsPro] = useState(false);
+  const [plan, setPlan] = useState<PlanId>('starter');
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -36,10 +43,16 @@ export default function OneTapBuilderPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+  const { locale: language } = useLanguage();
+  const d = dict[language].dashboard.builder;
   
   // Multi-page state
   const [pages, setPages] = useState<any[]>([]);
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
+
+  const planExpired = isExpired(expiresAt);
+  const activePlan = getPlan(plan, expiresAt);
+  const maxProfiles = activePlan.features.maxProfiles;
 
   // Load existing data
   const loadData = useCallback(async (pageId?: string) => {
@@ -60,8 +73,9 @@ export default function OneTapBuilderPage() {
 
       if (data.profile) {
         setUsername(data.profile.username ?? '');
-        // Professional or Education plans are considered "Pro" for templates
-        const userPlan = data.profile.plan ?? 'starter';
+        const userPlan = (data.profile.plan as PlanId) ?? 'starter';
+        setPlan(userPlan);
+        setExpiresAt(data.profile.plan_expires_at);
         setIsPro(userPlan === 'professional' || userPlan === 'education');
       }
       
@@ -129,17 +143,28 @@ export default function OneTapBuilderPage() {
   };
 
   const handleSave = async () => {
+    // Check if current page is disabled due to plan
+    const pageIndex = pages.findIndex(p => p.id === currentPageId);
+    if (pageIndex !== -1 && pageIndex >= maxProfiles) {
+      setToastMsg(t('dashboard.profileLimit.disabledDesc'));
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
     // Check if user is trying to save a Pro template without being Pro
     const selectedTemplate = templates.find(t => t.id === selectedTheme);
-    if (selectedTemplate?.isPro && !isPro) {
-      setToastMsg('Maaf, Anda perlu upgrade ke Pro Plan untuk menggunakan dan menyimpan template premium ini! Silakan gunakan tema standard atau upgrade sekarang.');
+    const hasPremiumAccess = canAccess(plan, 'customBranding', expiresAt);
+
+    if (selectedTemplate?.isPro && !hasPremiumAccess) {
+      setToastMsg(d.profile.premiumTemplateError);
       setToastType('warning');
       setShowToast(true);
       return;
     }
 
     if (!slug || slug.length < 3) {
-      setToastMsg('Slug harus memiliki minimal 3 karakter.');
+      setToastMsg(d.profile.slugError);
       setToastType('error');
       setShowToast(true);
       return;
@@ -164,19 +189,19 @@ export default function OneTapBuilderPage() {
       if (res.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
-        setToastMsg('Perubahan berhasil disimpan!');
+        setToastMsg(d.profile.saveSuccess);
         setToastType('success');
         setShowToast(true);
         // Refresh page list if new page was created or slug changed
         loadData(result.pageId);
       } else {
-        setToastMsg(result.error || 'Gagal menyimpan perubahan.');
+        setToastMsg(result.error || d.profile.saveFailed);
         setToastType('error');
         setShowToast(true);
       }
     } catch (err) {
       console.error(err);
-      setToastMsg('Terjadi kesalahan saat menyimpan.');
+      setToastMsg(d.profile.saveError);
       setToastType('error');
       setShowToast(true);
     }
@@ -184,35 +209,17 @@ export default function OneTapBuilderPage() {
   };
 
   const createNewPage = async () => {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Fetch latest profile to get current plan
-    const { data: profileData } = await supabase
-      .from('users_profile')
-      .select('plan')
-      .eq('id', user.id)
-      .single();
-    
-    const currentPlan = profileData?.plan || 'starter';
-    const isProPlan = currentPlan === 'professional';
-    const isEduPlan = currentPlan === 'education';
-
-    if (!isEduPlan) {
-      const maxPages = isProPlan ? 3 : 1;
-      if (pages.length >= maxPages) {
-        const planName = isEduPlan ? 'Education' : isProPlan ? 'Professional' : 'Starter';
-        setToastMsg(`Batas maksimal halaman untuk paket ${planName} tercapai (${maxPages}). Silakan hapus halaman lain atau upgrade plan.`);
-        setToastType('warning');
-        setShowToast(true);
-        return;
-      }
+    if (pages.length >= maxProfiles) {
+      const planName = locale === 'id' ? activePlan.nameId : activePlan.nameEn;
+      setToastMsg(t('dashboard.profileLimit.reachedDesc').replace('{plan}', planName).replace('{limit}', maxProfiles.toString()));
+      setToastType('warning');
+      setShowToast(true);
+      return;
     }
 
     // Reset editor for new page
     setCurrentPageId(null);
-    setProfile({ title: 'Profil Baru', bio: '', avatar: profile.avatar });
+    setProfile({ title: d.profile.newProfile, bio: '', avatar: profile.avatar });
     setLinks([]);
     setSelectedTheme('pink');
     setSlug(''); // User will need to enter a new slug
@@ -231,7 +238,7 @@ export default function OneTapBuilderPage() {
 
       const publicUrl = await uploadAvatar(user.id, file);
       if (!publicUrl) {
-        setToastMsg('Gagal mengunggah foto.');
+        setToastMsg(d.profile.avatar.failed);
         setToastType('error');
         setShowToast(true);
         return;
@@ -245,7 +252,7 @@ export default function OneTapBuilderPage() {
         
     } catch (err) {
       console.error('Error uploading avatar:', err);
-      setToastMsg('Gagal mengunggah foto.');
+      setToastMsg(d.profile.avatar.failed);
       setToastType('error');
       setShowToast(true);
     } finally {
@@ -253,12 +260,19 @@ export default function OneTapBuilderPage() {
     }
   };
 
+  const isPageDisabled = (id: string) => {
+    const idx = pages.findIndex(p => p.id === id);
+    return idx !== -1 && idx >= maxProfiles;
+  };
+
+  const currentIsDisabled = !!(currentPageId && isPageDisabled(currentPageId));
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-[#FF5FA2] animate-spin" />
-          <p className="text-sm font-black text-[#FF5FA2] uppercase tracking-widest">Memuat OneTap Builder...</p>
+          <p className="text-sm font-black text-[#FF5FA2] uppercase tracking-widest">{d.loading}</p>
         </div>
       </div>
     );
@@ -274,26 +288,28 @@ export default function OneTapBuilderPage() {
               <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-black text-[#18080F] hidden sm:block">OneTap Card Builder</h1>
+              <h1 className="text-xl font-black text-[#18080F] hidden sm:block">{d.title}</h1>
               <h1 className="text-lg font-black text-[#18080F] sm:hidden">OneTap Builder</h1>
             </div>
 
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || currentIsDisabled}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 ${
-                  saved 
-                    ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
-                    : 'bg-[#18080F] text-white hover:bg-[#FF5FA2] shadow-lg shadow-[#18080F]/10'
+                  currentIsDisabled
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : saved 
+                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
+                      : 'bg-[#18080F] text-white hover:bg-[#FF5FA2] shadow-lg shadow-[#18080F]/10'
                 }`}
               >
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : saved ? (
-                  <><Check className="w-4 h-4" /> Tersimpan</>
+                  <><Check className="w-4 h-4" /> {d.saved}</>
                 ) : (
-                  <><Save className="w-4 h-4" /> Simpan</>
+                  <><Save className="w-4 h-4" /> {d.save}</>
                 )}
               </button>
             </div>
@@ -302,54 +318,78 @@ export default function OneTapBuilderPage() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+        {currentIsDisabled && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-100 flex items-center gap-4 text-red-600"
+          >
+            <AlertCircle className="w-6 h-6 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-black text-sm uppercase tracking-wider">{t('dashboard.profileLimit.disabled')}</p>
+              <p className="text-xs font-medium opacity-80">{t('dashboard.profileLimit.disabledDesc')}</p>
+            </div>
+            <Link href="/#pricing" className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all">
+              {t('dashboard.planInfo.upgrade')}
+            </Link>
+          </motion.div>
+        )}
+
         <div className="grid lg:grid-cols-[1fr_360px] gap-12">
 
           {/* ===== LEFT: Editor ===== */}
-          <div className="space-y-10">
+          <div className={`space-y-10 ${currentIsDisabled ? 'opacity-60 pointer-events-none grayscale-[0.5]' : ''}`}>
             
             {/* Header info & Multi-page switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
-                <h2 className="text-2xl font-black text-[#18080F] tracking-tight">Kustomisasi Profil</h2>
-                <p className="text-sm font-medium text-gray-400 mt-1">Kelola tampilan halaman digital kamu.</p>
+                <h2 className="text-2xl font-black text-[#18080F] tracking-tight">{d.customization.title}</h2>
+                <p className="text-sm font-medium text-gray-400 mt-1">{d.customization.desc}</p>
               </div>
               
               <div className="flex items-center gap-3">
-                {isPro && (
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black shadow-lg shadow-amber-500/20 uppercase tracking-widest">
-                    <Zap className="w-3.5 h-3.5" fill="white" />
-                    PRO PLAN
-                  </div>
-                )}
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase tracking-widest ${activePlan.id === 'starter' ? 'bg-gray-100 text-gray-400' : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-amber-500/20'}`}>
+                  <Zap className="w-3.5 h-3.5" fill="currentColor" />
+                  {locale === 'id' ? activePlan.nameId : activePlan.nameEn} PLAN
+                </div>
                 
                 <div className="relative group">
                   <button 
                     onClick={createNewPage}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#F6B7C8]/20 text-[#18080F] text-xs font-bold hover:bg-[#FF5FA2] hover:text-white transition-all shadow-sm"
+                    disabled={pages.length >= maxProfiles}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                      pages.length >= maxProfiles
+                        ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                        : 'bg-white border border-[#F6B7C8]/20 text-[#18080F] hover:bg-[#FF5FA2] hover:text-white'
+                    }`}
                   >
                     <Plus className="w-4 h-4" />
-                    Tambah Profil
+                    {d.addProfile}
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Page List (For Pro Users) */}
-            {pages.length > 1 && (
+            {pages.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {pages.map((p: any) => (
-                  <button
-                    key={p.id}
-                    onClick={() => loadData(p.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                      currentPageId === p.id 
-                        ? 'bg-[#FF5FA2] text-white shadow-md' 
-                        : 'bg-white text-gray-500 border border-[#F6B7C8]/10 hover:border-[#FF5FA2]/30'
-                    }`}
-                  >
-                    {p.title || 'Tanpa Judul'}
-                  </button>
-                ))}
+                {pages.map((p: any, idx: number) => {
+                  const isDisabled = idx >= maxProfiles;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => loadData(p.id)}
+                      className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                        currentPageId === p.id 
+                          ? 'bg-[#FF5FA2] text-white shadow-md' 
+                          : 'bg-white text-gray-500 border border-[#F6B7C8]/10 hover:border-[#FF5FA2]/30'
+                      } ${isDisabled ? 'opacity-50' : ''}`}
+                    >
+                      {p.title || d.untitled}
+                      {isDisabled && <Lock className="w-3 h-3" />}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -383,22 +423,22 @@ export default function OneTapBuilderPage() {
                 <div className="flex-1 w-full space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Nama / Brand</label>
+                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">{d.profile.name}</label>
                       <input
                         type="text"
-                        placeholder="Contoh: Budi Santoso"
+                        placeholder={d.profile.namePlaceholder}
                         value={profile.title}
                         onChange={(e) => setProfile({ ...profile, title: e.target.value })}
                         className="w-full h-12 px-5 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-bold text-[#18080F]"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Custom Link (Slug)</label>
+                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">{d.profile.slug}</label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">/l/</span>
                         <input
                           type="text"
-                          placeholder="username-kamu"
+                          placeholder={d.profile.slugPlaceholder}
                           value={slug}
                           onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
                           className="w-full h-12 pl-8 pr-5 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-bold text-[#18080F]"
@@ -408,9 +448,9 @@ export default function OneTapBuilderPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1 space-y-1.5">
-                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">Bio Singkat</label>
+                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest ml-1">{d.profile.bio}</label>
                       <textarea
-                        placeholder="Ceritakan tentang dirimu..."
+                        placeholder={d.profile.bioPlaceholder}
                         value={profile.bio}
                         onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                         rows={2}
@@ -418,7 +458,7 @@ export default function OneTapBuilderPage() {
                       />
                     </div>
                     <div className="sm:w-48 flex flex-col justify-center">
-                      <label className="text-[10px] font-black text-[#FF5FA2] uppercase tracking-[0.2em] mb-3 ml-1 block">Status Publikasi</label>
+                      <label className="text-[10px] font-black text-[#FF5FA2] uppercase tracking-[0.2em] mb-3 ml-1 block">{d.profile.status}</label>
                       <div 
                         onClick={() => setIsPublished(!isPublished)}
                         className={`group relative w-full h-[64px] rounded-2xl border-2 cursor-pointer transition-all duration-300 flex items-center px-4 gap-3 ${
@@ -443,7 +483,7 @@ export default function OneTapBuilderPage() {
                             {isPublished ? 'Live' : 'Draft'}
                           </span>
                           <span className="text-[9px] font-bold text-gray-400 leading-none">
-                            {isPublished ? 'Publik' : 'Privat'}
+                            {isPublished ? d.profile.public : d.profile.private}
                           </span>
                         </div>
 
@@ -471,14 +511,14 @@ export default function OneTapBuilderPage() {
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText(`https://onetap-charm.com/l/${slug || username}`);
-                      setToastMsg('URL disalin ke clipboard!');
+                      setToastMsg(t('dashboard.copyLink'));
                       setToastType('success');
                       setShowToast(true);
                     }}
                     className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 text-gray-400 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all text-xs font-bold"
                   >
                     <Copy className="w-4 h-4" />
-                    Salin Link
+                    {d.profile.copyLink}
                   </button>
                 </div>
               )}
@@ -487,13 +527,13 @@ export default function OneTapBuilderPage() {
             {/* Links section */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-black text-[#18080F] tracking-tight">Koleksi Link</h2>
+                <h2 className="text-xl font-black text-[#18080F] tracking-tight">{d.links.title}</h2>
                 <button
                   onClick={addLink}
                   className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#FF5FA2] text-white text-xs sm:text-sm font-bold shadow-lg shadow-[#FF5FA2]/20 hover:-translate-y-0.5 transition-all"
                 >
                   <Plus className="w-4 h-4" />
-                  Tambah Link
+                  {d.links.add}
                 </button>
               </div>
 
@@ -509,8 +549,8 @@ export default function OneTapBuilderPage() {
                         <div className="w-20 h-20 rounded-3xl bg-white shadow-xl mx-auto flex items-center justify-center mb-6">
                           <Share2 className="w-10 h-10 text-gray-200" />
                         </div>
-                        <p className="text-lg font-black text-[#18080F]">Belum ada link</p>
-                        <p className="text-sm font-medium text-gray-400 mt-1">Mulai tambahkan sosial media websitemu.</p>
+                        <p className="text-lg font-black text-[#18080F]">{d.links.empty}</p>
+                        <p className="text-sm font-medium text-gray-400 mt-1">{d.links.emptyDesc}</p>
                       </motion.div>
                     ) : (
                       <div className="grid gap-4">
@@ -544,7 +584,7 @@ export default function OneTapBuilderPage() {
             {/* Theme picker */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-black text-[#18080F] tracking-tight">Warna & Tema</h2>
+                <h2 className="text-xl font-black text-[#18080F] tracking-tight">{d.appearance.theme}</h2>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full">Standard</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
@@ -575,7 +615,7 @@ export default function OneTapBuilderPage() {
             {/* Template picker */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-black text-[#18080F] tracking-tight">Template Layout</h2>
+                <h2 className="text-xl font-black text-[#18080F] tracking-tight">{d.appearance.template}</h2>
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100">
                   <Zap className="w-3 h-3" fill="currentColor" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Premium</span>
@@ -598,7 +638,7 @@ export default function OneTapBuilderPage() {
                         <div className="w-full h-2 rounded-full bg-white/20" />
                         <div className="w-full h-2 rounded-full bg-white/20" />
                       </div>
-                      {!isPro && (
+                      {!canAccess(plan, 'customBranding', expiresAt) && (
                         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                            <div className="bg-white rounded-full p-2">
                              <Lock className="w-4 h-4 text-[#18080F]" />
@@ -619,31 +659,33 @@ export default function OneTapBuilderPage() {
                   </button>
                 ))}
               </div>
-              {!isPro && (
+              {!canAccess(plan, 'customBranding', expiresAt) && (
                 <p className="text-xs font-medium text-amber-600 bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                  <strong>💡 Info:</strong> Kamu bisa mencoba preview template di atas, tapi kamu perlu upgrade ke <strong>Pro Plan</strong> untuk menyimpan perubahan dengan template premium.
+                  <strong>💡 Info:</strong> {d.appearance.premiumInfo}
                 </p>
               )}
             </div>
 
             {/* Pro Feature Multi-page Placeholder */}
-            {!isPro && (
+            {pages.length >= maxProfiles && (
               <div className="p-8 rounded-[40px] bg-gradient-to-br from-[#18080F] to-[#2D1622] text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF5FA2]/10 rounded-full blur-[100px] -mr-32 -mt-32" />
                 <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-8">
                   <div className="text-center sm:text-left">
                     <h3 className="text-xl font-black flex items-center justify-center sm:justify-start gap-2">
                       <Zap className="w-5 h-5 text-amber-400" fill="currentColor" />
-                      Butuh Lebih Dari Satu Halaman?
+                      {d.premiumLimit.title.replace('{limit}', maxProfiles.toString())}
                     </h3>
-                    <p className="text-gray-400 mt-2 text-sm font-medium">Upgrade ke Professional (3 halaman) atau Education (Tanpa Batas) untuk profil lebih banyak.</p>
+                    <p className="text-gray-400 mt-2 text-sm font-medium">
+                      {d.premiumLimit.desc}
+                    </p>
                   </div>
-                  <button 
-                    onClick={() => router.push('/checkout')}
+                  <Link 
+                    href="/#pricing"
                     className="px-8 py-3 rounded-2xl bg-white text-[#18080F] font-black hover:bg-[#FF5FA2] hover:text-white transition-all shadow-xl"
                   >
-                    Upgrade Sekarang
-                  </button>
+                    {t('dashboard.planInfo.upgrade')}
+                  </Link>
                 </div>
               </div>
             )}
@@ -655,7 +697,7 @@ export default function OneTapBuilderPage() {
               <div className="flex items-center justify-between px-2">
                 <h3 className="text-sm font-black text-[#18080F] uppercase tracking-widest flex items-center gap-2">
                   <Smartphone className="w-4 h-4 text-[#FF5FA2]" />
-                  Live Preview
+                  {d.preview.title}
                 </h3>
               </div>
 
@@ -677,7 +719,7 @@ export default function OneTapBuilderPage() {
                   className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white border border-[#F6B7C8]/20 text-[#18080F] font-bold shadow-sm hover:shadow-md transition-all group"
                 >
                   <ExternalLink className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                  Buka Halaman Penuh
+                  {d.preview.open}
                 </a>
                 <p className="text-[10px] text-center font-black text-gray-400 uppercase tracking-widest">
                   onetap-charm.com/l/{slug || username}
@@ -744,7 +786,7 @@ export default function OneTapBuilderPage() {
                   className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#FF5FA2] text-white font-bold shadow-lg"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Buka Halaman Penuh
+                  {d.preview.open}
                 </a>
               </div>
             </motion.div>

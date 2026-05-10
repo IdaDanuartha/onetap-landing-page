@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getTheme } from '@/lib/themes';
+import { getPlan } from '@/lib/plans';
 import type { Metadata } from 'next';
 import OneTapBio from './PublicLinktreePage';
 
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // 1. Get Page by Slug
   const { data: page } = await supabase
     .from('linktree_pages')
-    .select('user_id, title, bio')
+    .select('id, user_id, title, bio')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -26,9 +27,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // 2. Get Profile
   const { data: profile } = await supabase
     .from('users_profile')
-    .select('display_name, bio, avatar_url')
+    .select('id, display_name, bio, avatar_url, plan, plan_expires_at')
     .eq('id', page.user_id)
     .maybeSingle();
+
+  if (!profile) {
+    return { title: 'Profil Tidak Ditemukan | OneTap' };
+  }
+
+  // 3. Check if page is within plan limits
+  const planConfig = getPlan(profile.plan, profile.plan_expires_at);
+  const maxProfiles = planConfig.features.maxProfiles;
+
+  const { data: userPages } = await supabase
+    .from('linktree_pages')
+    .select('id')
+    .eq('user_id', profile.id)
+    .order('created_at', { ascending: true });
+
+  const pageIndex = userPages?.findIndex(p => p.id === (page as any).id) ?? -1;
+  // Note: we need to select id in page query to check index
+  if (pageIndex >= maxProfiles) {
+    return { title: 'Halaman Dinonaktifkan | OneTap' };
+  }
 
   const title = profile?.display_name || page.title || slug;
 
@@ -69,11 +90,26 @@ export default async function OneTapPublicPage({ params }: PageProps) {
   // 2. Fetch profile
   const { data: profile } = await supabase
     .from('users_profile')
-    .select('id, display_name, bio, avatar_url, username')
+    .select('id, display_name, bio, avatar_url, username, plan, plan_expires_at')
     .eq('id', page.user_id)
     .maybeSingle();
 
   if (!profile) return notFound();
+
+  // 2.5 Check if page is within plan limits
+  const planConfig = getPlan(profile.plan, profile.plan_expires_at);
+  const maxProfiles = planConfig.features.maxProfiles;
+
+  const { data: userPages } = await supabase
+    .from('linktree_pages')
+    .select('id')
+    .eq('user_id', profile.id)
+    .order('created_at', { ascending: true });
+
+  const pageIndex = userPages?.findIndex(p => p.id === page.id) ?? -1;
+  if (pageIndex >= maxProfiles) {
+    return notFound();
+  }
 
   // 3. Fetch active links
   const { data: links } = await supabase

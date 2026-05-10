@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { 
-  User, 
-  Lock, 
-  ChevronLeft, 
-  Save, 
-  Loader2, 
-  CheckCircle2, 
+import {
+  User,
+  Lock,
+  ChevronLeft,
+  Save,
+  Loader2,
+  CheckCircle2,
   AlertCircle,
   Eye,
   EyeOff,
@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Toast from "@/app/components/Toast";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { dict } from "@/lib/i18n/dict";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -31,6 +33,8 @@ export default function SettingsPage() {
   const [isChangingPass, setIsChangingPass] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+  const { locale: language } = useLanguage();
+  const d = dict[language].dashboard.settings;
   
   // Profile state
   const [profile, setProfile] = useState({
@@ -93,7 +97,7 @@ export default function SettingsPage() {
       // Validate username if changed
       if (profile.username !== originalUsername) {
         if (!/^[a-z0-9_-]+$/.test(profile.username)) {
-          setToastMsg("Username hanya boleh huruf kecil, angka, - dan _");
+          setToastMsg(d.profile.usernameError);
           setShowToast(true);
           setIsSavingProfile(false);
           return;
@@ -107,7 +111,7 @@ export default function SettingsPage() {
           .single();
         
         if (existing && existing.id !== profile.id) {
-          setToastMsg("Username sudah digunakan orang lain.");
+          setToastMsg(d.profile.usernameTaken);
           setShowToast(true);
           setIsSavingProfile(false);
           return;
@@ -125,11 +129,11 @@ export default function SettingsPage() {
       if (error) throw error;
 
       setOriginalUsername(profile.username);
-      setToastMsg("Profil berhasil diperbarui!");
+      setToastMsg(d.profile.success);
       setShowToast(true);
     } catch (err: any) {
       console.error(err);
-      setToastMsg("Gagal memperbarui profil.");
+      setToastMsg(d.profile.error);
       setShowToast(true);
     } finally {
       setIsSavingProfile(false);
@@ -137,7 +141,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (confirmPhrase !== "HAPUS AKUN SAYA") return;
+    if (confirmPhrase !== d.delete.confirmPhrase) return;
     
     setIsDeleting(true);
     try {
@@ -145,14 +149,14 @@ export default function SettingsPage() {
         method: "POST",
       });
       
-      if (!res.ok) throw new Error("Gagal menghapus akun");
+      if (!res.ok) throw new Error(d.delete.error);
       
       const supabase = createClient();
       await supabase.auth.signOut();
       router.push("/");
     } catch (err: any) {
       console.error(err);
-      setToastMsg("Gagal menghapus akun. Silakan coba lagi.");
+      setToastMsg(d.delete.error);
       setShowToast(true);
     } finally {
       setIsDeleting(false);
@@ -164,12 +168,12 @@ export default function SettingsPage() {
     setPassError("");
 
     if (passForm.newPassword !== passForm.confirmPassword) {
-      setPassError("Konfirmasi password tidak cocok.");
+      setPassError(d.password.errorMatch);
       return;
     }
 
     if (passForm.newPassword.length < 6) {
-      setPassError("Password minimal 6 karakter.");
+      setPassError(d.password.errorLength);
       return;
     }
 
@@ -183,12 +187,12 @@ export default function SettingsPage() {
 
       if (error) throw error;
 
-      setToastMsg("Password berhasil diubah!");
+      setToastMsg(d.password.success);
       setShowToast(true);
       setPassForm({ newPassword: "", confirmPassword: "" });
     } catch (err: any) {
       console.error(err);
-      setPassError(err.message || "Gagal mengubah password.");
+      setPassError(err.message || d.password.errorFailed);
     } finally {
       setIsChangingPass(false);
     }
@@ -215,13 +219,13 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between h-16 sm:h-20">
             <Link href="/dashboard" className="flex items-center gap-2 text-[#18080F]/60 hover:text-[#FF5FA2] transition-all font-bold">
               <ChevronLeft className="w-5 h-5" />
-              Kembali
+              {d.back}
             </Link>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] flex items-center justify-center">
                 <SettingsIcon className="w-4 h-4 text-white" />
               </div>
-              <span className="text-lg font-black text-[#18080F]">Pengaturan</span>
+              <span className="text-lg font-black text-[#18080F]">{d.title}</span>
             </div>
             <div className="w-20" /> {/* Spacer */}
           </div>
@@ -242,8 +246,8 @@ export default function SettingsPage() {
                   <User className="w-6 h-6 text-[#FF5FA2]" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-[#18080F]">Informasi Profil</h2>
-                  <p className="text-sm text-gray-500 font-medium">Perbarui informasi dasar akun kamu.</p>
+                  <h2 className="text-xl font-black text-[#18080F]">{d.profile.title}</h2>
+                  <p className="text-sm text-gray-500 font-medium">{d.profile.desc}</p>
                 </div>
               </div>
             </div>
@@ -251,28 +255,28 @@ export default function SettingsPage() {
             <form onSubmit={handleUpdateProfile} className="p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-[#18080F] ml-1">Nama Tampilan</label>
+                  <label className="text-sm font-bold text-[#18080F] ml-1">{d.profile.nameLabel}</label>
                   <input
                     type="text"
                     value={profile.display_name}
                     onChange={(e) => setProfile({ ...profile, display_name: e.target.value })}
-                    placeholder="Masukkan nama kamu"
+                    placeholder={d.profile.namePlaceholder}
                     className="w-full h-12 px-4 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-[#FF5FA2]/20 focus:border-[#FF5FA2] transition-all font-medium"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-[#18080F] ml-1">Username</label>
+                  <label className="text-sm font-bold text-[#18080F] ml-1">{d.profile.usernameLabel}</label>
                   <input
                     type="text"
                     value={profile.username}
                     onChange={(e) => setProfile({ ...profile, username: e.target.value.toLowerCase().replace(/\s/g, '-') })}
-                    placeholder="username_kamu"
+                    placeholder={d.profile.usernamePlaceholder}
                     className="w-full h-12 px-4 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-[#FF5FA2]/20 focus:border-[#FF5FA2] transition-all font-medium"
                   />
-                  <p className="text-[10px] text-gray-400 font-bold ml-1 uppercase tracking-wider">Username digunakan untuk identitas profil unik kamu.</p>
+                  <p className="text-[10px] text-gray-400 font-bold ml-1 uppercase tracking-wider">{d.profile.usernameHint}</p>
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-bold text-[#18080F] ml-1">Email</label>
+                  <label className="text-sm font-bold text-[#18080F] ml-1">{d.profile.emailLabel}</label>
                   <input
                     type="email"
                     value={profile.email}
@@ -289,7 +293,7 @@ export default function SettingsPage() {
                   className="flex items-center gap-2 px-8 py-3 rounded-xl bg-[#FF5FA2] text-white font-bold shadow-lg shadow-[#FF5FA2]/20 hover:bg-[#E8457E] transition-all disabled:opacity-70"
                 >
                   {isSavingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Simpan Perubahan
+                  {d.profile.saveBtn}
                 </button>
               </div>
             </form>
@@ -303,8 +307,8 @@ export default function SettingsPage() {
                   <Lock className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-[#18080F]">Ganti Password</h2>
-                  <p className="text-sm text-gray-500 font-medium">Amankan akun kamu dengan password yang kuat.</p>
+                  <h2 className="text-xl font-black text-[#18080F]">{d.password.title}</h2>
+                  <p className="text-sm text-gray-500 font-medium">{d.password.desc}</p>
                 </div>
               </div>
             </div>
@@ -312,13 +316,13 @@ export default function SettingsPage() {
             <form onSubmit={handleChangePassword} className="p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-[#18080F] ml-1">Password Baru</label>
+                  <label className="text-sm font-bold text-[#18080F] ml-1">{d.password.newPassLabel}</label>
                   <div className="relative">
                     <input
                       type={showPass ? "text" : "password"}
                       value={passForm.newPassword}
                       onChange={(e) => setPassForm({ ...passForm, newPassword: e.target.value })}
-                      placeholder="••••••••"
+                      placeholder={d.password.newPassPlaceholder}
                       className="w-full h-12 px-4 pr-12 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-[#FF5FA2]/20 focus:border-[#FF5FA2] transition-all font-medium"
                     />
                     <button
@@ -331,12 +335,12 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-[#18080F] ml-1">Konfirmasi Password Baru</label>
+                  <label className="text-sm font-bold text-[#18080F] ml-1">{d.password.confirmPassLabel}</label>
                   <input
                     type={showPass ? "text" : "password"}
                     value={passForm.confirmPassword}
                     onChange={(e) => setPassForm({ ...passForm, confirmPassword: e.target.value })}
-                    placeholder="••••••••"
+                    placeholder={d.password.confirmPassPlaceholder}
                     className="w-full h-12 px-4 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-[#FF5FA2]/20 focus:border-[#FF5FA2] transition-all font-medium"
                   />
                 </div>
@@ -356,7 +360,7 @@ export default function SettingsPage() {
                   className="flex items-center gap-2 px-8 py-3 rounded-xl bg-[#18080F] text-white font-bold shadow-lg shadow-black/10 hover:bg-black transition-all disabled:opacity-70"
                 >
                   {isChangingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                  Update Password
+                  {d.password.updateBtn}
                 </button>
               </div>
             </form>
@@ -370,8 +374,8 @@ export default function SettingsPage() {
                   <AlertCircle className="w-6 h-6 text-red-500" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-red-600">Hapus Akun</h2>
-                  <p className="text-sm text-red-400 font-medium italic">Sekali dihapus, data tidak bisa dikembalikan.</p>
+                  <h2 className="text-xl font-black text-red-600">{d.delete.title}</h2>
+                  <p className="text-sm text-red-400 font-medium italic">{d.delete.desc}</p>
                 </div>
               </div>
             </div>
@@ -379,7 +383,7 @@ export default function SettingsPage() {
             <div className="p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
               <div className="max-w-md">
                 <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                  Semua data profil digital, link, dan log absensi akan dihapus permanen dari sistem kami.
+                  {d.delete.dangerDesc}
                 </p>
               </div>
               <button 
@@ -387,7 +391,7 @@ export default function SettingsPage() {
                 className="px-8 py-3 rounded-xl border-2 border-red-100 text-red-500 font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center gap-2 group/btn"
               >
                 <Trash2 className="w-4 h-4 group-hover/btn:rotate-12 transition-transform" />
-                Hapus Akun Saya
+                {d.delete.cta}
               </button>
             </div>
           </section>
@@ -415,9 +419,9 @@ export default function SettingsPage() {
                 <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-6">
                   <Trash2 className="w-8 h-8 text-red-500" />
                 </div>
-                <h2 className="text-2xl font-black text-[#18080F] mb-2">Hapus Akun?</h2>
+                <h2 className="text-2xl font-black text-[#18080F] mb-2">{d.delete.modalTitle}</h2>
                 <p className="text-gray-500 font-medium mb-8">
-                  Tindakan ini permanen. Ketik <span className="font-black text-red-600 tracking-wider">HAPUS AKUN SAYA</span> di bawah untuk mengonfirmasi.
+                  {d.delete.modalDesc.replace('{phrase}', d.delete.confirmPhrase)}
                 </p>
 
                 <div className="space-y-4">
@@ -425,18 +429,18 @@ export default function SettingsPage() {
                     type="text"
                     value={confirmPhrase}
                     onChange={(e) => setConfirmPhrase(e.target.value)}
-                    placeholder="HAPUS AKUN SAYA"
+                    placeholder={d.delete.modalInputPlaceholder}
                     className="w-full h-12 px-4 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all font-bold text-center placeholder:font-medium"
                   />
 
                   <div className="flex flex-col gap-3">
                     <button
                       onClick={handleDeleteAccount}
-                      disabled={confirmPhrase !== "HAPUS AKUN SAYA" || isDeleting}
+                      disabled={confirmPhrase !== d.delete.confirmPhrase || isDeleting}
                       className="w-full h-12 rounded-xl bg-red-500 text-white font-black hover:bg-red-600 transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
                     >
                       {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                      Ya, Hapus Permanen
+                      {d.delete.modalConfirmBtn}
                     </button>
                     <button
                       onClick={() => {
@@ -445,7 +449,7 @@ export default function SettingsPage() {
                       }}
                       className="w-full h-12 rounded-xl bg-gray-50 text-gray-500 font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
                     >
-                      Batalkan
+                      {d.delete.modalCancelBtn}
                     </button>
                   </div>
                 </div>

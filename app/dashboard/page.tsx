@@ -5,16 +5,19 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { BarChart2, ExternalLink, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Share2, CheckCircle2, X, Loader2, Lock } from 'lucide-react';
+import { BarChart2, ExternalLink, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Share2, CheckCircle2, X, Loader2, Lock, Calendar, ShieldCheck, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { canAccess, PLANS, PLAN_BADGE_COLORS } from '@/lib/plans';
+import { canAccess, PLANS, PLAN_BADGE_COLORS, isExpired, getPlan } from '@/lib/plans';
 import type { PlanId } from '@/lib/plans';
 import Toast from '@/app/components/Toast';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t, locale } = useLanguage();
   const [user, setUser] = useState<{ name: string; email: string; username: string; slug: string } | null>(null);
   const [plan, setPlan] = useState<PlanId>('starter');
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [stats, setStats] = useState({ links: 0, totalClicks: 0 });
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
@@ -24,6 +27,8 @@ export default function DashboardPage() {
   const [usernameError, setUsernameError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const planExpired = isExpired(expiresAt);
+
   useEffect(() => {
     async function load() {
       const supabase = createClient();
@@ -32,7 +37,7 @@ export default function DashboardPage() {
 
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('display_name, username, plan')
+        .select('display_name, username, plan, plan_expires_at')
         .eq('id', authUser.id)
         .single();
 
@@ -55,6 +60,7 @@ export default function DashboardPage() {
         });
         setNewUsername(page?.slug || profile.username);
         setPlan((profile.plan as PlanId) ?? 'starter');
+        setExpiresAt(profile.plan_expires_at);
       }
 
       // Aggregate stats across all pages
@@ -100,7 +106,7 @@ export default function DashboardPage() {
 
     // Basic validation: only letters, numbers, hyphens, and underscores
     if (!/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
-      setUsernameError('URL hanya boleh berisi huruf, angka, - dan _');
+      setUsernameError(t('dashboard.url.errorFormat'));
       return;
     }
 
@@ -120,7 +126,7 @@ export default function DashboardPage() {
         .maybeSingle();
 
       if (existing && existing.user_id !== authUser.id) {
-        setUsernameError('URL sudah digunakan orang lain');
+        setUsernameError(t('dashboard.url.errorTaken'));
         setIsUpdating(false);
         return;
       }
@@ -153,7 +159,7 @@ export default function DashboardPage() {
       setIsEditingUsername(false);
     } catch (err) {
       console.error(err);
-      setUsernameError('Gagal memperbarui URL');
+      setUsernameError(t('dashboard.url.errorFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -171,7 +177,7 @@ export default function DashboardPage() {
       try {
         await navigator.share({
           title: 'OneTap - My Digital Card',
-          text: `Cek kartu digital saya di OneTap!`,
+          text: t('dashboard.url.shareText'),
           url: shareUrl,
         });
       } catch (err) {
@@ -179,12 +185,12 @@ export default function DashboardPage() {
       }
     } else {
       navigator.clipboard.writeText(shareUrl);
-      setToastMsg('Link disalin ke clipboard!');
+      setToastMsg(t('dashboard.copyLink'));
       setShowToast(true);
     }
   };
 
-  // Calculate dynamic conversion rate (mock logic: clicks / 10 views as base if no view data)
+  // Calculate dynamic conversion rate
   const conversionRate = stats.totalClicks > 0
     ? ((stats.totalClicks / (stats.totalClicks + 15)) * 100).toFixed(1)
     : '0';
@@ -218,16 +224,6 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="p-8 rounded-[32px] bg-white border border-gray-100 shadow-sm h-64">
-                <div className="w-14 h-14 rounded-2xl bg-gray-100 animate-pulse mb-6" />
-                <div className="w-40 h-6 bg-gray-100 rounded-lg animate-pulse mb-4" />
-                <div className="w-full h-4 bg-gray-100 rounded-md animate-pulse mb-2" />
-                <div className="w-2/3 h-4 bg-gray-100 rounded-md animate-pulse" />
-              </div>
-            ))}
-          </div>
         </main>
       </div>
     );
@@ -256,7 +252,7 @@ export default function DashboardPage() {
               <Link
                 href="/dashboard/settings"
                 className="p-2.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-200 group"
-                title="Settings"
+                title={t('dashboard.actions.settings')}
               >
                 <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform" />
               </Link>
@@ -267,13 +263,14 @@ export default function DashboardPage() {
                 <div className="hidden sm:flex flex-col items-end">
                   <span className="text-sm font-bold text-[#18080F]">{user?.name}</span>
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${PLAN_BADGE_COLORS[plan] || PLAN_BADGE_COLORS.starter}`}>
-                    {PLANS[plan]?.nameId || PLANS.starter.nameId}
+                    {locale === 'id' ? PLANS[plan]?.nameId : PLANS[plan]?.nameEn}
+                    {planExpired && ` (${t('dashboard.planInfo.expired')})`}
                   </span>
                 </div>
                 <button
                   onClick={handleLogout}
                   className="p-2.5 rounded-xl text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all duration-200 group"
-                  title="Logout"
+                  title={t('dashboard.actions.logout')}
                 >
                   <LogOut className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                 </button>
@@ -293,7 +290,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div>
               <h1 className="text-3xl sm:text-4xl font-black text-[#18080F] tracking-tight flex items-center gap-3">
-                Halo, {(user?.name || '').split(' ')[0]}
+                {t('dashboard.welcome')}, {(user?.name || '').split(' ')[0]}
                 <motion.div
                   animate={{
                     scale: [1, 1.1, 1],
@@ -319,7 +316,7 @@ export default function DashboardPage() {
                 </motion.div>
               </h1>
               <div className="text-base sm:text-lg text-gray-500 mt-2 font-medium flex flex-wrap items-center gap-2">
-                Kelola kartu digitalmu di
+                {t('dashboard.manageLink')}
                 <div className="flex items-center gap-2">
                   {isEditingUsername ? (
                     <div className="flex flex-col gap-1">
@@ -341,14 +338,14 @@ export default function DashboardPage() {
                             }
                           }}
                           className="bg-white border-2 border-[#FF5FA2] rounded-lg px-2 py-0.5 text-sm font-bold text-[#FF5FA2] outline-none w-32 focus:ring-2 focus:ring-[#FF5FA2]/20 transition-all"
-                          placeholder="username"
+                          placeholder={t('dashboard.url.placeholder')}
                           autoFocus
                         />
                         <button
                           onClick={handleUpdateUsername}
                           disabled={isUpdating}
                           className="p-1.5 rounded-lg bg-[#FF5FA2] text-white hover:bg-[#E8457E] disabled:opacity-50 transition-all"
-                          title="Simpan"
+                          title={t('dashboard.actions.save')}
                         >
                           {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                         </button>
@@ -359,7 +356,7 @@ export default function DashboardPage() {
                             setUsernameError('');
                           }}
                           className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-all"
-                          title="Batal"
+                          title={t('dashboard.actions.cancel')}
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -378,7 +375,7 @@ export default function DashboardPage() {
                       <button
                         onClick={() => setIsEditingUsername(true)}
                         className="p-1.5 rounded-lg hover:bg-[#FF5FA2]/5 text-gray-400 hover:text-[#FF5FA2] transition-all"
-                        title="Ubah URL"
+                        title={t('dashboard.actions.editUrl')}
                       >
                         <Settings className="w-3.5 h-3.5" />
                       </button>
@@ -389,7 +386,7 @@ export default function DashboardPage() {
                 <button
                   onClick={handleShare}
                   className="p-2 rounded-xl bg-white border border-gray-200 hover:border-[#FF5FA2] text-gray-400 hover:text-[#FF5FA2] transition-all shadow-sm hover:shadow-md ml-auto sm:ml-0"
-                  title="Share link"
+                  title={t('dashboard.actions.share')}
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
@@ -401,7 +398,63 @@ export default function DashboardPage() {
               className="flex md:hidden items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-lg shadow-[#FF5FA2]/20"
             >
               <Layout className="w-5 h-5" />
-              Edit Halaman
+              {t('dashboard.editPage')}
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Plan Info Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.15 }}
+          className="mb-10 p-6 sm:p-8 rounded-[32px] bg-white border border-[#FF5FA2]/10 shadow-xl shadow-[#FF5FA2]/5 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF5FA2]/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:scale-110 transition-transform duration-700" />
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+            <div className="flex items-center gap-6">
+              <div className={`w-16 h-16 rounded-2xl ${PLAN_BADGE_COLORS[plan] || PLAN_BADGE_COLORS.starter} flex items-center justify-center shadow-inner`}>
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-[#18080F]">{t('dashboard.planInfo.title')}</h3>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
+                  <div className="flex items-center gap-1.5 text-sm font-bold text-gray-500">
+                    <Zap className="w-3.5 h-3.5 text-yellow-500" />
+                    {locale === 'id' ? PLANS[plan]?.nameId : PLANS[plan]?.nameEn}
+                  </div>
+                  <div className="w-1 h-1 bg-gray-300 rounded-full hidden sm:block" />
+                  <div className="flex items-center gap-1.5 text-sm font-bold text-gray-500">
+                    <Calendar className="w-3.5 h-3.5 text-[#FF5FA2]" />
+                    {expiresAt 
+                      ? `${t('dashboard.planInfo.expiresAt')} ${new Date(expiresAt).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                      : t('dashboard.planInfo.neverExpires')
+                    }
+                  </div>
+                  {plan !== 'starter' && (
+                    <>
+                      <div className="w-1 h-1 bg-gray-300 rounded-full hidden sm:block" />
+                      <div className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest ${planExpired ? 'text-red-500' : 'text-green-500'}`}>
+                        <Clock className="w-3.5 h-3.5" />
+                        {planExpired ? t('dashboard.planInfo.expired') : t('dashboard.planInfo.active')}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Link
+              href="/#pricing"
+              className={`px-8 py-3.5 rounded-2xl font-black transition-all shadow-lg flex items-center gap-2 group/btn ${
+                planExpired || plan === 'starter'
+                  ? 'bg-[#FF5FA2] text-white hover:bg-[#E8457E] shadow-[#FF5FA2]/20'
+                  : 'bg-white border-2 border-[#FF5FA2] text-[#FF5FA2] hover:bg-[#FF5FA2]/5'
+              }`}
+            >
+              {planExpired ? t('dashboard.planInfo.renew') : t('dashboard.planInfo.upgrade')}
+              <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
             </Link>
           </div>
         </motion.div>
@@ -410,13 +463,13 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.2 }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 sm:mb-16"
         >
           {[
-            { label: 'Profil Aktif', value: stats.links, icon: Layout, color: '#FF5FA2', bg: 'from-[#FFF1F7] to-[#FFF1F7]/50', border: 'border-[#FF5FA2]/10' },
-            { label: 'Total Klik', value: stats.totalClicks, icon: BarChart2, color: '#8b5cf6', bg: 'from-[#f5f3ff] to-[#f5f3ff]/50', border: 'border-[#8b5cf6]/10' },
-            { label: 'Conversion Rate', value: `${conversionRate}%`, icon: Zap, color: '#f59e0b', bg: 'from-[#fffbeb] to-[#fffbeb]/50', border: 'border-[#f59e0b]/10' },
+            { label: t('dashboard.stats.activeProfiles'), value: stats.links, icon: Layout, color: '#FF5FA2', bg: 'from-[#FFF1F7] to-[#FFF1F7]/50', border: 'border-[#FF5FA2]/10' },
+            { label: t('dashboard.stats.totalClicks'), value: stats.totalClicks, icon: BarChart2, color: '#8b5cf6', bg: 'from-[#f5f3ff] to-[#f5f3ff]/50', border: 'border-[#8b5cf6]/10' },
+            { label: t('dashboard.stats.conversionRate'), value: `${conversionRate}%`, icon: Zap, color: '#f59e0b', bg: 'from-[#fffbeb] to-[#fffbeb]/50', border: 'border-[#f59e0b]/10' },
           ].map((s, idx) => (
             <div
               key={s.label}
@@ -435,7 +488,7 @@ export default function DashboardPage() {
 
         {/* Quick Actions Header */}
         <div className="flex items-center gap-4 mb-8">
-          <h2 className="text-xl sm:text-2xl font-black text-[#18080F] tracking-tight uppercase tracking-widest text-xs font-bold text-[#FF5FA2]">Menu Utama</h2>
+          <h2 className="text-xl sm:text-2xl font-black text-[#18080F] tracking-tight uppercase tracking-widest text-xs font-bold text-[#FF5FA2]">{t('dashboard.menu.title')}</h2>
           <div className="h-px flex-1 bg-gradient-to-r from-[#FF5FA2]/20 to-transparent" />
         </div>
 
@@ -445,8 +498,8 @@ export default function DashboardPage() {
             {
               href: '/dashboard/linktree',
               icon: Layout,
-              title: 'Edit OneTap Card',
-              desc: 'Sesuaikan link, profil, dan tema kartu digitalmu secara real-time.',
+              title: t('dashboard.menu.editCard'),
+              desc: t('dashboard.menu.editCardDesc'),
               color: '#FF5FA2',
               bg: 'bg-[#FFF1F7]',
               iconColor: 'text-[#FF5FA2]'
@@ -454,8 +507,8 @@ export default function DashboardPage() {
             {
               href: '/dashboard/nfc/connect',
               icon: Wifi,
-              title: 'Connect NFC Tag',
-              desc: 'Hubungkan OneTap-mu ke NFC Keychain OneTap hanya dengan sekali tempel.',
+              title: t('dashboard.menu.nfc'),
+              desc: t('dashboard.menu.nfcDesc'),
               color: '#0ea5e9',
               bg: 'bg-[#f0f9ff]',
               iconColor: 'text-[#0ea5e9]'
@@ -463,8 +516,8 @@ export default function DashboardPage() {
             {
               href: '/dashboard/analytics',
               icon: BarChart2,
-              title: 'Insight & Statistik',
-              desc: 'Analisa performa linkmu dengan data klik dan demografi pengunjung.',
+              title: t('dashboard.menu.analytics'),
+              desc: t('dashboard.menu.analyticsDesc'),
               color: '#8b5cf6',
               bg: 'bg-[#f5f3ff]',
               iconColor: 'text-[#8b5cf6]',
@@ -472,19 +525,19 @@ export default function DashboardPage() {
             {
               href: '/dashboard/attendance',
               icon: User,
-              title: 'Attendance (Absensi)',
-              desc: 'Kelola data kehadiran dan setup notifikasi WhatsApp otomatis.',
+              title: t('dashboard.menu.attendance'),
+              desc: t('dashboard.menu.attendanceDesc'),
               color: '#22c55e',
               bg: 'bg-[#f0fdf4]',
               iconColor: 'text-[#22c55e]',
-              locked: !canAccess(plan, 'attendance'),
-              requiredPlan: 'Education',
+              locked: !canAccess(plan, 'attendance', expiresAt),
+              requiredPlan: locale === 'id' ? PLANS.education.nameId : PLANS.education.nameEn,
             },
             {
               href: '/dashboard/settings',
               icon: Settings,
-              title: 'Pengaturan Akun',
-              desc: 'Update profil, ganti password, dan kelola keamanan akun kamu.',
+              title: t('dashboard.menu.settings'),
+              desc: t('dashboard.menu.settingsDesc'),
               color: '#475569',
               bg: 'bg-gray-100',
               iconColor: 'text-gray-600',
@@ -495,7 +548,7 @@ export default function DashboardPage() {
               key={item.href}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + idx * 0.1 }}
+              transition={{ delay: 0.3 + idx * 0.1 }}
               className=""
             >
               {item.locked ? (
@@ -512,13 +565,13 @@ export default function DashboardPage() {
                   </div>
                   <h3 className="text-xl font-black text-[#18080F] mb-3">{item.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed font-medium mb-6">{item.desc}</p>
-                  <a
+                  <Link
                     href="/#pricing"
                     className="inline-flex items-center gap-2 text-[#FF5FA2] font-bold text-sm uppercase tracking-wider cursor-pointer"
                   >
-                    Upgrade Plan
+                    {t('dashboard.menu.upgradePlan')}
                     <ChevronRight className="w-4 h-4" />
-                  </a>
+                  </Link>
                 </div>
               ) : (
                 <Link
@@ -537,7 +590,7 @@ export default function DashboardPage() {
                 </p>
 
                 <div className="flex items-center gap-2 text-[#FF5FA2] font-bold text-sm uppercase tracking-wider group-hover:gap-4 transition-all">
-                  Kelola Sekarang
+                  {t('dashboard.menu.manageNow')}
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </Link>
@@ -555,15 +608,15 @@ export default function DashboardPage() {
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF5FA2]/10 rounded-full blur-[100px] -mr-48 -mt-48" />
           <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-8">
             <div>
-              <h3 className="text-2xl sm:text-3xl font-black text-white">Butuh bantuan?</h3>
-              <p className="text-gray-400 mt-2 font-medium max-w-md text-base">Tim support kami siap membantumu kapan saja jika ada kendala setting NFC atau OneTap Card.</p>
+              <h3 className="text-2xl sm:text-3xl font-black text-white">{t('dashboard.support.title')}</h3>
+              <p className="text-gray-400 mt-2 font-medium max-w-md text-base">{t('dashboard.support.desc')}</p>
             </div>
             <a
               href="https://wa.me/6283114227745"
               target="_blank"
               className="px-8 py-4 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all duration-300 shadow-xl shadow-[#FF5FA2]/20 flex items-center gap-3"
             >
-              Hubungi Kami
+              {t('dashboard.support.cta')}
               <ChevronRight className="w-5 h-5" />
             </a>
           </div>
@@ -591,4 +644,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 

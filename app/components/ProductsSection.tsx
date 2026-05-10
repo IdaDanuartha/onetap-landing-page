@@ -19,6 +19,8 @@ export default function ProductsSection() {
       tag: null,
       price: t('products.plans.starter.price.monthly'),
       yearlyPrice: t('products.plans.starter.price.yearly'),
+      originalPrice: null,
+      originalYearlyPrice: null,
       period: "",
       description: t('products.plans.starter.desc'),
       border: "border-gray-200",
@@ -32,6 +34,8 @@ export default function ProductsSection() {
       tag: t('products.plans.professional.tag'),
       price: t('products.plans.professional.price.monthly'),
       yearlyPrice: t('products.plans.professional.price.yearly'),
+      originalPrice: t('products.plans.professional.price.originalMonthly'),
+      originalYearlyPrice: t('products.plans.professional.price.originalYearly'),
       period: "/bulan",
       description: t('products.plans.professional.desc'),
       border: "border-[#FF5FA2]",
@@ -45,6 +49,8 @@ export default function ProductsSection() {
       tag: null,
       price: t('products.plans.education.price.monthly'),
       yearlyPrice: t('products.plans.education.price.yearly'),
+      originalPrice: t('products.plans.education.price.originalMonthly'),
+      originalYearlyPrice: t('products.plans.education.price.originalYearly'),
       period: "/bulan",
       description: t('products.plans.education.desc'),
       border: "border-gray-200",
@@ -133,7 +139,12 @@ export default function ProductsSection() {
 
               {/* Price */}
               <div className="mb-7">
-                <div className="flex items-baseline gap-1">
+                <div className="flex items-baseline flex-wrap gap-1">
+                  {(billing === "yearly" ? plan.originalYearlyPrice : plan.originalPrice) && (
+                    <span className="text-gray-400 text-lg line-through font-medium mr-1">
+                      {billing === "yearly" ? plan.originalYearlyPrice : plan.originalPrice}
+                    </span>
+                  )}
                   <span
                     className="text-4xl text-[#18080F] font-extrabold"
                     style={{ fontFamily: "var(--font-display)" }}

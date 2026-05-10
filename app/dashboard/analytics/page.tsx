@@ -8,6 +8,8 @@ import { ArrowLeft, BarChart2, TrendingUp, MousePointer, Loader2, Zap, Layout, S
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { iconMap } from '@/app/components/linktree/IconPicker';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { dict } from '@/lib/i18n/dict';
 
 interface LinkStat {
   id: string;
@@ -32,6 +34,8 @@ export default function AnalyticsPage() {
   const [selectedPageId, setSelectedPageId] = useState<string>('all');
   const [totalClicks, setTotalClicks] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { locale: language } = useLanguage();
+  const d = dict[language].dashboard.analytics;
 
   useEffect(() => {
     async function load() {
@@ -134,7 +138,7 @@ export default function AnalyticsPage() {
           <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-xl font-black text-[#18080F]">Statistik Performa</h1>
+          <h1 className="text-xl font-black text-[#18080F]">{d.title}</h1>
         </div>
       </nav>
 
@@ -143,12 +147,12 @@ export default function AnalyticsPage() {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-black text-[#FF5FA2] uppercase tracking-[0.2em] mb-2">Real-time Data</p>
-            <h2 className="text-3xl font-black text-[#18080F] tracking-tight">Overview Klik</h2>
+            <p className="text-xs font-black text-[#FF5FA2] uppercase tracking-[0.2em] mb-2">{d.realtime}</p>
+            <h2 className="text-3xl font-black text-[#18080F] tracking-tight">{d.overview}</h2>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#F6B7C8]/20 text-xs font-bold text-gray-500 shadow-sm">
             <Activity className="w-4 h-4 text-green-500" />
-            Monitoring Aktif
+            {d.monitoring}
           </div>
         </div>
 
@@ -164,7 +168,7 @@ export default function AnalyticsPage() {
             </div>
             <div>
               <p className="text-4xl font-black text-[#18080F] tracking-tighter">{displayTotalClicks}</p>
-              <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">Total Interaksi</p>
+              <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">{d.totalInteractions}</p>
             </div>
           </motion.div>
 
@@ -179,7 +183,7 @@ export default function AnalyticsPage() {
             </div>
             <div>
               <p className="text-4xl font-black text-[#18080F] tracking-tighter">{displayActiveLinks}</p>
-              <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">Link Aktif</p>
+              <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">{d.activeLinks}</p>
             </div>
           </motion.div>
         </div>
@@ -199,9 +203,9 @@ export default function AnalyticsPage() {
                 <div className="w-12 h-12 rounded-2xl bg-[#FFF8F2] flex items-center justify-center">
                   <BarChart2 className="w-6 h-6 text-[#FF5FA2]" />
                 </div>
-                <h3 className="text-xl font-black text-[#18080F]">Detail Klik per Link</h3>
+                <h3 className="text-xl font-black text-[#18080F]">{d.detailTitle}</h3>
               </div>
-              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Urutan Terpopuler</div>
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{d.popularityOrder}</div>
             </div>
 
             {Object.keys(pagesInfo).length > 1 && (
@@ -214,7 +218,7 @@ export default function AnalyticsPage() {
                       : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  Semua Profil
+                  {d.allProfiles}
                 </button>
                 {Object.values(pagesInfo).map((p) => (
                   <button
@@ -240,8 +244,8 @@ export default function AnalyticsPage() {
                   <Layout className="w-10 h-10" />
                 </div>
                 <div className="text-center">
-                  <p className="text-xl font-black text-[#18080F] mb-2">Belum Ada Data</p>
-                  <p className="text-gray-400 text-sm font-medium mb-6">Tidak ada statistik untuk filter yang dipilih.</p>
+                  <p className="text-xl font-black text-[#18080F] mb-2">{d.noData.title}</p>
+                  <p className="text-gray-400 text-sm font-medium mb-6">{d.noData.desc}</p>
                 </div>
               </div>
             </div>
@@ -267,7 +271,7 @@ export default function AnalyticsPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
                             <p className={`text-base font-black truncate ${link.is_active ? 'text-[#18080F]' : 'text-gray-400'}`}>
-                              {link.label || 'Tanpa Label'}
+                              {link.label || d.noLabel}
                             </p>
                             {link.page_id && pagesInfo[link.page_id] && (
                               <span className="px-2 py-0.5 rounded-md bg-gray-100 text-[9px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">
@@ -280,7 +284,7 @@ export default function AnalyticsPage() {
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-xl font-black text-[#FF5FA2] tracking-tight">{link.click_count}</p>
-                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Klik</p>
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{d.clicks}</p>
                       </div>
                     </div>
                     {/* Progress bar container */}
@@ -309,8 +313,8 @@ export default function AnalyticsPage() {
             <Zap className="w-6 h-6 text-amber-400" fill="currentColor" />
           </div>
           <div>
-            <p className="text-sm font-bold">Tips Pro:</p>
-            <p className="text-xs text-gray-400 mt-1 font-medium">Link dengan ikon yang relevan dan label yang menarik memiliki conversion rate 30% lebih tinggi!</p>
+            <p className="text-sm font-bold">{d.tipTitle}</p>
+            <p className="text-xs text-gray-400 mt-1 font-medium">{d.tipDesc}</p>
           </div>
         </div>
       </div>
