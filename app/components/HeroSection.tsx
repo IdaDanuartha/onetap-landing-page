@@ -148,16 +148,16 @@ export default function HeroSection() {
             transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
             className="relative hidden lg:block"
           >
-            <div className="relative mx-auto w-full max-w-md">
-              {/* Hero image */}
-              <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50 bg-[#2D1020]">
+            <div className="relative mx-auto w-full max-w-lg">
+              {/* Hero image illustration */}
+              <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl shadow-[#FF5FA2]/10 bg-[#2D1020]/50 backdrop-blur-sm">
                 <img
-                  src="https://images.unsplash.com/photo-1720135885007-454165745e21?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBTYWFTJTIwZGFzaGJvYXJkJTIwYXBwJTIwZGFyayUyMGludGVyZmFjZXxlbnwxfHx8fDE3NzgxNDg5ODh8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                  alt="OneTap Dashboard"
-                  className="w-full h-80 object-cover"
+                  src="/images/hero-illustration.png"
+                  alt="OneTap NFC Experience"
+                  className="w-full h-auto object-cover scale-105 hover:scale-110 transition-transform duration-700"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#18080F]/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#18080F]/80 via-transparent to-transparent" />
               </div>
 
               {/* Floating profile card */}
