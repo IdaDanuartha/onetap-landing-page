@@ -47,7 +47,7 @@ export default function AttendanceManagementPage() {
   const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
   const [presentToday, setPresentToday] = useState(0);
   const [schoolName, setSchoolName] = useState("Umum");
-  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("Halo Pendamping {student_name}, ananda telah hadir di sekolah pada {date} pukul {time}.");
+  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("🔔 *PRESENSI KEHADIRAN* 🔔\n\nHalo Pendamping *{student_name}*,\nAnanda telah hadir di sekolah pada:\n\n📅 Hari/Tgl: *{date}*\n⏰ Pukul: *{time}*\n🏫 Sekolah: *{school_name}*\n\nTerima kasih atas perhatiannya.");
   const [user, setUser] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -142,8 +142,22 @@ export default function AttendanceManagementPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const checkUser = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        setUser(authUser);
+      } else {
+        window.location.href = "/auth/login";
+      }
+    };
+    checkUser();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -710,34 +724,30 @@ export default function AttendanceManagementPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 lg:flex lg:items-center gap-3 w-full lg:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto mt-4 lg:mt-0">
             <Link 
               href="/dashboard/attendance/logs"
-              className="px-4 sm:px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-base"
+              className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-sm"
             >
               <Calendar className="w-5 h-5 text-[#FF5FA2]" />
-              {d.actions.history}
+              <span className="hidden sm:inline">{d.actions.history}</span>
+              <span className="sm:hidden">History</span>
             </Link>
             <button 
               onClick={() => setShowImportModal(true)}
-              className="px-4 sm:px-6 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-base"
+              className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-sm"
             >
               <Download className="w-5 h-5 rotate-180" />
-              {d.actions.importCsv}
+              <span className="hidden sm:inline">{d.actions.importCsv}</span>
+              <span className="sm:hidden">Import</span>
             </button>
             <button 
               onClick={startBulkScan}
-              className="px-4 sm:px-6 py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 text-xs sm:text-base"
+              className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 text-sm"
             >
               <Radio className="w-5 h-5 animate-pulse" />
-              {d.actions.bulkScan}
-            </button>
-            <button 
-              onClick={() => handleOpenModal()}
-              className="px-4 sm:px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 text-xs sm:text-base"
-            >
-              <Plus className="w-5 h-5" />
-              {d.actions.addStudent}
+              <span className="hidden sm:inline">{d.actions.bulkScan}</span>
+              <span className="sm:hidden">Scan</span>
             </button>
           </div>
         </div>
@@ -875,6 +885,14 @@ export default function AttendanceManagementPage() {
                   Bulk Write ({filteredTags.length})
                 </button>
               )}
+
+              <button 
+                onClick={() => handleOpenModal()}
+                className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl bg-[#FF5FA2] text-white font-black text-sm hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-lg shadow-[#FF5FA2]/20"
+              >
+                <Plus className="w-4 h-4" />
+                {d.actions.addStudent}
+              </button>
             </div>
           </div>
 

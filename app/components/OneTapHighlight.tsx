@@ -64,10 +64,12 @@ export default function OneTapHighlight() {
                   {/* OneTap preview content */}
                   <div className="flex flex-col items-center py-12 px-5">
                     {/* Avatar */}
-                    <div
-                      className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg shadow-[#FF5FA2]/20 mb-4 bg-gradient-to-br from-[#FF5FA2] to-[#E8457E]"
-                    >
-                      <User className="w-10 h-10 text-white" />
+                    <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg shadow-[#FF5FA2]/20 mb-4 ring-4 ring-white">
+                      <img
+                        src="/images/yogik_avatar.png"
+                        alt="Yogik Pratama Avatar"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <p className="font-bold text-lg text-center text-[#18080F]" style={{ fontFamily: "var(--font-display)" }}>
                       {t('onetap_card.mockup.name')}

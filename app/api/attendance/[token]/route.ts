@@ -160,13 +160,14 @@ export async function POST(
       timeZone: 'Asia/Jakarta',
     });
 
-    const defaultTemplate = 'Halo Pendamping {student_name},  telah hadir di sekolah pada {date} pukul {time}.';
+    const defaultTemplate = '🔔 *PRESENSI KEHADIRAN* 🔔\n\nHalo Pendamping *{student_name}*,\nAnanda telah hadir di sekolah pada:\n\n📅 Hari/Tgl: *{date}*\n⏰ Pukul: *{time}*\n🏫 Sekolah: *{school_name}*\n\nTerima kasih atas perhatiannya.';
     const template = (tag.message_template as string) || defaultTemplate;
 
     const message = template
       .replace(/{student_name}/g, tag.student_name || 'Siswa')
       .replace(/{class_name}/g, tag.class_name || '-')
       .replace(/{subject}/g, tag.subject ?? '-')
+      .replace(/{school_name}/g, tag.school_name || 'OneTap School')
       .replace(/{date}/g, date)
       .replace(/{time}/g, time);
 

@@ -59,10 +59,10 @@ export default function Header() {
   }, [isMobileMenuOpen]);
 
   const navLinks = [
-    { label: t('nav.features'), href: "#features" },
-    { label: t('nav.howItWorks'), href: "#how-it-works" },
-    { label: t('products.badge'), href: "#pricing" },
-    { label: t('nav.attendance'), href: "#attendance" },
+    { label: t('nav.features'), href: "/#features" },
+    { label: t('nav.howItWorks'), href: "/#how-it-works" },
+    { label: t('products.badge'), href: "/#pricing" },
+    { label: t('nav.attendance'), href: "/#attendance" },
   ];
 
   return (
@@ -315,7 +315,7 @@ export default function Header() {
                   )}
                   
                   <a
-                    href="#pricing"
+                    href="/#pricing"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="mt-3 flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-[#FF5FA2] hover:bg-[#E8457E] transition-colors text-white font-bold text-[17px]"
                   >

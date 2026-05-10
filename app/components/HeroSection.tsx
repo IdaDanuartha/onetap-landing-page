@@ -160,8 +160,12 @@ export default function HeroSection() {
                 className="absolute -left-12 top-8 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl z-20"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5FA2] to-[#F6B7C8] flex items-center justify-center">
-                    <Users className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 shadow-lg">
+                    <img
+                      src="/images/yogik_avatar.png"
+                      alt="Yogik Pratama Avatar"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
                     <div className="text-white text-sm font-semibold">{t('hero.floating.profile')}</div>
