@@ -178,7 +178,7 @@ export default function Header() {
               </a>
             )}
             <a
-              href="https://wa.me/6283114227745"
+              href="https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia."
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF5FA2] text-white text-sm font-bold hover:bg-[#E8457E] transition-all duration-200 shadow-lg shadow-[#FF5FA2]/25"

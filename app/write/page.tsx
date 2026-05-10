@@ -161,7 +161,7 @@ function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
 
         <p className="mt-12 text-center text-sm font-semibold relative z-10">
           <span className="text-gray-400">Kehilangan kode?</span>{" "}
-          <a href="https://wa.me/6283114227745" className="text-blue-500 hover:underline underline-offset-4">
+          <a href="https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia." className="text-blue-500 hover:underline underline-offset-4">
             Hubungi Support
           </a>
         </p>

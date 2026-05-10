@@ -18,7 +18,7 @@ export default function Footer() {
     [t('footer.social')]: [
       { label: "Instagram", href: "https://instagram.com/onetap.charm" },
       { label: "TikTok", href: "https://tiktok.com/@onetap.charm" },
-      { label: "WhatsApp", href: "https://wa.me/6283114227745" },
+      { label: "WhatsApp", href: "https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia." },
     ],
     [t('footer.legal')]: [
       { label: t('footer.privacy'), href: "#" },

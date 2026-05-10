@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const WA_LINK =
-  "https://wa.me/6283114227745?text=Halo+OneTap!+Saya+tertarik+dengan+NFC+Keychain.";
+  "https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia.";
 
 export default function FloatingWA() {
   return (

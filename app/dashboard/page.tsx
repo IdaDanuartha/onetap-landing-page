@@ -612,7 +612,7 @@ export default function DashboardPage() {
               <p className="text-gray-400 mt-2 font-medium max-w-md text-base">{t('dashboard.support.desc')}</p>
             </div>
             <a
-              href="https://wa.me/6283114227745"
+              href="https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia."
               target="_blank"
               className="px-8 py-4 rounded-2xl bg-[#FF5FA2] text-white font-black hover:bg-[#E8457E] transition-all duration-300 shadow-xl shadow-[#FF5FA2]/20 flex items-center gap-3"
             >

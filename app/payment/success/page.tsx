@@ -166,7 +166,7 @@ export default function PaymentSuccessPage() {
                 {t('paymentSuccess.ctaRetry')}
               </button>
               <a
-                href="https://wa.me/6283114227745"
+                href="https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia."
                 className="px-5 py-3 rounded-xl bg-[#FF5FA2] text-white font-bold text-sm hover:bg-[#E8457E] transition-all"
               >
                 {t('paymentSuccess.ctaSupport')}
