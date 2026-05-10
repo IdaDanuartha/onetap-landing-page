@@ -12,14 +12,14 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [locale, setLocaleState] = useState<Locale>('id');
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const savedLocale = localStorage.getItem('onetap-locale') as Locale;
     if (savedLocale && (savedLocale === 'id' || savedLocale === 'en')) {
       setLocaleState(savedLocale);
     }
-    setIsLoaded(true);
+    setMounted(true);
   }, []);
 
   const setLocale = (newLocale: Locale) => {
@@ -27,7 +27,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('onetap-locale', newLocale);
   };
 
-  // Helper to get nested values from translation object
   const t = (key: string) => {
     const keys = key.split('.');
     let value: any = translations[locale];
@@ -36,7 +35,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (value && value[k]) {
         value = value[k];
       } else {
-        return key; // Return the key if not found
+        return key;
       }
     }
     return value;
@@ -44,8 +43,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   return (
     <LanguageContext.Provider value={{ locale, setLocale, t }}>
-      {/* Prevent hydration flicker by only rendering children after locale is loaded from localStorage */}
-      {isLoaded ? children : <div className="invisible">{children}</div>}
+      <div className={mounted ? "" : "invisible"}>
+        {children}
+      </div>
     </LanguageContext.Provider>
   );
 };

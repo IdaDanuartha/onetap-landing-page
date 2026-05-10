@@ -1,7 +1,6 @@
 'use client';
 
 import { getTheme } from '@/lib/themes';
-import Image from 'next/image';
 import Link from 'next/link';
 import { User } from 'lucide-react';
 import { iconMap } from '@/app/components/linktree/IconPicker';
