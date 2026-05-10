@@ -13,7 +13,7 @@ export default function WhatsAppWidget() {
   }
 
   const phoneNumber = '6283114227745';
-  const defaultMessage = 'Halo OneTap, saya ingin bertanya tentang layanan NFC OneTap.';
+  const defaultMessage = 'Halo OneTap, saya ingin bertanya mengenai detail produk NFC OneTap yang tersedia.';
   const encodedMessage = encodeURIComponent(defaultMessage);
   const waUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
