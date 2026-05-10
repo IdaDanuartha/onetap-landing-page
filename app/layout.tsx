@@ -17,6 +17,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.onetap-charm.com'),
   title: "OneTap - NFC Keychain & Digital Business Card Indonesia",
   description:
     "Solusi networking masa depan. Bagikan profil, kontak, dan sosial mediamu hanya dengan satu sentuhan NFC OneTap. Everything Connected.",
