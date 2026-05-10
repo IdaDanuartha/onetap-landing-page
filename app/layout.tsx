@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
-import TawkTo from "@/app/components/TawkTo";
+// import TawkTo from "@/app/components/TawkTo";
+import WhatsAppWidget from "@/app/components/WhatsAppWidget";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -121,7 +122,8 @@ export default function RootLayout({
           {children}
         </LanguageProvider>
 
-        <TawkTo />
+        {/* <TawkTo /> */}
+        <WhatsAppWidget />
       </body>
     </html>
   );
