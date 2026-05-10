@@ -99,9 +99,9 @@ export default function OneTapHighlight() {
                 className="absolute -top-4 -right-8 px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 bg-white text-[#18080F] border border-gray-100 z-20"
               >
                 <div className="w-6 h-6 rounded-full bg-[#FFF8F2] flex items-center justify-center">
-                    <LinkIcon className="w-3.5 h-3.5 text-[#FF5FA2]" />
+                  <LinkIcon className="w-3.5 h-3.5 text-[#FF5FA2]" />
                 </div>
-                onetap.id/l/andi
+                onetap-charm.com/l/yogik
               </div>
               {/* Floating badge — Stats */}
               <div

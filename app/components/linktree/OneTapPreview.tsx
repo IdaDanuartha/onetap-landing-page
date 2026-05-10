@@ -1,3 +1,4 @@
+import { User } from 'lucide-react';
 import { getTheme } from '@/lib/themes';
 import type { LinkItem } from './SortableLinkCard';
 import { iconMap } from './IconPicker';
@@ -32,10 +33,10 @@ export function OneTapPreview({ profile, links, theme }: OneTapPreviewProps) {
         />
       ) : (
         <div
-          className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white mb-3 shadow-lg"
+          className="w-16 h-16 rounded-full flex items-center justify-center text-white mb-3 shadow-lg"
           style={{ background: t.accent || '#FF5FA2' }}
         >
-          {profile.title?.charAt(0)?.toUpperCase() || '?'}
+          <User className="w-8 h-8" />
         </div>
       )}
 

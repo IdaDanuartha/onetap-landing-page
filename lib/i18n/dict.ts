@@ -285,7 +285,7 @@ export const translations = {
       rating: "4.9 / 5 dari 2.000+ ulasan",
       items: [
         {
-          name: "Andi Pratama",
+          name: "Yogik Pratama",
           role: "Marketing Manager",
           company: "Tokopedia",
           text: "OneTap benar-benar mengubah cara saya membangun jaringan di acara. Satu tap dan profil lengkap saya dibagikan — tidak perlu lagi mencari kartu nama. Analitik yang menunjukkan siapa yang melihat profil saya adalah pengubah permainan.",
@@ -438,7 +438,7 @@ export const translations = {
         nfc: "Koneksi NFC",
       },
       mockup: {
-        name: "Andi Pratama",
+        name: "Yogik Pratama",
         role: "Creative Designer",
         portfolio: "Portofolio",
         email: "Kirim Email",
@@ -1019,7 +1019,7 @@ export const translations = {
       rating: "4.9 / 5 from 2,000+ reviews",
       items: [
         {
-          name: "Andi Pratama",
+          name: "Yogik Pratama",
           role: "Marketing Manager",
           company: "Tokopedia",
           text: "OneTap completely changed how I network at events. One tap and my full profile is shared — no more fumbling for business cards. The analytics showing who viewed my profile is a game changer.",
@@ -1172,7 +1172,7 @@ export const translations = {
         nfc: "NFC Connection",
       },
       mockup: {
-        name: "Andi Pratama",
+        name: "Yogik Pratama",
         role: "Creative Designer",
         portfolio: "Portfolio",
         email: "Send Email",

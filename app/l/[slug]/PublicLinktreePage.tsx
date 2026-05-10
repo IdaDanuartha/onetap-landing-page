@@ -3,6 +3,7 @@
 import { getTheme } from '@/lib/themes';
 import Image from 'next/image';
 import Link from 'next/link';
+import { User } from 'lucide-react';
 import { iconMap } from '@/app/components/linktree/IconPicker';
 
 interface OneTapBioProps {
@@ -46,10 +47,10 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
           />
         ) : (
           <div
-            className="w-24 h-24 rounded-full mx-auto mb-4 ring-4 ring-white shadow-xl flex items-center justify-center text-3xl font-black text-white"
+            className="w-24 h-24 rounded-full mx-auto mb-4 ring-4 ring-white shadow-xl flex items-center justify-center text-white"
             style={{ background: theme.accent }}
           >
-            {(page.title || profile.display_name || username).charAt(0).toUpperCase()}
+            <User className="w-12 h-12" />
           </div>
         )}
 
