@@ -57,13 +57,13 @@ export default async function PayBridgePage({ params }: PageProps) {
   const merchantName = profile?.display_name || page.title || 'Merchant';
   const qrisData = page.qris_data;
 
-  // Indonesian Payment Apps Deep Links
+  // Indonesian Payment Apps Deep Links (Optimized for QRIS payloads)
   const paymentApps = [
-    { name: 'GoPay', color: 'bg-[#00AED6]', scheme: `gopay://pay?data=${qrisData}` },
-    { name: 'OVO', color: 'bg-[#4D2A86]', scheme: `ovo://pay?data=${qrisData}` },
-    { name: 'DANA', color: 'bg-[#118EEA]', scheme: `dana://pay?data=${qrisData}` },
-    { name: 'ShopeePay', color: 'bg-[#EE4D2D]', scheme: `shopeepay://pay?data=${qrisData}` },
-    { name: 'LinkAja', color: 'bg-[#E1251B]', scheme: `linkaja://pay?data=${qrisData}` },
+    { name: 'GoPay', color: 'bg-[#00AED6]', scheme: `gojek://gopay/qr?payload=${encodeURIComponent(qrisData)}` },
+    { name: 'OVO', color: 'bg-[#4D2A86]', scheme: `ovo://payment?code=${encodeURIComponent(qrisData)}` },
+    { name: 'DANA', color: 'bg-[#118EEA]', scheme: `dana://qr?payload=${encodeURIComponent(qrisData)}` },
+    { name: 'ShopeePay', color: 'bg-[#EE4D2D]', scheme: `shopeepay://qr?payload=${encodeURIComponent(qrisData)}` },
+    { name: 'LinkAja', color: 'bg-[#E1251B]', scheme: `linkaja://qr?payload=${encodeURIComponent(qrisData)}` },
   ];
 
   return (
