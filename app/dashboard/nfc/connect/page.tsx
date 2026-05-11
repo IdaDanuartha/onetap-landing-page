@@ -254,6 +254,7 @@ export default function ConnectNfcPage() {
         finalPayload += (finalPayload.includes('?') ? '&' : '?') + `p=${encodeURIComponent(nfcPassword)}`;
       }
 
+
       const ndef = new (window as any).NDEFReader();
       await ndef.scan();
       
@@ -262,24 +263,40 @@ export default function ConnectNfcPage() {
         let isProtected = false;
         let existingPass = '';
 
+        // Robust record scanning for protection markers
         for (const record of message.records) {
-          const decoder = new TextDecoder();
-          const rawData = decoder.decode(record.data);
-          
-          if (rawData.includes('p=')) {
-            const match = rawData.match(/[?&]p=([^& \n\r\t]+)/);
-            if (match) {
+          try {
+            const decoder = new TextDecoder();
+            // Some records have a prefix byte (like URL records), but our password 
+            // marker "?p=" is a literal string that should be detectable.
+            const rawData = decoder.decode(record.data);
+            
+            // Check for our software lock pattern
+            const pMatch = rawData.match(/[?&]p=([^& \n\r\t]+)/);
+            if (pMatch) {
               isProtected = true;
-              existingPass = decodeURIComponent(match[1]);
+              existingPass = decodeURIComponent(pMatch[1]);
+              break; // Found the protection
             }
+          } catch (e) {
+            console.error("Error decoding record:", e);
           }
         }
 
-        // Verify Rewrite Protection Password
-        if (isProtected && existingPass !== nfcPassword) {
-          setError(dict[locale].protection.tagProtected);
-          setIsConnecting(false);
-          return;
+        // SECURITY CHECK: If the tag is protected, the user MUST provide the correct password
+        // This applies to BOTH writing new data and ERASING.
+        if (isProtected) {
+          if (!nfcPassword) {
+            setError("Tag ini dilindungi password. Masukkan password di menu 'Keamanan Lanjutan' sebelum menghapus atau menulis ulang.");
+            setIsConnecting(false);
+            return;
+          }
+          
+          if (existingPass !== nfcPassword) {
+            setError("Password Tag salah! Akses ditolak.");
+            setIsConnecting(false);
+            return;
+          }
         }
 
         try {
@@ -448,16 +465,22 @@ export default function ConnectNfcPage() {
               ))}
             </div>
 
+
             {/* Input Area */}
-            <div className="p-6 bg-white border border-[#F6B7C8]/10 rounded-[32px] shadow-sm space-y-4">
+            <div className={`p-6 bg-white border rounded-[32px] shadow-sm space-y-4 transition-all ${mode === 'erase' ? 'border-red-100 ring-4 ring-red-50' : 'border-[#F6B7C8]/10'}`}>
               <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                    <selectedMode.icon className="w-5 h-5 text-gray-500" />
+                <div className="flex items-center gap-4 w-full">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${mode === 'erase' ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-500'}`}>
+                    <selectedMode.icon className="w-5 h-5" />
                   </div>
-                  <div className="text-left w-full">
+                  <div className="text-left flex-1">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedMode.label}</p>
-                    {mode === 'profile' ? (
+                    {mode === 'erase' ? (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-sm font-bold text-red-600">Hapus Semua Data</p>
+                        <p className="text-[10px] text-gray-500 leading-tight">Chip NFC akan dikosongkan. Jika tag ini memiliki password pelindung, masukkan password di bagian Keamanan Lanjutan.</p>
+                      </div>
+                    ) : mode === 'profile' ? (
                       <div className="space-y-3 mt-2">
                         {loadingProfiles ? (
                           <div className="flex items-center gap-2 text-xs text-gray-400">
