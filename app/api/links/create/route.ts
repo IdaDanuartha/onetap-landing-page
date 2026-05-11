@@ -1,16 +1,18 @@
+
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
-    // Optional: Allow anonymous creation for specific flows, but usually dashboard is auth
-    // For now, let's keep it restricted to logged in users
+    // Restricted to logged in users
     if (!user) {
+      console.warn('[links/create] Unauthorized attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -29,27 +31,43 @@ export async function POST(req: Request) {
       passwordHash = await bcrypt.hash(password, salt);
     }
 
-    const { data, error } = await supabase
+    // Use Admin Client to bypass RLS for this specific creation
+    const adminSupabase = createAdminClient();
+
+    // We use a simplified insert first to see if it works
+    const { data, error } = await adminSupabase
       .from('protected_links')
       .insert({
         token,
         original_url: url,
         is_protected: !!password,
         password_hash: passwordHash,
-        user_id: user.id,
-        created_at: new Date().toISOString()
+        user_id: user.id
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
-      console.error('[links/create] DB Error:', error);
-      return NextResponse.json({ error: 'Gagal membuat link terproteksi' }, { status: 500 });
+      console.error('[links/create] DB Error Detail:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      return NextResponse.json({ 
+        error: 'Gagal membuat link terproteksi', 
+        debug: error.message 
+      }, { status: 500 });
+    }
+
+    if (!data) {
+      console.error('[links/create] No data returned after insert');
+      return NextResponse.json({ error: 'Gagal membuat link terproteksi (no data)' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, token: data.token });
-  } catch (err) {
-    console.error('[links/create]', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err: any) {
+    console.error('[links/create] Exception:', err);
+    return NextResponse.json({ error: 'Internal server error', debug: err.message }, { status: 500 });
   }
 }

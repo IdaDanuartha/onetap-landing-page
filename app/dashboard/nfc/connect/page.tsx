@@ -207,15 +207,16 @@ export default function ConnectNfcPage() {
           
           if (!res.ok) throw new Error('API Error');
           
+
           const linkData = await res.json();
           if (linkData.token) {
             finalPayload = `https://onetap-charm.com/r/${linkData.token}`;
           } else {
-            throw new Error('No token');
+            throw new Error(linkData.debug || linkData.error || 'No token');
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('[ProtectedLink]', err);
-          setError('Gagal menyiapkan link terproteksi. Silakan coba lagi.');
+          setError(`Gagal menyiapkan link terproteksi: ${err.message}`);
           setIsConnecting(false);
           return;
         }
