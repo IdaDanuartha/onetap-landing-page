@@ -81,7 +81,7 @@ export default async function OneTapPublicPage({ params }: PageProps) {
   // 1. Fetch page by slug
   const { data: page } = await supabase
     .from('linktree_pages')
-    .select('id, user_id, title, bio, theme_id, is_published')
+    .select('id, user_id, title, bio, theme_id, is_published, password')
     .eq('slug', slug)
     .maybeSingle();
 

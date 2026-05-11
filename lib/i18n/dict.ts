@@ -828,6 +828,25 @@ export const translations = {
         title: "Writer App for OneTap Owners",
         desc: "Membutuhkan perangkat Android dengan sensor NFC dan browser Google Chrome untuk dapat menulis data ke keychain."
       }
+    },
+    protection: {
+      title: "Profil Terproteksi",
+      desc: "Masukkan password untuk melihat profil ini.",
+      placeholder: "Masukkan password...",
+      button: "Lihat Profil",
+      error: "Password salah. Silakan coba lagi.",
+      tagProtected: "Tag ini dilindungi password. Masukkan password yang benar pada kolom Password Proteksi.",
+      paymentTitle: "Halaman Terproteksi",
+      paymentDesc: "Halaman pembayaran untuk {name} dilindungi password.",
+    },
+    paymentBridge: {
+      chooseApp: "Pilih Aplikasi Pembayaran",
+      directOpen: "Langsung buka aplikasi",
+      showQris: "Tampilkan Gambar QRIS",
+      hideQris: "Sembunyikan QRIS",
+      manualScan: "Scan QRIS {name}",
+      screenshotInfo: "Screenshot QRIS di atas untuk discan dari galeri aplikasi pembayaran Anda.",
+      fallbackInfo: "Jika aplikasi tidak terbuka otomatis, silakan pilih \"Tampilkan Gambar QRIS\" dan scan secara manual.",
     }
   },
   en: {
@@ -1657,6 +1676,25 @@ export const translations = {
         title: "Writer App for OneTap Owners",
         desc: "Requires an Android device with NFC sensor and Google Chrome browser to write data to the keychain."
       }
+    },
+    protection: {
+      title: "Protected Profile",
+      desc: "Enter password to view this profile.",
+      placeholder: "Enter password...",
+      button: "View Profile",
+      error: "Incorrect password. Please try again.",
+      tagProtected: "This tag is password protected. Enter the correct password in the Protection Password field.",
+      paymentTitle: "Protected Page",
+      paymentDesc: "The payment page for {name} is password protected.",
+    },
+    paymentBridge: {
+      chooseApp: "Choose Payment App",
+      directOpen: "Open app directly",
+      showQris: "Show QRIS Image",
+      hideQris: "Hide QRIS Image",
+      manualScan: "Scan {name} QRIS",
+      screenshotInfo: "Screenshot the QRIS above to scan it from your payment app's gallery.",
+      fallbackInfo: "If the app doesn't open automatically, please select \"Show QRIS Image\" and scan manually.",
     }
   },
 };

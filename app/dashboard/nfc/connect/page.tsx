@@ -160,80 +160,119 @@ export default function ConnectNfcPage() {
         return;
       }
 
-      let payload = data.trim();
+      let finalPayload = data.trim();
+      const slug = selectedProfileSlug || username;
+
       if (mode === 'profile') {
-        payload = `https://onetap-charm.com/l/${selectedProfileSlug || username}`;
-        // If password is set for the link, we might need a specific handling 
-        // (e.g. adding a query param if the digital profile supports it)
+        finalPayload = `https://onetap-charm.com/l/${slug}`;
         if (linkPassword) {
-          payload += `?p=${encodeURIComponent(linkPassword)}`;
+          finalPayload += `?p=${encodeURIComponent(linkPassword)}`;
         }
+
+        // Save password to database for link protection
+        const supabase = createClient();
+        await supabase
+          .from('linktree_pages')
+          .update({ password: linkPassword || null })
+          .eq('slug', slug);
       } else if (mode === 'url') {
-        if (!payload.startsWith('http')) payload = `https://${payload}`;
-        if (linkPassword) {
-          // Wrap in a proxy or just handle via query param if the destination supports it
-          // For now, let's assume standard handling
-        }
+        if (!finalPayload.startsWith('http')) finalPayload = `https://${finalPayload}`;
       } else if (mode === 'whatsapp') {
         const cleanNum = waNumber.replace(/[^0-9]/g, "");
-        payload = `https://wa.me/${cleanNum}${waMessage ? `?text=${encodeURIComponent(waMessage)}` : ""}`;
+        finalPayload = `https://wa.me/${cleanNum}${waMessage ? `?text=${encodeURIComponent(waMessage)}` : ""}`;
       } else if (mode === 'phone') {
-        payload = `tel:${payload.replace(/[^0-9+]/g, '')}`;
+        finalPayload = `tel:${finalPayload.replace(/[^0-9+]/g, '')}`;
       } else if (mode === 'sms') {
-        payload = `sms:${payload.replace(/[^0-9+]/g, '')}`;
+        finalPayload = `sms:${finalPayload.replace(/[^0-9+]/g, '')}`;
       } else if (mode === 'email') {
-        payload = `mailto:${payload}`;
+        finalPayload = `mailto:${finalPayload}`;
       } else if (mode === 'payment') {
         if (paymentType === 'deepLink') {
-          if (paymentPlatform === 'gopay') payload = `gopay://pay?merchant_id=${merchantId}`;
-          else if (paymentPlatform === 'ovo') payload = `ovo://payment?merchant=${merchantId}`;
-          else if (paymentPlatform === 'dana') payload = `dana://pay?merchant=${merchantId}`;
-          else if (paymentPlatform === 'shopeepay') payload = `shopeepay://pay?merchant_id=${merchantId}`;
-          else if (paymentPlatform === 'linkaja') payload = `linkaja://pay?merchant_id=${merchantId}`;
+          if (paymentPlatform === 'gopay') finalPayload = `gopay://pay?merchant_id=${merchantId}`;
+          else if (paymentPlatform === 'ovo') finalPayload = `ovo://qris?data=${merchantId}`;
+          else if (paymentPlatform === 'dana') finalPayload = `dana://pay?merchant=${merchantId}`;
+          else if (paymentPlatform === 'shopeepay') finalPayload = `shopeepay://pay?payload=${merchantId}`;
+          else if (paymentPlatform === 'linkaja') finalPayload = `linkaja://pay?merchant_id=${merchantId}`;
         } else {
-          if (!payload.startsWith('http')) payload = `https://${payload}`;
+          if (!finalPayload.startsWith('http')) finalPayload = `https://${finalPayload}`;
         }
       } else if (mode === 'bridge') {
-        const slug = selectedProfileSlug || username;
-        payload = `https://onetap-charm.com/pay/${slug}`;
+        finalPayload = `https://onetap-charm.com/pay/${slug}`;
         
-        // Save QRIS data to database
-        if (qrisData) {
+        // Save QRIS data and password to database
+        if (qrisData || linkPassword) {
           const supabase = createClient();
           await supabase
             .from('linktree_pages')
-            .update({ qris_data: qrisData })
+            .update({ 
+              qris_data: qrisData || null,
+              password: linkPassword || null
+            })
             .eq('slug', slug);
         }
       }
 
       const ndef = new (window as any).NDEFReader();
-      await ndef.scan(); // Request NFC access
+      await ndef.scan();
       
-      let record: any;
-      if (mode === 'erase') {
-        record = { recordType: 'empty' };
-      } else {
-        record = {
-          recordType: (mode === 'url' || mode === 'profile' || mode === 'whatsapp' || mode === 'payment') ? 'url' : 'text',
-          data: payload,
-        };
-      }
+      ndef.onreading = async (event: any) => {
+        const message = event.message;
+        let isProtected = false;
+        let existingPass = '';
 
-      await ndef.write({
-        records: [record],
-      });
-      setConnected(true);
+        for (const record of message.records) {
+          if (record.recordType === 'url') {
+            const decoder = new TextDecoder();
+            const url = decoder.decode(record.data);
+            if (url.includes('?p=')) {
+              isProtected = true;
+              const urlObj = new URL(url);
+              existingPass = urlObj.searchParams.get('p') || '';
+            }
+          }
+        }
+
+        if (isProtected && existingPass !== linkPassword) {
+          // If the tag is protected and the user didn't provide the matching password in the field
+          setError(dict[locale].protection.tagProtected);
+          setIsConnecting(false);
+          // Stop scanning to prevent multiple triggers
+          return;
+        }
+
+        // Proceed to write
+        try {
+          let record: any;
+          if (mode === 'erase') {
+            record = { recordType: 'empty' };
+          } else {
+            record = {
+              recordType: (mode === 'url' || mode === 'profile' || mode === 'whatsapp' || mode === 'payment' || mode === 'bridge') ? 'url' : 'text',
+              data: finalPayload,
+            };
+          }
+
+          await ndef.write({
+            records: [record],
+          });
+          setConnected(true);
+          setIsConnecting(false);
+        } catch (err) {
+          setError('Gagal menulis. Pastikan tag tetap menempel.');
+          setIsConnecting(false);
+        }
+      };
+
     } catch (err: any) {
       if (err.name === 'NotAllowedError') {
         setError('Izin NFC ditolak. Silakan berikan izin akses NFC pada browser Anda.');
       } else if (err.name === 'NotSupportedError') {
         setError('Perangkat Anda tidak mendukung fitur NFC.');
       } else {
-        setError('Gagal menulis ke NFC tag. Pastikan tag tetap menempel di belakang HP selama proses.');
+        setError('Gagal menginisialisasi NFC. Coba lagi.');
       }
+      setIsConnecting(false);
     }
-    setIsConnecting(false);
   };
 
   const selectedMode = MODE_OPTIONS.find(m => m.id === mode)!;

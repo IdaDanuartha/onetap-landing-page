@@ -6,6 +6,7 @@ interface LanguageContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   t: (key: string) => any;
+  dict: any;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -42,7 +43,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <LanguageContext.Provider value={{ locale, setLocale, t }}>
+    <LanguageContext.Provider value={{ locale, setLocale, t, dict: translations[locale] }}>
       <div className={mounted ? "" : "invisible"}>
         {children}
       </div>

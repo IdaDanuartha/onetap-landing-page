@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { getTheme } from '@/lib/themes';
 import Link from 'next/link';
-import { User } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 import { iconMap } from '@/app/components/linktree/IconPicker';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface OneTapBioProps {
   username: string;
@@ -16,6 +18,7 @@ interface OneTapBioProps {
     title: string | null;
     bio: string | null;
     theme_id: string;
+    password?: string | null;
   };
   links: {
     id: string;
@@ -27,12 +30,61 @@ interface OneTapBioProps {
 }
 
 export default function OneTapBio({ username, profile, page, links }: OneTapBioProps) {
+  const { dict } = useLanguage();
+  const [isUnlocked, setIsUnlocked] = useState(!page.password);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [error, setError] = useState('');
+
   const theme = getTheme(page.theme_id);
 
   const handleLinkClick = async (linkId: string) => {
     // Track click in background — non-blocking
     fetch(`/api/linktree/click/${linkId}`, { method: 'POST' }).catch(() => {});
   };
+
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === page.password) {
+      setIsUnlocked(true);
+      setError('');
+    } else {
+      setError(dict.protection.error);
+    }
+  };
+
+  if (!isUnlocked) {
+    return (
+      <div className={`min-h-screen flex flex-col items-center justify-center py-12 px-4 ${theme.bg}`}>
+        <div className={`w-full max-w-sm p-8 rounded-3xl ${theme.card} text-center shadow-xl border border-white/20`}>
+          <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full bg-black/5">
+            <Lock className="w-8 h-8 opacity-40" />
+          </div>
+          <h2 className={`text-xl font-black mb-2 ${theme.text}`}>{dict.protection.title}</h2>
+          <p className={`text-sm mb-8 opacity-60 ${theme.bio}`}>{dict.protection.desc}</p>
+          
+          <form onSubmit={handleUnlock} className="space-y-4">
+            <div>
+              <input
+                type="password"
+                placeholder={dict.protection.placeholder}
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                className={`w-full px-6 py-4 rounded-2xl bg-black/5 border-2 ${error ? 'border-red-400' : 'border-transparent focus:border-black/10'} outline-none transition-all text-center font-bold tracking-widest`}
+                autoFocus
+              />
+              {error && <p className="text-xs font-bold text-red-500 mt-2">{error}</p>}
+            </div>
+            <button
+              type="submit"
+              className="w-full py-4 rounded-2xl bg-black text-white font-black text-sm active:scale-95 transition-all shadow-lg shadow-black/10"
+            >
+              {dict.protection.button}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen flex flex-col items-center py-12 px-4 ${theme.bg}`}>
