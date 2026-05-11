@@ -34,6 +34,7 @@ export async function POST(req: Request) {
     // Use Admin Client to bypass RLS for this specific creation
     const adminSupabase = createAdminClient();
 
+
     // We use a simplified insert first to see if it works
     const { data, error } = await adminSupabase
       .from('protected_links')
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
         original_url: url,
         is_protected: !!password,
         password_hash: passwordHash,
-        user_id: user.id
+        created_by: user.id
       })
       .select()
       .maybeSingle();
