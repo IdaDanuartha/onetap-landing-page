@@ -483,6 +483,13 @@ export const translations = {
             dana: "DANA",
             shopeepay: "ShopeePay",
             linkaja: "LinkAja"
+          },
+          success: {
+            title: "NFC Siap Digunakan",
+            subtitle: "Keychain kamu sekarang telah terprogram dan siap dibagikan.",
+            ready: "Sekarang keychain kamu siap digunakan dengan mode",
+            programOther: "Program Tag Lain",
+            done: "Selesai"
           }
         }
       },
@@ -1305,6 +1312,13 @@ export const translations = {
             dana: "DANA",
             shopeepay: "ShopeePay",
             linkaja: "LinkAja"
+          },
+          success: {
+            title: "NFC Ready to Use",
+            subtitle: "Your keychain is now programmed and ready to be shared.",
+            ready: "Your keychain is now ready to use with mode",
+            programOther: "Program Other Tag",
+            done: "Done"
           }
         }
       },

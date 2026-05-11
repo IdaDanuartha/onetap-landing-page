@@ -296,17 +296,31 @@ export default function ConnectNfcPage() {
           </AnimatePresence>
           
           <motion.div 
-            animate={connected ? { scale: [1, 1.1, 1] } : {}}
-            className={`absolute inset-0 flex items-center justify-center rounded-[48px] shadow-2xl transition-all duration-500 ${
+            animate={connected ? { scale: [1, 1.05, 1], rotate: [0, 5, 0] } : {}}
+            className={`absolute inset-0 flex items-center justify-center rounded-[56px] shadow-2xl transition-all duration-700 ${
               connected 
-                ? 'bg-green-500 text-white shadow-green-500/30' 
+                ? 'bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] text-white shadow-[#FF5FA2]/40' 
                 : mode === 'erase'
                   ? 'bg-red-500 text-white shadow-red-500/30'
                   : 'bg-white border border-[#F6B7C8]/20 text-[#FF5FA2]'
             }`}
           >
             {connected ? (
-              <CheckCircle2 className="w-16 h-16" strokeWidth={2.5} />
+              <div className="relative">
+                <motion.div
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                >
+                  <ShieldCheck className="w-20 h-20" strokeWidth={1.5} />
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1.5, opacity: 0 }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  className="absolute inset-0 bg-white/20 rounded-full"
+                />
+              </div>
             ) : mode === 'erase' ? (
               <Eraser className="w-12 h-12" strokeWidth={2.5} />
             ) : (
@@ -327,11 +341,11 @@ export default function ConnectNfcPage() {
           className="text-center space-y-3 mb-10"
         >
           <h2 className="text-3xl font-black text-[#18080F] tracking-tight">
-            {connected ? 'NFC Siap Digunakan! 🎉' : 'Konfigurasi NFC'}
+            {connected ? dict[locale].dashboard.nfc.success.title : 'Konfigurasi NFC'}
           </h2>
-          <p className="text-gray-400 font-medium max-w-sm mx-auto text-sm">
+          <p className="text-gray-400 font-medium max-w-sm mx-auto text-sm leading-relaxed">
             {connected 
-              ? 'Keychain kamu sekarang telah terprogram dan siap dibagikan.' 
+              ? dict[locale].dashboard.nfc.success.subtitle
               : 'Pilih mode dan kustomisasi aksi keychain OneTap kamu.'}
           </p>
         </motion.div>
@@ -663,7 +677,7 @@ export default function ConnectNfcPage() {
                 (mode !== 'erase' && mode !== 'whatsapp' && mode !== 'profile' && mode !== 'bridge' && mode !== 'payment' && !data.trim())
               }
               className={`w-full py-5 rounded-[24px] font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${
-                isConnecting 
+                isConnecting  
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                   : mode === 'erase'
                     ? 'bg-red-500 text-white hover:bg-red-600 shadow-red-500/20'
@@ -693,20 +707,20 @@ export default function ConnectNfcPage() {
           >
             <div className="p-8 bg-white border border-[#F6B7C8]/10 rounded-[40px] shadow-sm mb-8">
               <p className="text-sm font-bold text-gray-500 mb-6 italic">
-                &quot;Sekarang keychain kamu siap digunakan dengan mode {selectedMode.label}!&quot;
+                &quot;{dict[locale].dashboard.nfc.success.ready} {selectedMode.label}!&quot;
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => { setConnected(false); setError(''); }}
                   className="flex-1 py-4 rounded-2xl bg-[#FFF8F2] text-[#FF5FA2] font-black hover:bg-[#FF5FA2]/5 transition-all"
                 >
-                  Program Tag Lain
+                  {dict[locale].dashboard.nfc.success.programOther}
                 </button>
                 <Link 
                   href="/dashboard" 
-                  className="flex-1 py-4 rounded-2xl bg-[#18080F] text-white font-black hover:bg-[#FF5FA2] transition-all shadow-lg"
+                  className="flex-1 py-4 rounded-2xl bg-[#18080F] text-white font-black hover:bg-[#FF5FA2] transition-all shadow-lg flex items-center justify-center"
                 >
-                  Selesai
+                  {dict[locale].dashboard.nfc.success.done}
                 </Link>
               </div>
             </div>
