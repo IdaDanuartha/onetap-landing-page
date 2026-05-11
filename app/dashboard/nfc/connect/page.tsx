@@ -247,13 +247,18 @@ export default function ConnectNfcPage() {
         }
       }
 
-      // Append NFC Tag Protection Password (Rewrite Protection ONLY)
-      // This parameter (?p=) is used by our app to verify permission before overwriting.
-      // We keep it separate from Link Protection to ensure link privacy.
-      if (nfcPassword && (mode === 'profile' || mode === 'bridge' || mode === 'url' || mode === 'whatsapp' || mode === 'payment')) {
-        finalPayload += (finalPayload.includes('?') ? '&' : '?') + `p=${encodeURIComponent(nfcPassword)}`;
-      }
 
+      // NEW: We no longer append ?p= to the URL because it's visible in OS notifications.
+      // Instead, we store it in a SEPARATE record that OS doesn't show in the popup.
+      const mainPayload = data.trim();
+      
+      // Helper to hash password for tag storage
+      const hashTagPassword = async (pass: string) => {
+        const msgUint8 = new TextEncoder().encode(pass + "onetap_salt");
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      };
 
       const ndef = new (window as any).NDEFReader();
       await ndef.scan();
@@ -261,22 +266,30 @@ export default function ConnectNfcPage() {
       ndef.onreading = async (event: any) => {
         const message = event.message;
         let isProtected = false;
-        let existingPass = '';
+        let existingPassHash = '';
+        let isLegacyProtection = false;
+        let legacyPass = '';
 
         // Robust record scanning for protection markers
         for (const record of message.records) {
           try {
             const decoder = new TextDecoder();
-            // Some records have a prefix byte (like URL records), but our password 
-            // marker "?p=" is a literal string that should be detectable.
             const rawData = decoder.decode(record.data);
             
-            // Check for our software lock pattern
+            // 1. Check for New Protection (Separate Record)
+            if (rawData.startsWith('ot_p:')) {
+              isProtected = true;
+              existingPassHash = rawData.substring(5);
+              break;
+            }
+
+            // 2. Check for Legacy Protection (?p= in URL)
             const pMatch = rawData.match(/[?&]p=([^& \n\r\t]+)/);
             if (pMatch) {
               isProtected = true;
-              existingPass = decodeURIComponent(pMatch[1]);
-              break; // Found the protection
+              isLegacyProtection = true;
+              legacyPass = decodeURIComponent(pMatch[1]);
+              // Don't break yet, might find a new protection record which takes priority
             }
           } catch (e) {
             console.error("Error decoding record:", e);
@@ -284,7 +297,6 @@ export default function ConnectNfcPage() {
         }
 
         // SECURITY CHECK: If the tag is protected, the user MUST provide the correct password
-        // This applies to BOTH writing new data and ERASING.
         if (isProtected) {
           if (!nfcPassword) {
             setError("Tag ini dilindungi password. Masukkan password di menu 'Keamanan Lanjutan' sebelum menghapus atau menulis ulang.");
@@ -292,25 +304,46 @@ export default function ConnectNfcPage() {
             return;
           }
           
-          if (existingPass !== nfcPassword) {
-            setError("Password Tag salah! Akses ditolak.");
-            setIsConnecting(false);
-            return;
+          if (isLegacyProtection) {
+            // Compare plain text (old way)
+            if (legacyPass !== nfcPassword) {
+              setError("Password Tag salah! Akses ditolak.");
+              setIsConnecting(false);
+              return;
+            }
+          } else {
+            // Compare Hash (new way)
+            const inputHash = await hashTagPassword(nfcPassword);
+            if (existingPassHash !== inputHash) {
+              setError("Password Tag salah! Akses ditolak.");
+              setIsConnecting(false);
+              return;
+            }
           }
         }
 
         try {
-          let record: any;
+          let records: any[] = [];
           if (mode === 'erase') {
-            record = { recordType: 'empty' };
+            records.push({ recordType: 'empty' });
           } else {
-            record = {
+            // Primary Data Record
+            records.push({
               recordType: (mode === 'url' || mode === 'profile' || mode === 'whatsapp' || mode === 'payment' || mode === 'bridge') ? 'url' : 'text',
-              data: finalPayload,
-            };
+              data: finalPayload, // finalPayload here is the URL WITHOUT ?p= (if we fixed it above)
+            });
+
+            // Secondary Protection Record (Hidden from OS notifications)
+            if (nfcPassword) {
+              const passHash = await hashTagPassword(nfcPassword);
+              records.push({
+                recordType: 'text',
+                data: `ot_p:${passHash}`
+              });
+            }
           }
 
-          await ndef.write({ records: [record] });
+          await ndef.write({ records });
           setConnected(true);
           setIsConnecting(false);
         } catch (err) {
