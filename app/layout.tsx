@@ -19,6 +19,9 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.onetap-charm.com'),
+  alternates: {
+    canonical: '/',
+  },
   title: "OneTap - NFC Keychain & Digital Business Card Indonesia",
   description:
     "Solusi networking masa depan. Bagikan profil, kontak, dan sosial mediamu hanya dengan satu sentuhan NFC OneTap. Everything Connected.",
@@ -44,7 +47,7 @@ export const metadata: Metadata = {
     title: "OneTap - Bagikan Semuanya dengan Satu Sentuhan",
     description:
       "Transformasi networking fisik ke digital. Cek profil digital dan koleksi NFC kami sekarang!",
-    url: "https://onetap-charm.com",
+    url: "https://www.onetap-charm.com",
     siteName: "OneTap Indonesia",
     images: [
       {
@@ -74,9 +77,9 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "OneTap Indonesia",
-    image: "https://onetap-landing-page.vercel.app/images/logo_simple.png",
-    "@id": "https://onetap-landing-page.vercel.app",
-    url: "https://onetap-landing-page.vercel.app",
+    image: "https://www.onetap-charm.com/images/logo_simple.png",
+    "@id": "https://www.onetap-charm.com",
+    url: "https://www.onetap-charm.com",
     telephone: "+6283114227745",
     address: {
       "@type": "PostalAddress",
