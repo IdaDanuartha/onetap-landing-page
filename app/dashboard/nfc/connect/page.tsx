@@ -8,20 +8,21 @@ import {
   ArrowLeft, CheckCircle2, Wifi, AlertCircle, Loader2, 
   Smartphone, Globe, Activity, Info, Lock, ShieldCheck, 
   User, Link2, Type, Phone, MessageSquare, Mail, ChevronDown,
-  Eye, EyeOff, Zap, Eraser, MessageCircle
+  Eye, EyeOff, Zap, Eraser, MessageCircle, CreditCard, Wallet, QrCode
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { dict } from '@/lib/i18n/dict';
 
-type Mode = 'profile' | 'url' | 'text' | 'phone' | 'sms' | 'email' | 'whatsapp' | 'erase';
+type Mode = 'profile' | 'url' | 'text' | 'phone' | 'sms' | 'email' | 'whatsapp' | 'payment' | 'erase';
 
 const MODE_OPTIONS: { id: Mode; label: string; icon: any; placeholder?: string }[] = [
   { id: 'profile', label: 'Profil Digital', icon: User, placeholder: 'onetap-charm.com/l/...' },
   { id: 'url', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
   { id: 'text', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
   { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
+  { id: 'payment', label: 'Pembayaran', icon: CreditCard, placeholder: 'Gopay/OVO/QRIS' },
   { id: 'phone', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
   { id: 'sms', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
   { id: 'email', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
@@ -39,6 +40,15 @@ export default function ConnectNfcPage() {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [selectedProfileSlug, setSelectedProfileSlug] = useState('');
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  
+  // Payment states
+  const [paymentType, setPaymentType] = useState<'deepLink' | 'qris'>('deepLink');
+  const [paymentPlatform, setPaymentPlatform] = useState<'gopay' | 'ovo' | 'dana' | 'shopeepay' | 'linkaja'>('gopay');
+  const [merchantId, setMerchantId] = useState('');
+  const [qrisUrl, setQrisUrl] = useState('');
   const { locale, setLocale } = useLanguage();
   const d = dict[locale].dashboard.nfc || { title: 'NFC Activator' };
   
@@ -63,6 +73,28 @@ export default function ConnectNfcPage() {
       if (profile) {
         setUsername(profile.username);
         if (profile.whatsapp) setWaNumber(profile.whatsapp);
+        
+        // Also fetch all pages
+        setLoadingProfiles(true);
+        try {
+          const res = await fetch('/api/linktree/save');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.pages) {
+              setProfiles(data.pages);
+              if (data.pages.length > 0) {
+                // Default to first profile slug
+                setSelectedProfileSlug(data.pages[0].slug || data.pages[0].id);
+              } else {
+                setSelectedProfileSlug(profile.username);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching profiles:", err);
+        } finally {
+          setLoadingProfiles(false);
+        }
       }
       setLoading(false);
     }
@@ -83,7 +115,7 @@ export default function ConnectNfcPage() {
 
       let payload = data.trim();
       if (mode === 'profile') {
-        payload = `https://onetap-charm.com/l/${username}`;
+        payload = `https://onetap-charm.com/l/${selectedProfileSlug || username}`;
         // If password is set for the link, we might need a specific handling 
         // (e.g. adding a query param if the digital profile supports it)
         if (linkPassword) {
@@ -104,6 +136,17 @@ export default function ConnectNfcPage() {
         payload = `sms:${payload.replace(/[^0-9+]/g, '')}`;
       } else if (mode === 'email') {
         payload = `mailto:${payload}`;
+      } else if (mode === 'payment') {
+        if (paymentType === 'deepLink') {
+          if (paymentPlatform === 'gopay') payload = `gopay://pay?merchant_id=${merchantId}`;
+          else if (paymentPlatform === 'ovo') payload = `ovo://payment?merchant=${merchantId}`;
+          else if (paymentPlatform === 'dana') payload = `dana://pay?merchant=${merchantId}`;
+          else if (paymentPlatform === 'shopeepay') payload = `shopeepay://pay?merchant_id=${merchantId}`;
+          else if (paymentPlatform === 'linkaja') payload = `linkaja://pay?merchant_id=${merchantId}`;
+        } else {
+          payload = qrisUrl;
+          if (!payload.startsWith('http')) payload = `https://${payload}`;
+        }
       }
 
       const ndef = new (window as any).NDEFReader();
@@ -114,7 +157,7 @@ export default function ConnectNfcPage() {
         record = { recordType: 'empty' };
       } else {
         record = {
-          recordType: (mode === 'url' || mode === 'profile' || mode === 'whatsapp') ? 'url' : 'text',
+          recordType: (mode === 'url' || mode === 'profile' || mode === 'whatsapp' || mode === 'payment') ? 'url' : 'text',
           data: payload,
         };
       }
@@ -265,7 +308,43 @@ export default function ConnectNfcPage() {
                   <div className="text-left w-full">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedMode.label}</p>
                     {mode === 'profile' ? (
-                      <p className="text-sm font-bold text-[#18080F]">/l/{username}</p>
+                      <div className="space-y-3 mt-2">
+                        {loadingProfiles ? (
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Memuat profil...
+                          </div>
+                        ) : profiles.length > 0 ? (
+                          <div className="grid gap-2">
+                            {profiles.map((p) => (
+                              <button
+                                key={p.id}
+                                onClick={() => setSelectedProfileSlug(p.slug || p.id)}
+                                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                                  selectedProfileSlug === (p.slug || p.id)
+                                    ? "bg-[#FF5FA2]/5 border-[#FF5FA2] text-[#FF5FA2]"
+                                    : "bg-white border-gray-100 text-gray-500 hover:border-[#FF5FA2]/30"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                                    <User className="w-4 h-4 text-gray-400" />
+                                  </div>
+                                  <div className="text-left">
+                                    <p className="text-xs font-bold">{p.title || "Untitled Profile"}</p>
+                                    <p className="text-[9px] opacity-60 font-medium tracking-tight">/l/{p.slug || p.id}</p>
+                                  </div>
+                                </div>
+                                {selectedProfileSlug === (p.slug || p.id) && (
+                                  <CheckCircle2 className="w-4 h-4 text-[#FF5FA2]" strokeWidth={3} />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm font-bold text-[#18080F]">/l/{username}</p>
+                        )}
+                      </div>
                     ) : mode === 'whatsapp' ? (
                       <div className="space-y-3 mt-2">
                         <input 
@@ -282,6 +361,56 @@ export default function ConnectNfcPage() {
                           rows={3}
                           className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all resize-none"
                         />
+                      </div>
+                    ) : mode === 'payment' ? (
+                      <div className="space-y-4 mt-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <button 
+                            onClick={() => setPaymentType('deepLink')}
+                            className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-[10px] font-bold transition-all ${paymentType === 'deepLink' ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-md' : 'bg-white border-gray-100 text-gray-500'}`}
+                          >
+                            <Wallet className="w-3 h-3" />
+                            {dict[locale].dashboard.nfc.payment.types.deepLink}
+                          </button>
+                          <button 
+                            onClick={() => setPaymentType('qris')}
+                            className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-[10px] font-bold transition-all ${paymentType === 'qris' ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-md' : 'bg-white border-gray-100 text-gray-500'}`}
+                          >
+                            <QrCode className="w-3 h-3" />
+                            {dict[locale].dashboard.nfc.payment.types.qris}
+                          </button>
+                        </div>
+
+                        {paymentType === 'deepLink' ? (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {['gopay', 'ovo', 'dana', 'shopeepay', 'linkaja'].map((p) => (
+                                <button
+                                  key={p}
+                                  onClick={() => setPaymentPlatform(p as any)}
+                                  className={`p-2 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all ${paymentPlatform === p ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-gray-100 text-gray-400'}`}
+                                >
+                                  {p}
+                                </button>
+                              ))}
+                            </div>
+                            <input 
+                              type="text"
+                              value={merchantId}
+                              onChange={(e) => setMerchantId(e.target.value)}
+                              placeholder={dict[locale].dashboard.nfc.payment.merchantPlaceholder}
+                              className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                            />
+                          </div>
+                        ) : (
+                          <input 
+                            type="text"
+                            value={qrisUrl}
+                            onChange={(e) => setQrisUrl(e.target.value)}
+                            placeholder={dict[locale].dashboard.nfc.payment.qrisPlaceholder}
+                            className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                          />
+                        )}
                       </div>
                     ) : (
                       <input 
@@ -404,7 +533,7 @@ export default function ConnectNfcPage() {
 
             <button
               onClick={handleConnectNfc}
-              disabled={isConnecting || (mode === 'whatsapp' ? !waNumber.trim() : (mode !== 'profile' && mode !== 'erase' && !data.trim()))}
+              disabled={isConnecting || (mode === 'whatsapp' ? !waNumber.trim() : (mode === 'profile' ? (!selectedProfileSlug && !username) : (mode !== 'erase' && !data.trim())))}
               className={`w-full py-5 rounded-[24px] font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${
                 isConnecting 
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 

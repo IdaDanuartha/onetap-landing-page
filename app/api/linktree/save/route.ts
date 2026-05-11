@@ -123,7 +123,7 @@ export async function GET(req: Request) {
     // 1. Get all pages for this user to show in switcher
     const { data: pages } = await supabase
       .from('linktree_pages')
-      .select('id, title, updated_at')
+      .select('id, title, slug, updated_at')
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 

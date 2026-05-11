@@ -50,7 +50,10 @@ export default function LoginPage() {
         }
       }
 
-      router.push("/dashboard");
+      // Check for 'next' redirect parameter
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+      router.push(next || "/dashboard");
     } catch (err) {
       setError("Terjadi kesalahan sistem. Silakan coba lagi nanti.");
       setLoading(false);

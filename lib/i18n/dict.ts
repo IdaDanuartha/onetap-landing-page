@@ -463,6 +463,28 @@ export const translations = {
       title: "Dashboard",
       nfc: {
         title: "NFC Activator",
+        modeLabel: "Pilih Mode Aksi",
+        payment: {
+          title: "Pembayaran Digital",
+          subtitle: "Terima pembayaran langsung lewat tap NFC.",
+          typeLabel: "Tipe Pembayaran",
+          types: {
+            deepLink: "E-Wallet",
+            qris: "QRIS Static"
+          },
+          platformLabel: "Pilih Platform",
+          merchantLabel: "Merchant ID / Username",
+          merchantPlaceholder: "Masukkan Merchant ID Anda",
+          qrisLabel: "Link/URL QRIS",
+          qrisPlaceholder: "https://qris.id/...",
+          platforms: {
+            gopay: "GoPay",
+            ovo: "OVO",
+            dana: "DANA",
+            shopeepay: "ShopeePay",
+            linkaja: "LinkAja"
+          }
+        }
       },
       welcome: "Halo",
       manageLink: "Kelola kartu digitalmu di",
@@ -752,6 +774,54 @@ export const translations = {
         }
       }
     },
+    write: {
+      gate: {
+        title: "Akses Premium",
+        desc: "Masukkan kode unik yang terdapat pada box keychain OneTap Anda.",
+        error: "Kode akses tidak valid. Silakan cek QR code pada box.",
+        lost: "Kehilangan kode?",
+        support: "Hubungi Support"
+      },
+      writer: {
+        unsupported: {
+          title: "Browser Tidak Mendukung",
+          desc: "Fitur penulisan NFC saat ini hanya tersedia melalui peramban Google Chrome di perangkat Android yang memiliki sensor NFC."
+        },
+        verified: "Terverifikasi",
+        title: "Kustomisasi Keychain",
+        desc: "Tentukan aksi apa yang akan terjadi saat orang lain menyentuh keychain Anda.",
+        mode: "Pilih Mode",
+        content: "Konten Data",
+        erase: {
+          title: "Format Ulang Chip",
+          desc: "Tindakan ini akan mengosongkan seluruh data pada keychain."
+        },
+        inputLabel: "Masukkan",
+        waPlaceholder: "Nomor WhatsApp (628...)",
+        waMsgPlaceholder: "Pesan otomatis (Opsional)",
+        profileLabel: "Pilih Profil Digital",
+        profilePlaceholder: "Pilih profil yang ingin dihubungkan",
+        noProfiles: "Belum ada profil digital. Buat sekarang di dashboard.",
+        success: "Berhasil menulis data ke NFC Keychain!",
+        btnFormat: "Mulai Proses Format",
+        btnWrite: "Tulis ke Keychain",
+        waiting: {
+          title: "Siap Menerima Data",
+          desc: "Tempelkan dan tahan bagian belakang HP Anda ke keychain OneTap sekarang.",
+          cancel: "Batalkan Proses"
+        }
+      },
+      upsell: {
+        title: "Buka Fitur Lebih Lengkap",
+        desc: "Aktifkan perlindungan password, profil digital premium, integrasi pembayaran (GoPay/OVO/QRIS), dan analytics canggih.",
+        login: "Masuk",
+        register: "Daftar"
+      },
+      footer: {
+        title: "Writer App for OneTap Owners",
+        desc: "Membutuhkan perangkat Android dengan sensor NFC dan browser Google Chrome untuk dapat menulis data ke keychain."
+      }
+    }
   },
   en: {
     nav: {
@@ -1215,6 +1285,28 @@ export const translations = {
       title: "Dashboard",
       nfc: {
         title: "NFC Activator",
+        modeLabel: "Choose Action Mode",
+        payment: {
+          title: "Digital Payment",
+          subtitle: "Receive payments instantly via NFC tap.",
+          typeLabel: "Payment Type",
+          types: {
+            deepLink: "E-Wallet",
+            qris: "Static QRIS"
+          },
+          platformLabel: "Select Platform",
+          merchantLabel: "Merchant ID / Username",
+          merchantPlaceholder: "Enter your Merchant ID",
+          qrisLabel: "QRIS Link/URL",
+          qrisPlaceholder: "https://qris.id/...",
+          platforms: {
+            gopay: "GoPay",
+            ovo: "OVO",
+            dana: "DANA",
+            shopeepay: "ShopeePay",
+            linkaja: "LinkAja"
+          }
+        }
       },
       welcome: "Hello",
       manageLink: "Manage your digital card at",
@@ -1501,9 +1593,57 @@ export const translations = {
           modalCancelBtn: "Cancel",
           confirmPhrase: "DELETE MY ACCOUNT",
           error: "Failed to delete account. Please try again.",
-        },
-      },
+        }
+      }
     },
+    write: {
+      gate: {
+        title: "Premium Access",
+        desc: "Enter the unique code found on your OneTap keychain box.",
+        error: "Invalid access code. Please check the QR code on the box.",
+        lost: "Lost your code?",
+        support: "Contact Support"
+      },
+      writer: {
+        unsupported: {
+          title: "Browser Not Supported",
+          desc: "NFC writing feature is currently only available through Google Chrome browser on Android devices with NFC sensor."
+        },
+        verified: "Verified",
+        title: "Customize Keychain",
+        desc: "Determine what action happens when someone taps your keychain.",
+        mode: "Select Mode",
+        content: "Data Content",
+        erase: {
+          title: "Reformat Chip",
+          desc: "This action will clear all data on the keychain."
+        },
+        inputLabel: "Enter",
+        waPlaceholder: "WhatsApp Number (628...)",
+        waMsgPlaceholder: "Automated message (Optional)",
+        profileLabel: "Select Digital Profile",
+        profilePlaceholder: "Choose the profile to link",
+        noProfiles: "No digital profiles found. Create one in the dashboard.",
+        success: "Successfully wrote data to NFC Keychain!",
+        btnFormat: "Start Formatting",
+        btnWrite: "Write to Keychain",
+        waiting: {
+          title: "Ready to Receive Data",
+          desc: "Tap and hold the back of your phone to your OneTap keychain now.",
+          cancel: "Cancel Process"
+        }
+      },
+      upsell: {
+        title: "Unlock More Features",
+        desc: "Unlock password protection, premium digital profiles, payment integration (GoPay/OVO/QRIS), and advanced analytics.",
+        login: "Login",
+        register: "Register"
+      },
+      footer: {
+        title: "Writer App for OneTap Owners",
+        desc: "Requires an Android device with NFC sensor and Google Chrome browser to write data to the keychain."
+      }
+    }
   },
 };
 export const dict = translations;

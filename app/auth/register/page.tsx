@@ -99,7 +99,10 @@ export default function RegisterPage() {
         theme_id: 'pink',
       });
 
-      router.push('/dashboard/linktree');
+      // Check for 'next' redirect parameter
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+      router.push(next || '/dashboard/linktree');
     } catch {
       setError('Terjadi kesalahan. Coba lagi.');
       setLoading(false);

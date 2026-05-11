@@ -11,22 +11,20 @@ import {
   MessageSquare,
   Mail,
   Eraser,
-  KeyRound,
   ArrowRight,
   AlertCircle,
-  Loader2,
   CheckCircle2,
   XCircle,
   ShieldCheck,
   SmartphoneNfc,
-  MessageCircle
+  MessageCircle,
+  Sparkles,
+  Shield
 } from "lucide-react";
+import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 
-// ─── Valid access codes ─────────────────────────────────────────────────────
-const envCodes = process.env.NEXT_PUBLIC_VALID_ACCESS_CODES || "";
-const VALID_ACCESS_CODES: Set<string> = new Set(
-  envCodes.split(",").map((c) => c.trim().toUpperCase()).filter(Boolean)
-);
 
 // ─── NFC helper ─────────────────────────────────────────────────────────────
 function isNFCSupported(): boolean {
@@ -55,7 +53,6 @@ async function writeCustomRecord(
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type RecordType = "url" | "text" | "phone" | "sms" | "email" | "erase" | "whatsapp";
-type Screen = "gate" | "writer";
 type WriteStatus = "idle" | "waiting";
 
 // ─── Animation variants ──────────────────────────────────────────────────────
@@ -65,110 +62,6 @@ const fadeUp: Variants = {
   exit: { opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.3 } },
 };
 
-// ─── Access Gate ─────────────────────────────────────────────────────────────
-function AccessGate({ onUnlock }: { onUnlock: (code: string) => void }) {
-  const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    setTimeout(() => {
-      const trimmed = code.trim().toUpperCase();
-      if (VALID_ACCESS_CODES.has(trimmed)) {
-        onUnlock(trimmed);
-      } else {
-        setError("Kode akses tidak valid. Silakan cek QR code pada box.");
-        setLoading(false);
-      }
-    }, 800);
-  }
-
-  return (
-    <motion.div
-      key="gate"
-      variants={fadeUp}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      className="w-full max-w-lg mx-auto px-4"
-    >
-      <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] p-10 sm:p-14 relative border border-slate-50">
-        {/* Subtle Inner Glow */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/20 to-transparent rounded-[2.5rem] pointer-events-none" />
-
-        {/* Icon Header */}
-        <div className="flex justify-center mb-10 relative z-10">
-          <div className="w-24 h-24 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
-            <KeyRound className="w-10 h-10 text-slate-200" strokeWidth={1.5} />
-          </div>
-        </div>
-
-        <div className="text-center mb-10 relative z-10">
-          <h1 className="text-3xl font-black text-[#18080F] tracking-tight mb-4">Akses Premium</h1>
-          <p className="text-gray-400 text-sm leading-relaxed max-w-[280px] mx-auto font-medium">
-            Masukkan kode unik yang terdapat pada box keychain OneTap Anda.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
-          <div className="relative">
-            <input
-              id="access-code-input"
-              type="text"
-              value={code}
-              onChange={(e) => { 
-                const val = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
-                setCode(val); 
-                setError(null); 
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && code.trim()) handleSubmit(e);
-              }}
-              placeholder="XXXXX-XXXXX"
-              maxLength={11}
-              autoComplete="off"
-              className={`w-full h-16 px-6 rounded-2xl bg-[#F8FAFC]/50 border border-slate-100 text-[#18080F] text-center text-xl font-bold tracking-[0.2em] uppercase outline-none transition-all duration-300 placeholder:text-slate-200 placeholder:tracking-normal placeholder:font-medium focus:bg-white focus:border-primary-200 focus:ring-4 focus:ring-primary-500/5 ${
-                error ? "border-red-100 bg-red-50/30" : ""
-              }`}
-            />
-          </div>
-
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-red-500 text-xs text-center font-semibold"
-              >
-                {error}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Hidden Submit Button for Accessibility but visible to triggers */}
-          <button type="submit" className="hidden" />
-          
-          {loading && (
-            <div className="flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-            </div>
-          )}
-        </form>
-
-        <p className="mt-12 text-center text-sm font-semibold relative z-10">
-          <span className="text-gray-400">Kehilangan kode?</span>{" "}
-          <a href="https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia." className="text-blue-500 hover:underline underline-offset-4">
-            Hubungi Support
-          </a>
-        </p>
-      </div>
-    </motion.div>
-  );
-}
 
 // ─── NFC Writer ───────────────────────────────────────────────────────────────
 type IconComponent = React.FC<React.SVGProps<SVGSVGElement> & { className?: string }>;
@@ -184,6 +77,7 @@ const TYPE_OPTIONS: { id: RecordType; label: string; icon: IconComponent; placeh
 ];
 
 function NFCWriter() {
+  const { t } = useLanguage();
   const [supported, setSupported] = useState(true);
   const [recordType, setRecordType] = useState<RecordType>("url");
   const [data, setData] = useState("");
@@ -240,9 +134,9 @@ function NFCWriter() {
           <div className="w-16 h-16 rounded-full bg-pink-100 flex items-center justify-center mb-4">
             <AlertCircle className="w-8 h-8 text-pink-500" />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Browser Tidak Mendukung</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">{t('write.writer.unsupported.title')}</h2>
           <p className="text-slate-500 leading-relaxed">
-            Fitur penulisan NFC saat ini hanya tersedia melalui peramban <strong>Google Chrome di perangkat Android</strong> yang memiliki sensor NFC.
+            {t('write.writer.unsupported.desc')}
           </p>
         </div>
       </div>
@@ -272,12 +166,51 @@ function NFCWriter() {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 border border-green-200 text-green-600 text-sm font-semibold mb-6 shadow-sm"
           >
             <ShieldCheck className="w-4 h-4" />
-            Terverifikasi
+            {t('write.writer.verified')}
           </motion.div>
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Kustomisasi Keychain</h1>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">{t('write.writer.title')}</h1>
           <p className="mt-3 text-slate-500 text-base max-w-md mx-auto">
-            Tentukan aksi apa yang akan terjadi saat orang lain menyentuh keychain Anda.
+            {t('write.writer.desc')}
           </p>
+        </div>
+        
+        {/* Upsell Banner */}
+        <div className="px-8 mt-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="p-4 bg-gradient-to-br from-indigo-50/50 to-primary-50/50 border border-indigo-100/50 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+            
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-12 h-12 rounded-xl bg-white border border-indigo-50 flex items-center justify-center shadow-sm shrink-0">
+                <Sparkles className="w-6 h-6 text-indigo-500" />
+              </div>
+              <div className="text-left">
+                <h4 className="text-sm font-bold text-slate-800">{t('write.upsell.title')}</h4>
+                <p className="text-xs text-slate-500 leading-relaxed max-w-[240px]">
+                  {t('write.upsell.desc')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 relative z-10 w-full sm:w-auto">
+              <Link 
+                href="/auth/login?next=/dashboard/nfc/connect" 
+                className="flex-1 sm:flex-none text-center px-5 py-2.5 text-xs font-bold text-slate-600 bg-white/80 hover:bg-white border border-slate-200 rounded-xl transition-all active:scale-95"
+              >
+                {t('write.upsell.login')}
+              </Link>
+              <Link 
+                href="/auth/register?next=/dashboard/nfc/connect" 
+                className="flex-1 sm:flex-none text-center px-5 py-2.5 text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
+              >
+                {t('write.upsell.register')}
+              </Link>
+            </div>
+          </motion.div>
         </div>
 
         <div className="p-8 relative z-10">
@@ -285,7 +218,7 @@ function NFCWriter() {
             
             {/* Left Column: Type Selection */}
             <div className="space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">Pilih Mode</h3>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.mode')}</h3>
               <div className="grid grid-cols-2 gap-3">
                 {TYPE_OPTIONS.map((t) => {
                   const Icon = t.icon;
@@ -313,7 +246,7 @@ function NFCWriter() {
 
             {/* Right Column: Input & Action */}
             <div className="flex flex-col">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">Konten Data</h3>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.content')}</h3>
               
               <div className="flex-1 bg-slate-50 rounded-3xl p-6 border border-slate-100/50">
                 {recordType === "erase" ? (
@@ -322,9 +255,9 @@ function NFCWriter() {
                       <Eraser className="w-8 h-8 text-red-500" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-800">Format Ulang Chip</h4>
+                      <h4 className="font-bold text-slate-800">{t('write.writer.erase.title')}</h4>
                       <p className="text-sm text-slate-500 mt-2 max-w-[200px] mx-auto">
-                        Tindakan ini akan mengosongkan seluruh data pada keychain.
+                        {t('write.writer.erase.desc')}
                       </p>
                     </div>
                   </div>
@@ -332,7 +265,7 @@ function NFCWriter() {
                   <div className="space-y-3 h-full flex flex-col">
                     <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                       <selectedType.icon className="w-4 h-4 text-primary-500" />
-                      Masukkan {selectedType.label}
+                      {t('write.writer.inputLabel')} {selectedType.label}
                     </label>
                     {recordType === "whatsapp" ? (
                       <div className="space-y-3 flex-1 flex flex-col">
@@ -340,13 +273,13 @@ function NFCWriter() {
                           type="text"
                           value={waNumber}
                           onChange={(e) => { setWaNumber(e.target.value); setLastResult(null); }}
-                          placeholder="Nomor WhatsApp (628...)"
+                          placeholder={t('write.writer.waPlaceholder')}
                           className="w-full px-5 py-4 rounded-2xl border-2 border-slate-200 focus:border-primary-500 bg-white text-slate-800 outline-none transition-all text-base shadow-sm focus:ring-4 focus:ring-primary-500/10"
                         />
                         <textarea
                           value={waMessage}
                           onChange={(e) => { setWaMessage(e.target.value); setLastResult(null); }}
-                          placeholder="Pesan otomatis (Opsional)"
+                          placeholder={t('write.writer.waMsgPlaceholder')}
                           rows={3}
                           className="w-full flex-1 px-5 py-4 rounded-2xl border-2 border-slate-200 focus:border-primary-500 bg-white text-slate-800 outline-none transition-all text-base resize-none shadow-sm focus:ring-4 focus:ring-primary-500/10"
                         />
@@ -389,7 +322,7 @@ function NFCWriter() {
                   }`}
                 >
                   {lastResult === "success" ? <CheckCircle2 className="w-6 h-6 shrink-0 text-green-500" /> : <XCircle className="w-6 h-6 shrink-0 text-red-500" />}
-                  <span className="font-semibold">{lastResult === "success" ? "Berhasil menulis data ke NFC Keychain!" : errorMsg}</span>
+                  <span className="font-semibold">{lastResult === "success" ? t('write.writer.success') : errorMsg}</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -406,7 +339,7 @@ function NFCWriter() {
               }`}
             >
               <Image src="/images/logo_simple.png" alt="" width={24} height={24} className="invert brightness-0" />
-              {recordType === "erase" ? "Mulai Proses Format" : "Tulis ke Keychain"}
+              {recordType === "erase" ? t('write.writer.btnFormat') : t('write.writer.btnWrite')}
             </motion.button>
           </div>
         </div>
@@ -427,16 +360,16 @@ function NFCWriter() {
                   <Image src="/images/logo_simple.png" alt="OneTap" width={64} height={64} className="object-contain invert brightness-0" />
                 </div>
               </div>
-              <h2 className="font-extrabold text-2xl text-slate-800 mb-2">Siap Menerima Data</h2>
+              <h2 className="font-extrabold text-2xl text-slate-800 mb-2">{t('write.writer.waiting.title')}</h2>
               <p className="text-slate-500 max-w-[250px] leading-relaxed">
-                Tempelkan dan tahan bagian belakang HP Anda ke keychain OneTap sekarang.
+                {t('write.writer.waiting.desc')}
               </p>
               
               <button 
                 onClick={() => setWriteStatus("idle")}
                 className="mt-8 text-sm font-semibold text-slate-400 hover:text-slate-600 transition-colors px-4 py-2"
               >
-                Batalkan Proses
+                {t('write.writer.waiting.cancel')}
               </button>
             </motion.div>
           )}
@@ -448,36 +381,8 @@ function NFCWriter() {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-export default function WritePage() {
-  const [screen, setScreen] = useState<Screen>("gate");
-  const [autoChecked, setAutoChecked] = useState(false);
-
-  const handleUnlock = (code: string) => {
-    localStorage.setItem("onetap_access_code", code);
-    setScreen("writer");
-  };
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const qrCode = params.get("code")?.trim().toUpperCase() ?? null;
-    const savedCode = localStorage.getItem("onetap_access_code");
-
-    if (qrCode && VALID_ACCESS_CODES.has(qrCode)) {
-      localStorage.setItem("onetap_access_code", qrCode);
-      setScreen("writer");
-    } else if (savedCode && VALID_ACCESS_CODES.has(savedCode)) {
-      setScreen("writer");
-    }
-    setAutoChecked(true);
-  }, []);
-
-  if (!autoChecked) {
-    return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-primary-500" />
-      </div>
-    );
-  }
+function WritePageContent() {
+  const { t } = useLanguage();
 
   return (
     <>
@@ -501,29 +406,32 @@ export default function WritePage() {
               OneTap
             </span>
           </a>
+          <LanguageSwitcher />
         </header>
 
         {/* Main content */}
         <main className="flex-1 flex items-center justify-center px-4 py-8 relative z-10">
           <AnimatePresence mode="wait">
-            {screen === "gate" ? (
-              <AccessGate key="gate" onUnlock={handleUnlock} />
-            ) : (
-              <NFCWriter key="writer" />
-            )}
+            <NFCWriter key="writer" />
           </AnimatePresence>
         </main>
 
         {/* Minimal Footer */}
         <footer className="relative z-10 py-8 px-6 text-center border-t border-slate-200/60">
           <div className="max-w-md mx-auto">
-            <p className="text-sm font-semibold text-slate-800 mb-1">Writer App for OneTap Owners</p>
+            <p className="text-sm font-semibold text-slate-800 mb-1">{t('write.footer.title')}</p>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Membutuhkan perangkat Android dengan sensor NFC dan browser Google Chrome untuk dapat menulis data ke keychain.
+              {t('write.footer.desc')}
             </p>
           </div>
         </footer>
       </div>
     </>
+  );
+}
+
+export default function WritePage() {
+  return (
+    <WritePageContent />
   );
 }
