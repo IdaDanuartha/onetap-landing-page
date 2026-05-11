@@ -50,13 +50,13 @@ export default function FeatureGate({ requiredPlan, userPlan, children, message 
           <p className="text-gray-500 text-sm mb-6">
             {message ?? `Fitur ini membutuhkan plan ${requiredPlanConfig.nameId} atau lebih tinggi.`}
           </p>
-          <a
-            href="/#pricing"
+          <Link
+            href="/pricing"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold text-sm shadow-lg shadow-[#FF5FA2]/20 hover:-translate-y-0.5 transition-all cursor-pointer"
           >
             Upgrade Plan
             <ArrowRight className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
       </div>
     </div>

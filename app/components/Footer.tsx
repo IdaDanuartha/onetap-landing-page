@@ -3,17 +3,18 @@
 import { Zap, Twitter, Instagram, Linkedin, Youtube, Mail, Phone, MapPin } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Footer() {
   const { t } = useLanguage();
   
   const footerLinks = {
     [t('footer.quickLinks')]: [
-      { label: t('nav.features'), href: "#features" },
-      { label: t('nav.howItWorks'), href: "#how-it-works" },
-      { label: t('products.badge'), href: "#pricing" },
-      { label: t('education.badge'), href: "#education" },
-      { label: t('testimonials.badge'), href: "#testimonials" },
+      { label: t('nav.features'), href: "/#features" },
+      { label: t('nav.howItWorks'), href: "/#how-it-works" },
+      { label: t('products.badge'), href: "/pricing" },
+      { label: t('education.badge'), href: "/#education" },
+      { label: t('testimonials.badge'), href: "/#testimonials" },
     ],
     [t('footer.social')]: [
       { label: "Instagram", href: "https://instagram.com/onetap.charm" },
@@ -41,7 +42,7 @@ export default function Footer() {
         <div className="pb-12 grid grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand column */}
           <div className="col-span-2">
-            <a href="#" className="flex items-center gap-2.5 mb-5">
+            <Link href="/" className="flex items-center gap-2.5 mb-5">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] flex items-center justify-center shadow-lg shadow-[#FF5FA2]/30">
                 <Image src="/images/logo_simple.png" alt="OneTap" width={20} height={20} />
               </div>
@@ -51,7 +52,7 @@ export default function Footer() {
               >
                 OneTap
               </span>
-            </a>
+            </Link>
             <p className="text-[#F6B7C8]/50 text-sm leading-relaxed mb-6 max-w-xs">
               {t('footer.description')}
             </p>
@@ -102,12 +103,12 @@ export default function Footer() {
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <a
+                    <Link
                       href={link.href}
                       className="text-[#F6B7C8]/40 text-sm hover:text-[#FF5FA2] transition-colors duration-150"
                     >
                       {link.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

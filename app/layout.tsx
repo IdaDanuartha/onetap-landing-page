@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 // import TawkTo from "@/app/components/TawkTo";
 import WhatsAppWidget from "@/app/components/WhatsAppWidget";
+import ScrollToTop from "./components/ScrollToTop";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -121,6 +122,7 @@ export default function RootLayout({
         {/* Force light mode even if OS uses dark mode — intentional brand decision */}
       </head>
       <body className={`${inter.variable} ${outfit.variable} antialiased`}>
+        <ScrollToTop />
         <LanguageProvider>
           {children}
           <WhatsAppWidget />

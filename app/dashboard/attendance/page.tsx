@@ -656,7 +656,7 @@ export default function AttendanceManagementPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link 
-              href="/#pricing" 
+              href="/pricing" 
               className="px-8 py-4 bg-[#FF5FA2] text-white font-black rounded-2xl hover:bg-[#E8457E] transition-all shadow-lg shadow-[#FF5FA2]/20"
             >
               {d.locked.upgrade}

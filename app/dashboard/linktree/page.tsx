@@ -339,7 +339,7 @@ export default function OneTapBuilderPage() {
               <p className="font-black text-sm uppercase tracking-wider">{t('dashboard.profileLimit.disabled')}</p>
               <p className="text-xs font-medium opacity-80">{t('dashboard.profileLimit.disabledDesc')}</p>
             </div>
-            <Link href="/#pricing" className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all">
+            <Link href="/pricing" className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all">
               {t('dashboard.planInfo.upgrade')}
             </Link>
           </motion.div>
@@ -691,7 +691,7 @@ export default function OneTapBuilderPage() {
                     </p>
                   </div>
                   <Link 
-                    href="/#pricing"
+                    href="/pricing"
                     className="px-8 py-3 rounded-2xl bg-white text-[#18080F] font-black hover:bg-[#FF5FA2] hover:text-white transition-all shadow-xl"
                   >
                     {t('dashboard.planInfo.upgrade')}

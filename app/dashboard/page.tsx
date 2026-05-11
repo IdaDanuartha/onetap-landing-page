@@ -457,7 +457,7 @@ export default function DashboardPage() {
             </div>
 
             <Link
-              href="/#pricing"
+              href="/pricing"
               className={`px-8 py-3.5 rounded-2xl font-black transition-all shadow-lg flex items-center gap-2 group/btn ${
                 planExpired || plan === 'starter'
                   ? 'bg-[#FF5FA2] text-white hover:bg-[#E8457E] shadow-[#FF5FA2]/20'
@@ -577,7 +577,7 @@ export default function DashboardPage() {
                   <h3 className="text-xl font-black text-[#18080F] mb-3">{item.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed font-medium mb-6">{item.desc}</p>
                   <Link
-                    href="/#pricing"
+                    href="/pricing"
                     className="inline-flex items-center gap-2 text-[#FF5FA2] font-bold text-sm uppercase tracking-wider cursor-pointer"
                   >
                     {t('dashboard.menu.upgradePlan')}

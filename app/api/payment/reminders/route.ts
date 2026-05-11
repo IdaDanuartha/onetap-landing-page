@@ -84,7 +84,7 @@ Halo!
 Plan <strong>OneTap ${planLabel}</strong> kamu akan berakhir dalam <strong>${daysLeft} hari</strong>.
 
 Untuk melanjutkan akses ke semua fitur, silakan perbarui langganan kamu di:
-<a href="${process.env.NEXT_PUBLIC_APP_URL}/#pricing">${process.env.NEXT_PUBLIC_APP_URL}/#pricing</a>
+<a href="${process.env.NEXT_PUBLIC_APP_URL}/pricing">${process.env.NEXT_PUBLIC_APP_URL}/pricing</a>
 
 Jika ada pertanyaan, hubungi kami via WhatsApp:
 https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia.

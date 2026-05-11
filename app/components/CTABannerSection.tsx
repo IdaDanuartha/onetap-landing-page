@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { MessageCircle, ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 import AnimatedSection, { fadeInUp } from "./AnimatedSection";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
@@ -35,13 +36,13 @@ export default function CTABannerSection() {
             </motion.p>
             
             <motion.div variants={fadeInUp} className="flex flex-wrap justify-center gap-4">
-              <a
+              <Link
                 href="/auth/register"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-xl shadow-[#FF5FA2]/20 hover:shadow-[#FF5FA2]/40 hover:-translate-y-1 transition-all duration-300"
               >
                 <MessageCircle className="w-5 h-5" />
                 {t('cta.chat')}
-              </a>
+              </Link>
             </motion.div>
           </div>
         </div>

@@ -60,7 +60,7 @@ export default function CheckoutPage() {
     if (planId && PLANS[planId]) {
       checkAuth();
     } else {
-      router.push('/#pricing');
+      router.push('/pricing');
     }
   }, [planId, billingCycle, router, supabase]);
 
@@ -151,7 +151,7 @@ export default function CheckoutPage() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
-          <Link href="/#pricing" className="flex items-center gap-2 text-gray-500 hover:text-[#FF5FA2] transition-colors font-bold text-sm">
+          <Link href="/pricing" className="flex items-center gap-2 text-gray-500 hover:text-[#FF5FA2] transition-colors font-bold text-sm">
             <ArrowLeft className="w-4 h-4" />
             Kembali
           </Link>

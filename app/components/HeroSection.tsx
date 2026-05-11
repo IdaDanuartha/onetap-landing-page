@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { ArrowRight, Play, Users, Link2, CheckCircle, Instagram, Twitter, Linkedin, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { motion } from "framer-motion";
@@ -96,13 +97,13 @@ export default function HeroSection() {
               }}
               className="flex flex-wrap gap-4 mb-12"
             >
-              <a
+              <Link
                 href="/auth/register"
                 className="inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-semibold shadow-2xl shadow-[#FF5FA2]/30 hover:shadow-[#FF5FA2]/50 hover:-translate-y-0.5 transition-all duration-200"
               >
                 {t('hero.ctaPrimary')}
                 <ArrowRight className="w-4 h-4" />
-              </a>
+              </Link>
               <a
                 href="https://lynk.id/onetap.charm"
                 target="_blank"

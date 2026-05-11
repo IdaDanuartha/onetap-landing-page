@@ -4,11 +4,15 @@ import { useState, useEffect } from "react";
 import { Zap, Menu, X, ChevronRight, Globe, Play, User, Users, LogOut, LayoutDashboard, Instagram, Twitter, Linkedin, MessageCircle, Link2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function Header() {
   const { t, locale, setLocale } = useLanguage();
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -22,6 +26,9 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Determine if we should show the "dark text / white background" style
+  const showSolidStyle = isScrolled || !isHomePage;
 
   useEffect(() => {
     const supabase = createClient();
@@ -62,46 +69,46 @@ export default function Header() {
     { label: t('nav.features'), href: "/#features" },
     { label: t('nav.howItWorks'), href: "/#how-it-works" },
     { label: t('nav.products'), href: "https://lynk.id/onetap.charm" },
-    { label: t('nav.pricing'), href: "/#pricing" },
+    { label: t('nav.pricing'), href: "/pricing" },
   ];
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "py-4" : "py-6"
+        showSolidStyle ? "py-4" : "py-6"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <nav
           className={`relative flex items-center justify-between px-6 py-3 rounded-2xl transition-all duration-300 ${
-            isScrolled
+            showSolidStyle
               ? "bg-white/80 backdrop-blur-lg border border-gray-100 shadow-lg shadow-gray-200/20"
               : "bg-transparent border border-transparent"
           }`}
         >
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2.5 shrink-0">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] flex items-center justify-center shadow-lg shadow-[#FF5FA2]/30">
               <Image src="/images/logo_simple.png" alt="OneTap" width={20} height={20} />
             </div>
             <span
-              className={`text-xl font-bold tracking-tight transition-colors duration-300 ${isScrolled ? "text-[#18080F]" : "text-white"}`}
+              className={`text-xl font-bold tracking-tight transition-colors duration-300 ${showSolidStyle ? "text-[#18080F]" : "text-white"}`}
               style={{ fontFamily: "var(--font-display)" }}
             >
               OneTap
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
                 href={link.href}
-                className={`text-sm font-semibold transition-colors duration-300 ${isScrolled ? "text-[#18080F]/70" : "text-white/80"} hover:text-[#FF5FA2]`}
+                className={`text-sm font-semibold transition-colors duration-300 ${showSolidStyle ? "text-[#18080F]/70" : "text-white/80"} hover:text-[#FF5FA2]`}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -110,7 +117,7 @@ export default function Header() {
             {/* Language Switcher */}
             <button
               onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all duration-300 text-sm font-semibold ${isScrolled ? "text-[#18080F]/70" : "text-white/80"}`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all duration-300 text-sm font-semibold ${showSolidStyle ? "text-[#18080F]/70" : "text-white/80"}`}
             >
               <Globe className="w-4 h-4" />
               {locale.toUpperCase()}
@@ -121,7 +128,7 @@ export default function Header() {
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className={`flex items-center cursor-pointer gap-3 px-3 py-1.5 rounded-xl transition-all duration-300 ${
-                    isScrolled ? "bg-gray-100" : "bg-white/10"
+                    showSolidStyle ? "bg-gray-100" : "bg-white/10"
                   } hover:bg-[#FF5FA2]/10 group`}
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] flex items-center justify-center text-white">
@@ -131,7 +138,7 @@ export default function Header() {
                       <User className="w-4 h-4" />
                     )}
                   </div>
-                  <span className={`text-sm font-bold transition-colors duration-300 ${isScrolled ? "text-[#18080F]" : "text-white"} group-hover:text-[#FF5FA2]`}>
+                  <span className={`text-sm font-bold transition-colors duration-300 ${showSolidStyle ? "text-[#18080F]" : "text-white"} group-hover:text-[#FF5FA2]`}>
                     {profile?.display_name || user.email?.split('@')[0]}
                   </span>
                 </button>
@@ -146,13 +153,13 @@ export default function Header() {
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl shadow-black/10 border border-gray-100 py-2 z-20 overflow-hidden"
                       >
-                        <a
+                        <Link
                           href="/dashboard"
                           className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#18080F] hover:bg-gray-50 transition-colors"
                         >
                           <LayoutDashboard className="w-4 h-4 text-[#FF5FA2]" />
                           Dashboard
-                        </a>
+                        </Link>
                         <button
                           onClick={async () => {
                             const supabase = createClient();
@@ -170,12 +177,12 @@ export default function Header() {
                 </AnimatePresence>
               </div>
             ) : (
-              <a
+              <Link
                 href="/auth/login"
-                className={`text-sm font-semibold transition-colors duration-300 ${isScrolled ? "text-[#18080F]" : "text-white"} hover:text-[#FF5FA2]`}
+                className={`text-sm font-semibold transition-colors duration-300 ${showSolidStyle ? "text-[#18080F]" : "text-white"} hover:text-[#FF5FA2]`}
               >
                 {t('common.login')}
-              </a>
+              </Link>
             )}
             <a
               href="https://wa.me/6283114227745?text=Halo%20OneTap%2C%20saya%20ingin%20bertanya%20mengenai%20detail%20produk%20NFC%20OneTap%20yang%20tersedia."
@@ -191,7 +198,7 @@ export default function Header() {
           {/* Mobile Menu Toggle */}
           <button
             className={`lg:hidden w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${
-              isScrolled ? "bg-gray-50 text-[#18080F]" : "bg-white/10 text-white"
+              showSolidStyle ? "bg-gray-50 text-[#18080F]" : "bg-white/10 text-white"
             }`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -244,7 +251,7 @@ export default function Header() {
                 {/* Main Links */}
                 <div className="flex flex-col gap-2">
                   {navLinks.map((link) => (
-                    <a
+                    <Link
                       key={link.label}
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -259,7 +266,7 @@ export default function Header() {
                       <span className="text-[17px] font-bold text-[#18080F] tracking-tight">
                         {link.label}
                       </span>
-                    </a>
+                    </Link>
                   ))}
                 </div>
 
@@ -283,7 +290,7 @@ export default function Header() {
                     <span className="text-sm font-bold text-[#FF5FA2] uppercase bg-[#FF5FA2]/10 px-2.5 py-1 rounded-lg">{locale}</span>
                   </button>
                   
-                  <a
+                  <Link
                     href={user ? "/dashboard" : "/auth/login"}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group"
@@ -294,7 +301,7 @@ export default function Header() {
                     <span className="text-[17px] font-bold text-[#18080F] tracking-tight">
                       {user ? "Dashboard" : t('common.login')}
                     </span>
-                  </a>
+                  </Link>
                   
                   {user && (
                     <button
@@ -314,14 +321,14 @@ export default function Header() {
                     </button>
                   )}
                   
-                  <a
-                    href="/#pricing"
+                  <Link
+                    href="/pricing"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="mt-3 flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-[#FF5FA2] hover:bg-[#E8457E] transition-colors text-white font-bold text-[17px]"
                   >
                     {t('nav.orderNow')}
                     <ChevronRight className="w-5 h-5" />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </motion.div>

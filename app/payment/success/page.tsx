@@ -140,7 +140,7 @@ export default function PaymentSuccessPage() {
             <h1 className="text-2xl font-black text-[#18080F] mb-3">{t('paymentSuccess.expired')}</h1>
             <p className="text-gray-500 text-sm mb-8">{t('paymentSuccess.expiredDesc')}</p>
             <Link
-              href="/#pricing"
+              href="/pricing"
               className="inline-flex items-center justify-center w-full gap-2 px-8 py-4 rounded-2xl bg-[#FF5FA2] text-white font-bold shadow-lg shadow-[#FF5FA2]/20 hover:-translate-y-0.5 transition-all"
             >
               {t('paymentSuccess.ctaPricing')}

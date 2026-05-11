@@ -68,7 +68,7 @@ export async function sendPlanEmail({ to, subject, planName, daysLeft, type }: E
         <p>Halo! Kami ingin menginformasikan bahwa langganan plan <strong>${planName}</strong> kamu akan berakhir dalam <strong>${daysLeft} hari</strong>.</p>
         <p>Untuk tetap bisa menggunakan fitur premium tanpa gangguan, silakan lakukan perpanjangan plan kamu.</p>
         <div style="text-align: center; margin-top: 32px;">
-          <a href="${appUrl}/#pricing" class="cta-button">Perpanjang Plan</a>
+          <a href="${appUrl}/pricing" class="cta-button">Perpanjang Plan</a>
         </div>
       `}
 
