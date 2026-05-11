@@ -8,34 +8,34 @@ export default function UseCasesSection() {
   const { t } = useLanguage();
 
   const useCases = [
-    {
-      icon: Briefcase,
-      title: t('useCases.items.corporate.title'),
-      description: t('useCases.items.corporate.desc'),
-      tag: t('useCases.items.corporate.tag'),
-      tagColor: "bg-[#FF5FA2]/20 text-[#FF5FA2]",
-    },
+    // {
+    //   icon: Briefcase,
+    //   title: t('useCases.items.corporate.title'),
+    //   description: t('useCases.items.corporate.desc'),
+    //   tag: t('useCases.items.corporate.tag'),
+    //   tagColor: "bg-[#FF5FA2]/20 text-[#FF5FA2]",
+    // },
     {
       icon: Music,
       title: t('useCases.items.artist.title'),
       description: t('useCases.items.artist.desc'),
       tag: t('useCases.items.artist.tag'),
-      tagColor: "bg-[#F6B7C8]/30 text-white",
+      tagColor: "bg-[#FF5FA2]/20 text-[#FF5FA2]",
     },
     {
       icon: Camera,
       title: t('useCases.items.creator.title'),
       description: t('useCases.items.creator.desc'),
       tag: t('useCases.items.creator.tag'),
-      tagColor: "bg-[#FF5FA2]/20 text-[#FF5FA2]",
-    },
-    {
-      icon: Building2,
-      title: t('useCases.items.property.title'),
-      description: t('useCases.items.property.desc'),
-      tag: t('useCases.items.property.tag'),
       tagColor: "bg-[#F6B7C8]/30 text-white",
     },
+    // {
+    //   icon: Building2,
+    //   title: t('useCases.items.property.title'),
+    //   description: t('useCases.items.property.desc'),
+    //   tag: t('useCases.items.property.tag'),
+    //   tagColor: "bg-[#F6B7C8]/30 text-white",
+    // },
     {
       icon: Stethoscope,
       title: t('useCases.items.health.title'),
