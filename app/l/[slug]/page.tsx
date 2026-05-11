@@ -120,10 +120,18 @@ export default async function OneTapPublicPage({ params }: PageProps) {
     .order('sort_order', { ascending: true });
 
   return (
+
     <OneTapBio
       username={profile.username}
       profile={profile}
-      page={page}
+
+      page={{
+        id: page.id,
+        title: page.title,
+        bio: page.bio,
+        theme_id: page.theme_id,
+        hasPassword: !!page.password
+      }}
       links={links ?? []}
     />
   );

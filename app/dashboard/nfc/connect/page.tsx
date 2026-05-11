@@ -160,11 +160,12 @@ export default function ConnectNfcPage() {
         return;
       }
 
+
       let finalPayload = data.trim();
       const slug = selectedProfileSlug || username;
-      const tagPass = nfcPassword || linkPassword;
       const selectedPage = profiles.find(p => p.slug === selectedProfileSlug || p.id === selectedProfileSlug);
 
+      // Handle Profile Mode
       if (mode === 'profile') {
         finalPayload = `https://onetap-charm.com/l/${slug}`;
         if (selectedPage) {
@@ -174,7 +175,9 @@ export default function ConnectNfcPage() {
             .update({ password: linkPassword || null })
             .eq('id', selectedPage.id);
         }
-      } else if (mode === 'bridge') {
+      } 
+      // Handle Bridge Mode
+      else if (mode === 'bridge') {
         finalPayload = `https://onetap-charm.com/pay/${slug}`;
         if (selectedPage && (qrisData || linkPassword)) {
           const supabase = createClient();
@@ -186,9 +189,43 @@ export default function ConnectNfcPage() {
             })
             .eq('id', selectedPage.id);
         }
-      } else if (mode === 'url') {
+      } 
+      // Handle Custom URL Mode with Protection
+      else if (mode === 'url' && linkPassword) {
+        // Create a protected link on the server
+        const targetUrl = finalPayload.startsWith('http') ? finalPayload : `https://${finalPayload}`;
+        
+        try {
+          const res = await fetch('/api/links/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              url: targetUrl, 
+              password: linkPassword 
+            })
+          });
+          
+          if (!res.ok) throw new Error('API Error');
+          
+          const linkData = await res.json();
+          if (linkData.token) {
+            finalPayload = `https://onetap-charm.com/r/${linkData.token}`;
+          } else {
+            throw new Error('No token');
+          }
+        } catch (err) {
+          console.error('[ProtectedLink]', err);
+          setError('Gagal menyiapkan link terproteksi. Silakan coba lagi.');
+          setIsConnecting(false);
+          return;
+        }
+      }
+      // Handle Standard URL Mode
+      else if (mode === 'url') {
         if (!finalPayload.startsWith('http')) finalPayload = `https://${finalPayload}`;
-      } else if (mode === 'whatsapp') {
+      } 
+      // Handle Other Modes
+      else if (mode === 'whatsapp') {
         const cleanNum = waNumber.replace(/[^0-9]/g, "");
         finalPayload = `https://wa.me/${cleanNum}${waMessage ? `?text=${encodeURIComponent(waMessage)}` : ""}`;
       } else if (mode === 'phone') {
@@ -209,9 +246,11 @@ export default function ConnectNfcPage() {
         }
       }
 
-      // Append password to all URL-based payloads
-      if (tagPass && (mode === 'profile' || mode === 'bridge' || mode === 'url' || mode === 'whatsapp' || mode === 'payment')) {
-        finalPayload += (finalPayload.includes('?') ? '&' : '?') + `p=${encodeURIComponent(tagPass)}`;
+      // Append NFC Tag Protection Password (Rewrite Protection ONLY)
+      // This parameter (?p=) is used by our app to verify permission before overwriting.
+      // We keep it separate from Link Protection to ensure link privacy.
+      if (nfcPassword && (mode === 'profile' || mode === 'bridge' || mode === 'url' || mode === 'whatsapp' || mode === 'payment')) {
+        finalPayload += (finalPayload.includes('?') ? '&' : '?') + `p=${encodeURIComponent(nfcPassword)}`;
       }
 
       const ndef = new (window as any).NDEFReader();
@@ -226,7 +265,6 @@ export default function ConnectNfcPage() {
           const decoder = new TextDecoder();
           const rawData = decoder.decode(record.data);
           
-          // More robust detection: check for p= in any record (url or text)
           if (rawData.includes('p=')) {
             const match = rawData.match(/[?&]p=([^& \n\r\t]+)/);
             if (match) {
@@ -236,7 +274,8 @@ export default function ConnectNfcPage() {
           }
         }
 
-        if (isProtected && existingPass !== tagPass) {
+        // Verify Rewrite Protection Password
+        if (isProtected && existingPass !== nfcPassword) {
           setError(dict[locale].protection.tagProtected);
           setIsConnecting(false);
           return;

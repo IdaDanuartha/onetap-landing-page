@@ -15,10 +15,11 @@ interface OneTapBioProps {
     avatar_url: string | null;
   };
   page: {
+    id: string;
     title: string | null;
     bio: string | null;
     theme_id: string;
-    password?: string | null;
+    hasPassword?: boolean;
   };
   links: {
     id: string;
@@ -31,7 +32,7 @@ interface OneTapBioProps {
 
 export default function OneTapBio({ username, profile, page, links }: OneTapBioProps) {
   const { dict } = useLanguage();
-  const [isUnlocked, setIsUnlocked] = useState(!page.password);
+  const [isUnlocked, setIsUnlocked] = useState(!page.hasPassword);
   const [passwordInput, setPasswordInput] = useState('');
   const [error, setError] = useState('');
 
@@ -42,9 +43,18 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
     fetch(`/api/linktree/click/${linkId}`, { method: 'POST' }).catch(() => {});
   };
 
-  const handleUnlock = (e: React.FormEvent) => {
+  const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === page.password) {
+    if (!passwordInput) return;
+    
+    setError('');
+    const res = await fetch('/api/linktree/unlock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pageId: page.id, password: passwordInput })
+    });
+
+    if (res.ok) {
       setIsUnlocked(true);
       setError('');
     } else {
@@ -97,64 +107,68 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
             className="w-24 h-24 rounded-full mx-auto mb-4 ring-4 ring-white shadow-xl object-cover"
           />
         ) : (
-          <div
-            className="w-24 h-24 rounded-full mx-auto mb-4 ring-4 ring-white shadow-xl flex items-center justify-center text-white"
-            style={{ background: theme.accent }}
-          >
-            <User className="w-12 h-12" />
+          <div className="w-24 h-24 rounded-full mx-auto mb-4 bg-black/10 flex items-center justify-center ring-4 ring-white shadow-xl">
+            <User className="w-12 h-12 opacity-20" />
           </div>
         )}
-
-        <h1 className={`text-2xl font-black ${theme.text}`}>
-          {page.title || profile.display_name || username}
-        </h1>
-
-        {(page.bio || profile.bio) && (
-          <p className={`mt-2 text-sm max-w-xs mx-auto leading-relaxed ${theme.bio}`}>
-            {page.bio || profile.bio}
-          </p>
-        )}
+        <h1 className={`text-2xl font-black mb-1 ${theme.text}`}>{profile.display_name ?? username}</h1>
+        {profile.bio && <p className={`text-sm opacity-60 ${theme.bio}`}>{profile.bio}</p>}
       </div>
 
       {/* Links */}
-      <div className="w-full max-w-sm space-y-3">
-        {links.length === 0 && (
-          <p className="text-center text-sm opacity-60 py-8">
-            Belum ada link yang ditambahkan.
-          </p>
-        )}
+      <div className="w-full max-w-xl space-y-4">
         {links.map((link) => {
-          const Icon = iconMap[link.icon || 'link'];
+          const IconComponent = link.icon ? (iconMap[link.icon as keyof typeof iconMap] || iconMap.Globe) : iconMap.Globe;
+          
           return (
             <a
               key={link.id}
               href={link.url}
-              onClick={() => handleLinkClick(link.id)}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex items-center justify-between gap-2.5 w-full py-4 px-6 rounded-2xl font-semibold text-sm transition-all active:scale-95 ${theme.card} relative group overflow-hidden`}
+              onClick={() => handleLinkClick(link.id)}
+              className={`w-full p-4 rounded-2xl ${theme.card} flex items-center justify-between border border-white/10 shadow-lg shadow-black/5 active:scale-[0.98] transition-all group`}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
-                <span className="truncate">{link.label}</span>
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl bg-black/5 flex items-center justify-center ${theme.text} opacity-80 group-hover:opacity-100 transition-opacity`}>
+                  <IconComponent className="w-6 h-6" />
+                </div>
+                <span className={`font-bold ${theme.text}`}>{link.label}</span>
               </div>
-              <div className="w-5 h-5 rounded-full bg-black/5 flex items-center justify-center shrink-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-black/20" />
+              <div className={`w-8 h-8 rounded-full bg-black/5 flex items-center justify-center opacity-30 group-hover:opacity-100 transition-all`}>
+                <ArrowRight className="w-4 h-4" />
               </div>
             </a>
           );
         })}
       </div>
 
-      {/* OneTap branding footer */}
-      <div className="mt-16 text-center">
-        <Link
-          href="/"
-          className="text-[10px] font-bold text-gray-400/80 uppercase tracking-widest hover:text-[#FF5FA2] transition-colors flex items-center gap-2"
-        >
-          Dibuat dengan <span className="text-[#FF5FA2]">❤️</span> <span className="font-black text-gray-500">OneTap</span>
+      {/* Branding */}
+      <div className="mt-auto pt-12 text-center opacity-40">
+        <Link href="/" className={`text-[10px] font-black tracking-[0.2em] uppercase ${theme.text}`}>
+          Powered by OneTap
         </Link>
       </div>
     </div>
+  );
+}
+
+// Local helper to avoid missing import
+function ArrowRight(props: any) {
+  return (
+    <svg 
+      {...props} 
+      xmlns="http://www.w3.org/2000/svg" 
+      width="24" 
+      height="24" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+    </svg>
   );
 }

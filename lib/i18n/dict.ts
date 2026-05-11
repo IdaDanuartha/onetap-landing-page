@@ -848,7 +848,8 @@ export const translations = {
       step1: "Buka di Chrome Android",
       step2: "Tempel keychain di belakang HP",
       searching: "Mencari Tag...",
-      startBtn: "Mulai Proses Aktivasi"
+      startBtn: "Mulai Proses Aktivasi",
+      preparingLink: "Menyiapkan Link Terproteksi..."
     },
     paymentBridge: {
       chooseApp: "Pilih Aplikasi Pembayaran",
@@ -1707,7 +1708,8 @@ export const translations = {
       step1: "Open in Chrome Android",
       step2: "Tap keychain on back of phone",
       searching: "Searching for Tag...",
-      startBtn: "Start Activation Process"
+      startBtn: "Start Activation Process",
+      preparingLink: "Preparing Protected Link..."
     },
     paymentBridge: {
       chooseApp: "Choose Payment App",
