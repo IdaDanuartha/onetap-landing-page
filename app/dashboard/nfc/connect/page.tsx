@@ -653,7 +653,15 @@ export default function ConnectNfcPage() {
 
             <button
               onClick={handleConnectNfc}
-              disabled={isConnecting || (mode === 'whatsapp' ? !waNumber.trim() : (mode === 'profile' ? (!selectedProfileSlug && !username) : (mode !== 'erase' && !data.trim())))}
+              disabled={
+                isConnecting || 
+                (mode === 'whatsapp' && !waNumber.trim()) ||
+                (mode === 'profile' && !selectedProfileSlug && !username) ||
+                (mode === 'bridge' && !qrisData) ||
+                (mode === 'payment' && paymentType === 'deepLink' && !merchantId.trim()) ||
+                (mode === 'payment' && paymentType === 'qris' && !qrisUrl.trim()) ||
+                (mode !== 'erase' && mode !== 'whatsapp' && mode !== 'profile' && mode !== 'bridge' && mode !== 'payment' && !data.trim())
+              }
               className={`w-full py-5 rounded-[24px] font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${
                 isConnecting 
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
