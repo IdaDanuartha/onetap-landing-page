@@ -482,10 +482,12 @@ export default function ConnectNfcPage() {
                               onChange={(e) => setSelectedProfileSlug(e.target.value)}
                               className="w-full bg-white border border-[#F1F5F9] rounded-lg px-3 py-2 text-xs font-bold text-[#18080F] outline-none appearance-none"
                             >
-                              <option value="">Profil Utama ({username})</option>
                               {profiles.map(p => (
-                                <option key={p.id} value={p.slug}>{p.title} ({p.slug})</option>
+                                <option key={p.id} value={p.slug}>{p.title || 'Profil Utama'} ({p.slug})</option>
                               ))}
+                              {profiles.length === 0 && (
+                                <option value="">Profil Utama ({username})</option>
+                              )}
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
                           </div>
