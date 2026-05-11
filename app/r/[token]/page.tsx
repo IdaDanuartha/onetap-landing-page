@@ -15,8 +15,17 @@ export default function RedirectPage({ params }: RedirectPageProps) {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
+
   // Check if link is protected or not on mount
   useEffect(() => {
+    // SECURITY: If there's a password in the URL (?p=...), strip it immediately
+    // so it's not visible in the address bar.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('p')) {
+      url.searchParams.delete('p');
+      window.history.replaceState({}, '', url.toString());
+    }
+
     async function checkLink() {
       try {
         const res = await fetch(`/api/links/unlock/${token}`, {
@@ -109,107 +118,79 @@ export default function RedirectPage({ params }: RedirectPageProps) {
     );
   }
 
+
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-6"
-      style={{ background: 'var(--color-bg)' }}
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ backgroundColor: '#FAFAFA' }}
     >
-      {/* Background blobs */}
-      <div
-        className="fixed top-20 right-10 w-72 h-72 blob pointer-events-none"
-        style={{ background: 'var(--color-primary-soft)', opacity: 0.12 }}
-      />
-      <div
-        className="fixed bottom-20 left-10 w-48 h-48 blob pointer-events-none"
-        style={{ background: 'var(--color-primary-soft)', opacity: 0.08 }}
-      />
-
-      <div className="card max-w-sm w-full overflow-hidden p-0 relative z-10">
+      <div className="w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl shadow-black/5 overflow-hidden border border-gray-100">
         {/* Top accent bar */}
-        <div className="h-1.5 w-full" style={{ background: 'var(--color-primary)' }} />
+        <div className="h-2 w-full bg-[#FF5FA2]" />
 
-        <div className="p-8 flex flex-col items-center text-center gap-6">
+        <div className="p-8 flex flex-col items-center text-center">
           {/* Logo */}
-          <Image src="/images/logo_simple.png" alt="OneTap" width={44} height={44} className="object-contain" />
-
-          {/* Lock icon */}
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center"
-            style={{ background: 'var(--color-primary-light)' }}
-          >
-            <Lock className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />
+          <div className="mb-8">
+            <Image src="/images/logo_simple.png" alt="OneTap" width={60} height={60} className="object-contain" />
           </div>
 
-          <div>
-            <h1
-              className="text-2xl font-bold mb-1"
-              style={{ color: 'var(--color-text-dark)' }}
-            >
+          {/* Lock icon */}
+          <div className="w-20 h-20 rounded-3xl bg-[#FFF1F7] flex items-center justify-center mb-6">
+            <Lock className="w-10 h-10 text-[#FF5FA2]" />
+          </div>
+
+          <div className="mb-8">
+            <h1 className="text-2xl font-black text-[#0F172A] mb-2">
               Link Terproteksi
             </h1>
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-              Konten ini dilindungi password. Masukkan password untuk melanjutkan.
+            <p className="text-sm text-[#64748B] leading-relaxed">
+              Konten ini dilindungi password.<br />Masukkan password untuk melanjutkan.
             </p>
           </div>
 
-          <div className="w-full space-y-3">
-            <input
-              id="link-password"
-              type="password"
-              placeholder="••••••••"
-              className="w-full h-12 px-4 text-center text-lg tracking-widest rounded-xl border transition-all outline-none focus:ring-2"
-              style={{
-                background: 'var(--color-bg)',
-                border: '1.5px solid var(--color-border)',
-                color: 'var(--color-text-dark)',
-              }}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
-              autoFocus
-            />
+          <div className="w-full space-y-4">
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="Password Link"
+                className="w-full h-14 px-6 text-center text-lg tracking-[0.3em] rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#FF5FA2]/20 focus:bg-white outline-none transition-all"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+                autoFocus
+              />
+            </div>
+
             {error && (
-              <div
-                className="flex items-center justify-center gap-2 text-sm font-medium"
-                style={{ color: '#DC2626' }}
-              >
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-red-500 py-1">
+                <AlertCircle className="w-4 h-4" />
                 {error}
               </div>
             )}
 
             <button
-              id="unlock-btn"
               onClick={handleUnlock}
               disabled={loading || !password}
-              className="btn-primary w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-14 rounded-2xl bg-[#0F172A] text-white font-black text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-xl shadow-black/10"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
                   Buka Link
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
           </div>
 
-          <p
-            className="text-xs font-semibold uppercase tracking-widest"
-            style={{ color: 'var(--color-text-muted)', letterSpacing: '0.2em' }}
-          >
-            Powered by OneTap NFC
-          </p>
+          <div className="mt-12 flex flex-col items-center gap-1 opacity-40">
+            <span className="text-[10px] font-black tracking-[0.2em] text-[#0F172A] uppercase">
+              Powered by OneTap NFC
+            </span>
+          </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }
