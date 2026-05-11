@@ -14,11 +14,13 @@ import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { dict } from '@/lib/i18n/dict';
+import jsQR from 'jsqr';
 
-type Mode = 'profile' | 'url' | 'text' | 'phone' | 'sms' | 'email' | 'whatsapp' | 'payment' | 'erase';
+type Mode = 'profile' | 'url' | 'text' | 'phone' | 'sms' | 'email' | 'whatsapp' | 'payment' | 'erase' | 'bridge';
 
 const MODE_OPTIONS: { id: Mode; label: string; icon: any; placeholder?: string }[] = [
   { id: 'profile', label: 'Profil Digital', icon: User, placeholder: 'onetap-charm.com/l/...' },
+  { id: 'bridge', label: 'Payment Bridge', icon: Zap, placeholder: 'QRIS Bridge Page' },
   { id: 'url', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
   { id: 'text', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
   { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
@@ -49,6 +51,51 @@ export default function ConnectNfcPage() {
   const [paymentPlatform, setPaymentPlatform] = useState<'gopay' | 'ovo' | 'dana' | 'shopeepay' | 'linkaja'>('gopay');
   const [merchantId, setMerchantId] = useState('');
   const [qrisUrl, setQrisUrl] = useState('');
+  
+  // Bridge states
+  const [qrisData, setQrisData] = useState('');
+  const [isDecoding, setIsDecoding] = useState(false);
+  const [merchantName, setMerchantName] = useState('');
+
+  const handleQrisUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsDecoding(true);
+    setError('');
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d')!;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        context.drawImage(img, 0, 0, img.width, img.height);
+        const imageData = context.getImageData(0, 0, img.width, img.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+        if (code) {
+          setQrisData(code.data);
+          // Try to extract merchant name (Tag 59 in EMVCo QRIS)
+          const match = code.data.match(/59(\d{2})(.{1,99})60/);
+          if (match) {
+            const length = parseInt(match[1]);
+            setMerchantName(match[2].substring(0, length));
+          } else {
+            setMerchantName('QRIS Detected');
+          }
+        } else {
+          setError('Gagal membaca kode QRIS. Pastikan gambar jelas.');
+        }
+        setIsDecoding(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
   const { locale, setLocale } = useLanguage();
   const d = dict[locale].dashboard.nfc || { title: 'NFC Activator' };
   
@@ -144,8 +191,19 @@ export default function ConnectNfcPage() {
           else if (paymentPlatform === 'shopeepay') payload = `shopeepay://pay?merchant_id=${merchantId}`;
           else if (paymentPlatform === 'linkaja') payload = `linkaja://pay?merchant_id=${merchantId}`;
         } else {
-          payload = qrisUrl;
           if (!payload.startsWith('http')) payload = `https://${payload}`;
+        }
+      } else if (mode === 'bridge') {
+        const slug = selectedProfileSlug || username;
+        payload = `https://onetap-charm.com/pay/${slug}`;
+        
+        // Save QRIS data to database
+        if (qrisData) {
+          const supabase = createClient();
+          await supabase
+            .from('linktree_pages')
+            .update({ qris_data: qrisData })
+            .eq('slug', slug);
         }
       }
 
@@ -410,6 +468,66 @@ export default function ConnectNfcPage() {
                             placeholder={dict[locale].dashboard.nfc.payment.qrisPlaceholder}
                             className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
                           />
+                        )}
+                      </div>
+                    ) : mode === 'bridge' ? (
+                      <div className="space-y-4 mt-3">
+                        <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl p-4">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+                            Pilih Profil Digital
+                          </label>
+                          <div className="relative">
+                            <select 
+                              value={selectedProfileSlug}
+                              onChange={(e) => setSelectedProfileSlug(e.target.value)}
+                              className="w-full bg-white border border-[#F1F5F9] rounded-lg px-3 py-2 text-xs font-bold text-[#18080F] outline-none appearance-none"
+                            >
+                              <option value="">Profil Utama ({username})</option>
+                              {profiles.map(p => (
+                                <option key={p.id} value={p.slug}>{p.title} ({p.slug})</option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                          </div>
+                        </div>
+
+                        <div className="relative">
+                          <input 
+                            type="file"
+                            accept="image/*"
+                            onChange={handleQrisUpload}
+                            id="qris-upload"
+                            className="hidden"
+                          />
+                          <label 
+                            htmlFor="qris-upload"
+                            className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${qrisData ? 'bg-green-50 border-green-200 text-green-600' : 'bg-white border-slate-100 text-slate-400 hover:border-[#FF5FA2]/30 hover:bg-[#FF5FA2]/5'}`}
+                          >
+                            {isDecoding ? (
+                              <Loader2 className="w-8 h-8 animate-spin" />
+                            ) : qrisData ? (
+                              <CheckCircle2 className="w-8 h-8" />
+                            ) : (
+                              <QrCode className="w-8 h-8" />
+                            )}
+                            <div className="text-center">
+                              <p className="text-xs font-bold">
+                                {isDecoding ? 'Memproses...' : qrisData ? 'QRIS Berhasil Discan' : 'Upload Foto QRIS Anda'}
+                              </p>
+                              {merchantName && (
+                                <p className="text-[10px] font-medium opacity-70 mt-1">{merchantName}</p>
+                              )}
+                            </div>
+                          </label>
+                        </div>
+                        
+                        {qrisData && (
+                          <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-100 rounded-xl">
+                            <Info className="w-4 h-4 text-yellow-500 shrink-0" />
+                            <p className="text-[10px] font-bold text-yellow-700 leading-tight">
+                              NFC akan membuka halaman khusus dengan pilihan tombol Bank/E-Wallet otomatis.
+                            </p>
+                          </div>
                         )}
                       </div>
                     ) : (
