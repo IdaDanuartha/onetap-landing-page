@@ -162,19 +162,30 @@ export default function ConnectNfcPage() {
 
       let finalPayload = data.trim();
       const slug = selectedProfileSlug || username;
+      const tagPass = nfcPassword || linkPassword;
+      const selectedPage = profiles.find(p => p.slug === selectedProfileSlug || p.id === selectedProfileSlug);
 
       if (mode === 'profile') {
         finalPayload = `https://onetap-charm.com/l/${slug}`;
-        if (linkPassword) {
-          finalPayload += `?p=${encodeURIComponent(linkPassword)}`;
+        if (selectedPage) {
+          const supabase = createClient();
+          await supabase
+            .from('linktree_pages')
+            .update({ password: linkPassword || null })
+            .eq('id', selectedPage.id);
         }
-
-        // Save password to database for link protection
-        const supabase = createClient();
-        await supabase
-          .from('linktree_pages')
-          .update({ password: linkPassword || null })
-          .eq('slug', slug);
+      } else if (mode === 'bridge') {
+        finalPayload = `https://onetap-charm.com/pay/${slug}`;
+        if (selectedPage && (qrisData || linkPassword)) {
+          const supabase = createClient();
+          await supabase
+            .from('linktree_pages')
+            .update({ 
+              qris_data: qrisData || null,
+              password: linkPassword || null
+            })
+            .eq('id', selectedPage.id);
+        }
       } else if (mode === 'url') {
         if (!finalPayload.startsWith('http')) finalPayload = `https://${finalPayload}`;
       } else if (mode === 'whatsapp') {
@@ -196,20 +207,11 @@ export default function ConnectNfcPage() {
         } else {
           if (!finalPayload.startsWith('http')) finalPayload = `https://${finalPayload}`;
         }
-      } else if (mode === 'bridge') {
-        finalPayload = `https://onetap-charm.com/pay/${slug}`;
-        
-        // Save QRIS data and password to database
-        if (qrisData || linkPassword) {
-          const supabase = createClient();
-          await supabase
-            .from('linktree_pages')
-            .update({ 
-              qris_data: qrisData || null,
-              password: linkPassword || null
-            })
-            .eq('slug', slug);
-        }
+      }
+
+      // Append password to all URL-based payloads
+      if (tagPass && (mode === 'profile' || mode === 'bridge' || mode === 'url' || mode === 'whatsapp' || mode === 'payment')) {
+        finalPayload += (finalPayload.includes('?') ? '&' : '?') + `p=${encodeURIComponent(tagPass)}`;
       }
 
       const ndef = new (window as any).NDEFReader();
@@ -221,26 +223,25 @@ export default function ConnectNfcPage() {
         let existingPass = '';
 
         for (const record of message.records) {
-          if (record.recordType === 'url') {
-            const decoder = new TextDecoder();
-            const url = decoder.decode(record.data);
-            if (url.includes('?p=')) {
+          const decoder = new TextDecoder();
+          const rawData = decoder.decode(record.data);
+          
+          // More robust detection: check for p= in any record (url or text)
+          if (rawData.includes('p=')) {
+            const match = rawData.match(/[?&]p=([^& \n\r\t]+)/);
+            if (match) {
               isProtected = true;
-              const urlObj = new URL(url);
-              existingPass = urlObj.searchParams.get('p') || '';
+              existingPass = decodeURIComponent(match[1]);
             }
           }
         }
 
-        if (isProtected && existingPass !== linkPassword) {
-          // If the tag is protected and the user didn't provide the matching password in the field
+        if (isProtected && existingPass !== tagPass) {
           setError(dict[locale].protection.tagProtected);
           setIsConnecting(false);
-          // Stop scanning to prevent multiple triggers
           return;
         }
 
-        // Proceed to write
         try {
           let record: any;
           if (mode === 'erase') {
@@ -252,9 +253,7 @@ export default function ConnectNfcPage() {
             };
           }
 
-          await ndef.write({
-            records: [record],
-          });
+          await ndef.write({ records: [record] });
           setConnected(true);
           setIsConnecting(false);
         } catch (err) {
@@ -621,7 +620,7 @@ export default function ConnectNfcPage() {
                   <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
                     <Lock className="w-4 h-4" />
                   </div>
-                  <span className="text-sm font-bold text-[#18080F]">Keamanan Lanjutan</span>
+                  <span className="text-sm font-bold text-[#18080F]">{dict[locale].protection.advanced}</span>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showSecurity ? 'rotate-180' : ''}`} />
               </button>
@@ -638,16 +637,16 @@ export default function ConnectNfcPage() {
                       <div className="space-y-3">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                           <Globe className="w-3 h-3" />
-                          Password Proteksi Link
+                          {dict[locale].protection.linkPassLabel}
                         </label>
                         <input 
                           type="password"
                           value={linkPassword}
                           onChange={(e) => setLinkPassword(e.target.value)}
-                          placeholder="Kosongkan jika tidak perlu"
+                          placeholder={dict[locale].protection.linkPassPlaceholder}
                           className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 text-sm font-medium focus:bg-white focus:border-[#FF5FA2] outline-none transition-all"
                         />
-                        <p className="text-[10px] text-gray-400">Pintu masuk link akan memerlukan password ini.</p>
+                        <p className="text-[10px] text-gray-400">{dict[locale].protection.linkPassInfo}</p>
                       </div>
 
                       <div className="h-px bg-gray-50" />
@@ -655,14 +654,14 @@ export default function ConnectNfcPage() {
                       <div className="space-y-3">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                           <Smartphone className="w-3 h-3" />
-                          Password Proteksi Tag NFC
+                          {dict[locale].protection.tagPassLabel}
                         </label>
                         <div className="relative">
                           <input 
                             type={showNfcPass ? "text" : "password"}
                             value={nfcPassword}
                             onChange={(e) => setNfcPassword(e.target.value)}
-                            placeholder="Mencegah orang lain me-write ulang"
+                            placeholder={dict[locale].protection.tagPassPlaceholder}
                             className="w-full px-4 py-3 pr-10 rounded-xl bg-gray-50 border border-gray-100 text-sm font-medium focus:bg-white focus:border-[#FF5FA2] outline-none transition-all"
                           />
                           <button 
@@ -672,7 +671,7 @@ export default function ConnectNfcPage() {
                             {showNfcPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
-                        <p className="text-[10px] text-gray-400">Chip akan terkunci secara fisik (NFC Protection).</p>
+                        <p className="text-[10px] text-gray-400">{dict[locale].protection.tagPassInfo}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -683,8 +682,8 @@ export default function ConnectNfcPage() {
             {/* Steps */}
             <div className="grid sm:grid-cols-2 gap-4 text-left">
               {[
-                { icon: Smartphone, text: 'Buka di Chrome Android' },
-                { icon: Info, text: 'Tempel keychain di belakang HP' },
+                { icon: Smartphone, text: dict[locale].protection.step1 },
+                { icon: Info, text: dict[locale].protection.step2 },
               ].map((step, i) => (
                 <div key={i} className="p-5 bg-white/50 border border-[#F6B7C8]/10 rounded-2xl flex items-center gap-3">
                   <step.icon className="w-5 h-5 text-[#FF5FA2]" />
@@ -726,12 +725,12 @@ export default function ConnectNfcPage() {
               {isConnecting ? (
                 <>
                   <Loader2 className="w-6 h-6 animate-spin" />
-                  Mencari Tag...
+                  {dict[locale].protection.searching}
                 </>
               ) : (
                 <>
                   <Zap className="w-6 h-6" />
-                  Mulai Proses Aktivasi
+                  {dict[locale].protection.startBtn}
                 </>
               )}
             </button>
