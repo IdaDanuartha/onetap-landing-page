@@ -236,7 +236,7 @@ function NFCWriter() {
       exit="exit"
       className="w-full max-w-2xl mx-auto"
     >
-      <div className="bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_60px_-15px_rgba(255,95,162,0.12)] rounded-[2.5rem] overflow-hidden relative">
+      <div className="bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_60px_-15px_rgba(255,95,162,0.12)] rounded-[2.5rem] relative">
         
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-100/40 rounded-full blur-3xl pointer-events-none" />
@@ -302,7 +302,8 @@ function NFCWriter() {
             
             {/* Left Column: Type Selection */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar mb-2">
+              <div className="relative">
+                <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide no-scrollbar mb-2 -mx-1 px-1 touch-pan-x">
                 {MODE_CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
@@ -317,6 +318,9 @@ function NFCWriter() {
                     {cat.label}
                   </button>
                 ))}
+                </div>
+                {/* Fade indicators for scroll */}
+                <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white/50 to-transparent pointer-events-none md:hidden" />
               </div>
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.mode')}</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -348,7 +352,7 @@ function NFCWriter() {
             <div className="flex flex-col">
               <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.content')}</h3>
               
-              <div className="flex-1 bg-slate-50 rounded-3xl p-6 border border-slate-100/50">
+              <div className="flex-1 bg-slate-50 rounded-3xl p-6 border border-slate-100/50 min-h-[320px] overflow-y-auto max-h-[60vh] md:max-h-none">
                 {recordType === "erase" ? (
                   <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">

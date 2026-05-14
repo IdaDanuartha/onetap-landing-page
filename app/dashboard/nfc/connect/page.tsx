@@ -564,7 +564,8 @@ export default function ConnectNfcPage() {
         {!connected && (
           <div className="space-y-6">
             {/* Category Selection */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
+            <div className="relative">
+              <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide no-scrollbar -mx-1 px-1 touch-pan-x">
               {MODE_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
@@ -579,6 +580,8 @@ export default function ConnectNfcPage() {
                   {cat.label}
                 </button>
               ))}
+              </div>
+              <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white/50 to-transparent pointer-events-none md:hidden" />
             </div>
 
             {/* Mode Selection Grid (Filtered by Category) */}
