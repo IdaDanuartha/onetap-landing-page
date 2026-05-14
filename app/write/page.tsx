@@ -251,16 +251,16 @@ function NFCWriter() {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="w-full max-w-2xl mx-auto px-2 sm:px-0"
+      className="w-full max-w-2xl mx-auto flex justify-center"
     >
-      <div className="bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_60px_-15px_rgba(255,95,162,0.12)] rounded-[1.5rem] sm:rounded-[2.5rem] relative">
+      <div className="w-[calc(100vw-24px)] sm:w-full bg-white/90 backdrop-blur-2xl border border-white/50 shadow-[0_20px_60px_-15px_rgba(255,95,162,0.12)] rounded-[1.5rem] sm:rounded-[2.5rem] relative overflow-hidden">
         
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-100/40 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50/40 rounded-full blur-3xl pointer-events-none" />
 
         {/* Header Section */}
-        <div className="px-8 pt-10 pb-8 text-center relative z-10 border-b border-slate-100">
+        <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-6 sm:pb-8 text-center relative z-10 border-b border-slate-100">
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -276,7 +276,7 @@ function NFCWriter() {
         </div>
         
         {/* Upsell Banner */}
-        <div className="px-8 mt-6">
+        <div className="px-4 sm:px-8 mt-6">
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -315,31 +315,31 @@ function NFCWriter() {
         </div>
 
         <div className="p-4 sm:p-8 relative z-10">
-          <div className="grid md:grid-cols-[1fr_1.2fr] gap-8">
+          <div className="grid md:grid-cols-[1fr_1.2fr] gap-6 sm:gap-8">
             
             {/* Left Column: Type Selection */}
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-hidden">
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.type')}</h3>
+              
               <div className="relative">
-                <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide no-scrollbar mb-2 -mx-1 px-1 touch-pan-x">
+                <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide no-scrollbar mb-2 px-1 touch-pan-x">
                 {MODE_CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full border whitespace-nowrap transition-all text-[10px] font-bold ${
+                    className={`whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-full border-2 transition-all text-xs sm:text-sm font-bold ${
                       activeCategory === cat.id
-                        ? 'bg-primary-500 border-primary-500 text-white shadow-md'
-                        : 'bg-white border-slate-200 text-slate-500 hover:border-primary-300'
+                        ? 'bg-primary-500 border-primary-500 text-white shadow-md shadow-primary-500/20'
+                        : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'
                     }`}
                   >
-                    <cat.icon className="w-3 h-3" />
+                    <cat.icon className="w-4 h-4" />
                     {cat.label}
                   </button>
                 ))}
                 </div>
-                {/* Fade indicators for scroll */}
-                <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white/50 to-transparent pointer-events-none md:hidden" />
               </div>
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.mode')}</h3>
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.mode')}</h3>
               <div className="grid grid-cols-2 gap-3">
                 {TYPE_OPTIONS.filter(m => m.category === activeCategory).map((t) => {
                   const Icon = t.icon;
@@ -681,7 +681,7 @@ function WritePageContent() {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 flex items-center justify-center px-4 py-8 relative z-10">
+        <main className="flex-1 flex flex-col items-center py-6 sm:py-10 px-3 sm:px-6 relative z-10 overflow-x-hidden">
           <AnimatePresence mode="wait">
             <NFCWriter key="writer" />
           </AnimatePresence>
