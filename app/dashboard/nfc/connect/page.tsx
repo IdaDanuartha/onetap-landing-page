@@ -6,9 +6,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { 
   ArrowLeft, CheckCircle2, Wifi, AlertCircle, Loader2, 
-  Smartphone, Globe, Activity, Info, Lock, ShieldCheck, 
   User, Link2, Type, Phone, MessageSquare, Mail, ChevronDown,
-  Eye, EyeOff, Zap, Eraser, MessageCircle, CreditCard, Wallet, QrCode
+  Eye, EyeOff, Zap, Eraser, MessageCircle, CreditCard, Wallet, QrCode,
+  Contact2, Bluetooth, AppWindow, MapPin, Navigation, Map, Search,
+  Share2, Globe, Building2, ShieldCheck, Info, Smartphone, Activity,
+  Lock, Shield, Sparkles
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,19 +18,51 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { dict } from '@/lib/i18n/dict';
 import jsQR from 'jsqr';
 
-type Mode = 'profile' | 'url' | 'text' | 'phone' | 'sms' | 'email' | 'whatsapp' | 'payment' | 'erase' | 'bridge';
+type Mode = 
+  | 'profile' | 'vcard' | 'bridge' 
+  | 'whatsapp' | 'phone' | 'sms' | 'email' 
+  | 'wifi' | 'bluetooth' | 'app' 
+  | 'location' | 'navigation' | 'streetview' 
+  | 'url' | 'text' | 'payment' | 'erase';
 
-const MODE_OPTIONS: { id: Mode; label: string; icon: any; placeholder?: string }[] = [
-  { id: 'profile', label: 'Profil Digital', icon: User, placeholder: 'onetap-charm.com/l/...' },
-  { id: 'bridge', label: 'Payment Bridge', icon: Zap, placeholder: 'QRIS Bridge Page' },
-  { id: 'url', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
-  { id: 'text', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
-  { id: 'payment', label: 'Pembayaran', icon: CreditCard, placeholder: 'Gopay/OVO/QRIS' },
-  { id: 'phone', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
-  { id: 'sms', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
-  { id: 'email', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
-  { id: 'erase', label: 'Format NFC', icon: Eraser, placeholder: 'Hapus data' },
+const MODE_CATEGORIES = [
+  { id: 'networking', label: 'Networking', icon: User },
+  { id: 'communication', label: 'Komunikasi', icon: MessageCircle },
+  { id: 'connectivity', label: 'Konektivitas', icon: Wifi },
+  { id: 'maps', label: 'Maps', icon: MapPin },
+  { id: 'social', label: 'Sosial', icon: Globe },
+  { id: 'utility', label: 'Utilitas', icon: Activity },
+];
+
+const MODE_OPTIONS: { id: Mode; category: string; label: string; icon: any; placeholder?: string }[] = [
+  // Networking
+  { id: 'profile', category: 'networking', label: 'Profil Digital', icon: User, placeholder: 'onetap-charm.com/l/...' },
+  { id: 'vcard', category: 'networking', label: 'Kontak (vCard)', icon: Contact2, placeholder: 'Nama & No HP' },
+  { id: 'bridge', category: 'networking', label: 'Payment Bridge', icon: Zap, placeholder: 'QRIS Bridge Page' },
+  
+  // Communication
+  { id: 'whatsapp', category: 'communication', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
+  { id: 'phone', category: 'communication', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
+  { id: 'sms', category: 'communication', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
+  { id: 'email', category: 'communication', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
+
+  // Connectivity
+  { id: 'wifi', category: 'connectivity', label: 'Wi-Fi Network', icon: Wifi, placeholder: 'SSID & Password' },
+  { id: 'bluetooth', category: 'connectivity', label: 'Bluetooth', icon: Bluetooth, placeholder: 'Mac Address' },
+  { id: 'app', category: 'connectivity', label: 'Open App', icon: AppWindow, placeholder: 'com.package.name' },
+
+  // Maps
+  { id: 'location', category: 'maps', label: 'Lokasi (Geo)', icon: MapPin, placeholder: 'Lat, Lng' },
+  { id: 'navigation', category: 'maps', label: 'Navigasi', icon: Navigation, placeholder: 'Alamat Tujuan' },
+  { id: 'streetview', category: 'maps', label: 'Street View', icon: Map, placeholder: 'Lat, Lng' },
+
+  // Social
+  { id: 'url', category: 'social', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
+  { id: 'text', category: 'social', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
+  { id: 'payment', category: 'social', label: 'Pembayaran', icon: CreditCard, placeholder: 'Gopay/OVO/QRIS' },
+  
+  // Utility
+  { id: 'erase', category: 'utility', label: 'Format NFC', icon: Eraser, placeholder: 'Hapus data' },
 ];
 
 export default function ConnectNfcPage() {
@@ -45,6 +79,16 @@ export default function ConnectNfcPage() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [selectedProfileSlug, setSelectedProfileSlug] = useState('');
   const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('networking');
+
+  // New Mode States
+  const [vcardData, setVcardData] = useState({ firstName: '', lastName: '', phone: '', email: '', org: '' });
+  const [wifiData, setWifiData] = useState({ ssid: '', password: '', encryption: 'WPA' });
+  const [btAddress, setBtAddress] = useState('');
+  const [appPackage, setAppPackage] = useState('');
+  const [geoData, setGeoData] = useState({ lat: '', lng: '' });
+  const [navAddress, setNavAddress] = useState('');
+  const [svData, setSvData] = useState({ lat: '', lng: '' });
   
   // Payment states
   const [paymentType, setPaymentType] = useState<'deepLink' | 'qris'>('deepLink');
@@ -245,6 +289,20 @@ export default function ConnectNfcPage() {
         } else {
           if (!finalPayload.startsWith('http')) finalPayload = `https://${finalPayload}`;
         }
+      } else if (mode === 'vcard') {
+        finalPayload = `BEGIN:VCARD\nVERSION:3.0\nFN:${vcardData.firstName} ${vcardData.lastName}\nN:${vcardData.lastName};${vcardData.firstName};;;\nTEL;TYPE=CELL:${vcardData.phone}\nEMAIL:${vcardData.email}\nORG:${vcardData.org}\nEND:VCARD`;
+      } else if (mode === 'wifi') {
+        finalPayload = `WIFI:S:${wifiData.ssid};T:${wifiData.encryption};P:${wifiData.password};;`;
+      } else if (mode === 'location') {
+        finalPayload = `geo:${geoData.lat},${geoData.lng}`;
+      } else if (mode === 'navigation') {
+        finalPayload = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(navAddress)}`;
+      } else if (mode === 'streetview') {
+        finalPayload = `google.streetview:cbll=${svData.lat},${svData.lng}`;
+      } else if (mode === 'app') {
+        finalPayload = appPackage; // Will be used as external record
+      } else if (mode === 'bluetooth') {
+        finalPayload = btAddress;
       }
 
 
@@ -327,11 +385,22 @@ export default function ConnectNfcPage() {
           if (mode === 'erase') {
             records.push({ recordType: 'empty' });
           } else {
-            // Primary Data Record
-            records.push({
-              recordType: (mode === 'url' || mode === 'profile' || mode === 'whatsapp' || mode === 'payment' || mode === 'bridge') ? 'url' : 'text',
-              data: finalPayload, // finalPayload here is the URL WITHOUT ?p= (if we fixed it above)
-            });
+            let record: any = { recordType: 'url', data: finalPayload };
+
+            if (['text', 'bluetooth'].includes(mode)) {
+              record.recordType = 'text';
+            } else if (mode === 'vcard') {
+              record.recordType = 'mime';
+              record.mediaType = 'text/vcard';
+            } else if (mode === 'wifi') {
+              record.recordType = 'mime';
+              record.mediaType = 'application/vnd.wfa.wsc';
+              record.data = new TextEncoder().encode(finalPayload);
+            } else if (mode === 'app') {
+              record.recordType = 'android.com:pkg';
+            }
+
+            records.push(record);
 
             // Secondary Protection Record (Hidden from OS notifications)
             if (nfcPassword) {
@@ -362,6 +431,20 @@ export default function ConnectNfcPage() {
       }
       setIsConnecting(false);
     }
+  };
+
+  const isFormValid = () => {
+    if (mode === 'profile' || mode === 'erase') return true;
+    if (mode === 'bridge') return !!qrisData;
+    if (mode === 'vcard') return !!vcardData.firstName && !!vcardData.phone;
+    if (mode === 'wifi') return !!wifiData.ssid;
+    if (mode === 'location') return !!geoData.lat && !!geoData.lng;
+    if (mode === 'navigation') return !!navAddress;
+    if (mode === 'streetview') return !!svData.lat && !!svData.lng;
+    if (mode === 'app') return !!appPackage;
+    if (mode === 'whatsapp') return !!waNumber;
+    if (mode === 'payment') return paymentType === 'qris' ? !!qrisUrl : !!merchantId;
+    return !!data.trim();
   };
 
   const selectedMode = MODE_OPTIONS.find(m => m.id === mode)!;
@@ -480,9 +563,27 @@ export default function ConnectNfcPage() {
 
         {!connected && (
           <div className="space-y-6">
-            {/* Mode Selection */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {MODE_OPTIONS.map((m) => (
+            {/* Category Selection */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
+              {MODE_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border whitespace-nowrap transition-all text-xs font-bold ${
+                    activeCategory === cat.id
+                      ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-md'
+                      : 'bg-white border-[#F6B7C8]/20 text-gray-500 hover:border-[#FF5FA2]/30'
+                  }`}
+                >
+                  <cat.icon className="w-3.5 h-3.5" />
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Mode Selection Grid (Filtered by Category) */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {MODE_OPTIONS.filter(m => m.category === activeCategory).map((m) => (
                 <button
                   key={m.id}
                   onClick={() => { setMode(m.id); setData(''); }}
@@ -618,7 +719,7 @@ export default function ConnectNfcPage() {
                           />
                         )}
                       </div>
-                    ) : mode === 'bridge' ? (
+                     ) : mode === 'bridge' ? (
                       <div className="space-y-4 mt-3">
                         <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl p-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
@@ -679,6 +780,146 @@ export default function ConnectNfcPage() {
                             </p>
                           </div>
                         )}
+                      </div>
+                    ) : mode === 'vcard' ? (
+                      <div className="space-y-3 mt-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <input 
+                            type="text"
+                            value={vcardData.firstName}
+                            onChange={(e) => setVcardData({...vcardData, firstName: e.target.value})}
+                            placeholder="Nama Depan"
+                            className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                          />
+                          <input 
+                            type="text"
+                            value={vcardData.lastName}
+                            onChange={(e) => setVcardData({...vcardData, lastName: e.target.value})}
+                            placeholder="Nama Belakang"
+                            className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                          />
+                        </div>
+                        <input 
+                          type="text"
+                          value={vcardData.phone}
+                          onChange={(e) => setVcardData({...vcardData, phone: e.target.value})}
+                          placeholder="No. Telepon"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                        <input 
+                          type="email"
+                          value={vcardData.email}
+                          onChange={(e) => setVcardData({...vcardData, email: e.target.value})}
+                          placeholder="Email"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                        <input 
+                          type="text"
+                          value={vcardData.org}
+                          onChange={(e) => setVcardData({...vcardData, org: e.target.value})}
+                          placeholder="Perusahaan / Organisasi"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                      </div>
+                    ) : mode === 'wifi' ? (
+                      <div className="space-y-3 mt-2">
+                        <input 
+                          type="text"
+                          value={wifiData.ssid}
+                          onChange={(e) => setWifiData({...wifiData, ssid: e.target.value})}
+                          placeholder="SSID (Nama Wi-Fi)"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                        <div className="relative">
+                          <input 
+                            type={showNfcPass ? "text" : "password"}
+                            value={wifiData.password}
+                            onChange={(e) => setWifiData({...wifiData, password: e.target.value})}
+                            placeholder="Password Wi-Fi"
+                            className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                          />
+                          <button 
+                            type="button"
+                            onClick={() => setShowNfcPass(!showNfcPass)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          >
+                            {showNfcPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        <select 
+                          value={wifiData.encryption}
+                          onChange={(e) => setWifiData({...wifiData, encryption: e.target.value})}
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all appearance-none"
+                        >
+                          <option value="WPA">WPA / WPA2</option>
+                          <option value="WEP">WEP</option>
+                          <option value="None">Tanpa Password</option>
+                        </select>
+                      </div>
+                    ) : mode === 'location' ? (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <input 
+                          type="text"
+                          value={geoData.lat}
+                          onChange={(e) => setGeoData({...geoData, lat: e.target.value})}
+                          placeholder="Latitude"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                        <input 
+                          type="text"
+                          value={geoData.lng}
+                          onChange={(e) => setGeoData({...geoData, lng: e.target.value})}
+                          placeholder="Longitude"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                      </div>
+                    ) : mode === 'navigation' ? (
+                      <div className="space-y-3 mt-2">
+                        <input 
+                          type="text"
+                          value={navAddress}
+                          onChange={(e) => setNavAddress(e.target.value)}
+                          placeholder="Alamat Tujuan (Nama Tempat/Alamat)"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                      </div>
+                    ) : mode === 'streetview' ? (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <input 
+                          type="text"
+                          value={svData.lat}
+                          onChange={(e) => setSvData({...svData, lat: e.target.value})}
+                          placeholder="Latitude"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                        <input 
+                          type="text"
+                          value={svData.lng}
+                          onChange={(e) => setSvData({...svData, lng: e.target.value})}
+                          placeholder="Longitude"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                      </div>
+                    ) : mode === 'app' ? (
+                      <div className="space-y-3 mt-2">
+                        <input 
+                          type="text"
+                          value={appPackage}
+                          onChange={(e) => setAppPackage(e.target.value)}
+                          placeholder="Contoh: com.whatsapp atau id.dana"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
+                        <p className="text-[10px] text-gray-400 px-1 italic">Membuka aplikasi otomatis di Android jika sudah terinstal.</p>
+                      </div>
+                    ) : mode === 'bluetooth' ? (
+                      <div className="space-y-3 mt-2">
+                        <input 
+                          type="text"
+                          value={btAddress}
+                          onChange={(e) => setBtAddress(e.target.value)}
+                          placeholder="Mac Address (Contoh: 00:11:22:33:FF:EE)"
+                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                        />
                       </div>
                     ) : (
                       <input 
@@ -799,37 +1040,31 @@ export default function ConnectNfcPage() {
               </motion.div>
             )}
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleConnectNfc}
-              disabled={
-                isConnecting || 
-                (mode === 'whatsapp' && !waNumber.trim()) ||
-                (mode === 'profile' && !selectedProfileSlug && !username) ||
-                (mode === 'bridge' && !qrisData) ||
-                (mode === 'payment' && paymentType === 'deepLink' && !merchantId.trim()) ||
-                (mode === 'payment' && paymentType === 'qris' && !qrisUrl.trim()) ||
-                (mode !== 'erase' && mode !== 'whatsapp' && mode !== 'profile' && mode !== 'bridge' && mode !== 'payment' && !data.trim())
-              }
-              className={`w-full py-5 rounded-[24px] font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${
-                isConnecting  
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              disabled={isConnecting || !isFormValid()}
+              className={`w-full py-4 sm:py-5 rounded-[24px] font-black text-sm sm:text-base uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-3 ${
+                isConnecting 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
                   : mode === 'erase'
-                    ? 'bg-red-500 text-white hover:bg-red-600 shadow-red-500/20'
-                    : 'bg-[#FF5FA2] text-white hover:bg-[#E8457E] shadow-[#FF5FA2]/20'
+                    ? 'bg-red-500 text-white shadow-red-500/20 hover:bg-red-600'
+                    : 'bg-[#FF5FA2] text-white shadow-[#FF5FA2]/20 hover:bg-[#E8457E]'
               }`}
             >
               {isConnecting ? (
                 <>
                   <Loader2 className="w-6 h-6 animate-spin" />
-                  {dict[locale].protection.searching}
+                  {dict[locale].protection.connecting || 'Menghubungkan...'}
                 </>
               ) : (
                 <>
                   <Zap className="w-6 h-6" />
-                  {dict[locale].protection.startBtn}
+                  {mode === 'erase' ? 'Format Tag Sekarang' : 'Aktifkan Keychain'}
                 </>
               )}
-            </button>
+            </motion.button>
           </div>
         )}
 

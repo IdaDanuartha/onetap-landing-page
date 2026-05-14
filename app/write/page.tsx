@@ -16,10 +16,23 @@ import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
-  SmartphoneNfc,
   MessageCircle,
   Sparkles,
-  Shield
+  Shield,
+  Contact2,
+  Bluetooth,
+  AppWindow,
+  MapPin,
+  Navigation,
+  Map,
+  Search,
+  Globe,
+  Activity,
+  User,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  Lock
 } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -52,7 +65,49 @@ async function writeCustomRecord(
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type RecordType = "url" | "text" | "phone" | "sms" | "email" | "erase" | "whatsapp";
+type RecordType = 
+  | 'vcard' | 'whatsapp' | 'phone' | 'sms' | 'email' 
+  | 'wifi' | 'bluetooth' | 'app' 
+  | 'location' | 'navigation' | 'streetview' 
+  | 'url' | 'text' | 'erase';
+
+const MODE_CATEGORIES = [
+  { id: 'networking', label: 'Networking', icon: User },
+  { id: 'communication', label: 'Komunikasi', icon: MessageCircle },
+  { id: 'connectivity', label: 'Konektivitas', icon: Wifi },
+  { id: 'maps', label: 'Maps', icon: MapPin },
+  { id: 'social', label: 'Sosial', icon: Globe },
+  { id: 'utility', label: 'Utilitas', icon: Activity },
+];
+
+const TYPE_OPTIONS: { id: RecordType; category: string; label: string; icon: any; placeholder?: string }[] = [
+  // Networking
+  { id: 'vcard', category: 'networking', label: 'Kontak (vCard)', icon: Contact2, placeholder: 'Nama & No HP' },
+  
+  // Communication
+  { id: 'whatsapp', category: 'communication', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
+  { id: 'phone', category: 'communication', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
+  { id: 'sms', category: 'communication', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
+  { id: 'email', category: 'communication', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
+
+  // Connectivity
+  { id: 'wifi', category: 'connectivity', label: 'Wi-Fi Network', icon: Wifi, placeholder: 'SSID & Password' },
+  { id: 'bluetooth', category: 'connectivity', label: 'Bluetooth', icon: Bluetooth, placeholder: 'Mac Address' },
+  { id: 'app', category: 'connectivity', label: 'Open App', icon: AppWindow, placeholder: 'com.package.name' },
+
+  // Maps
+  { id: 'location', category: 'maps', label: 'Lokasi (Geo)', icon: MapPin, placeholder: 'Lat, Lng' },
+  { id: 'navigation', category: 'maps', label: 'Navigasi', icon: Navigation, placeholder: 'Alamat Tujuan' },
+  { id: 'streetview', category: 'maps', label: 'Street View', icon: Map, placeholder: 'Lat, Lng' },
+
+  // Social
+  { id: 'url', category: 'social', label: 'Link Kustom', icon: LinkIcon, placeholder: 'https://...' },
+  { id: 'text', category: 'social', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
+  
+  // Utility
+  { id: 'erase', category: 'utility', label: 'Format NFC', icon: Eraser, placeholder: 'Hapus data' },
+];
+
 type WriteStatus = "idle" | "waiting";
 
 // ─── Animation variants ──────────────────────────────────────────────────────
@@ -62,30 +117,27 @@ const fadeUp: Variants = {
   exit: { opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.3 } },
 };
 
-
-// ─── NFC Writer ───────────────────────────────────────────────────────────────
-type IconComponent = React.FC<React.SVGProps<SVGSVGElement> & { className?: string }>;
-
-const TYPE_OPTIONS: { id: RecordType; label: string; icon: IconComponent; placeholder?: string }[] = [
-  { id: "url", label: "Link/URL", icon: LinkIcon as IconComponent, placeholder: "https://instagram.com/..." },
-  { id: "text", label: "Pesan Teks", icon: Type as IconComponent, placeholder: "Halo, ini keychain saya!" },
-  { id: "whatsapp", label: "WhatsApp", icon: MessageCircle as IconComponent, placeholder: "62812... (Pesan)" },
-  { id: "phone", label: "Telepon", icon: Phone as IconComponent, placeholder: "+62812..." },
-  { id: "sms", label: "Kirim SMS", icon: MessageSquare as IconComponent, placeholder: "+62812..." },
-  { id: "email", label: "Kirim Email", icon: Mail as IconComponent, placeholder: "nama@email.com" },
-  { id: "erase", label: "Format Ulang", icon: Eraser as IconComponent, placeholder: undefined },
-];
-
 function NFCWriter() {
   const { t } = useLanguage();
   const [supported, setSupported] = useState(true);
-  const [recordType, setRecordType] = useState<RecordType>("url");
+  const [recordType, setRecordType] = useState<RecordType>("vcard");
+  const [activeCategory, setActiveCategory] = useState("networking");
   const [data, setData] = useState("");
   const [waNumber, setWaNumber] = useState("");
   const [waMessage, setWaMessage] = useState("");
   const [writeStatus, setWriteStatus] = useState<WriteStatus>("idle");
   const [lastResult, setLastResult] = useState<"success" | "error" | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showPass, setShowPass] = useState(false);
+
+  // New Mode States
+  const [vcardData, setVcardData] = useState({ firstName: '', lastName: '', phone: '', email: '', org: '' });
+  const [wifiData, setWifiData] = useState({ ssid: '', password: '', encryption: 'WPA' });
+  const [btAddress, setBtAddress] = useState('');
+  const [appPackage, setAppPackage] = useState('');
+  const [geoData, setGeoData] = useState({ lat: '', lng: '' });
+  const [navAddress, setNavAddress] = useState('');
+  const [svData, setSvData] = useState({ lat: '', lng: '' });
 
   useEffect(() => {
     setSupported(isNFCSupported());
@@ -109,13 +161,45 @@ function NFCWriter() {
       payload = `sms:${payload.replace(/[^0-9+]/g, "")}`;
     } else if (recordType === "email") {
       payload = `mailto:${payload}`;
+    } else if (recordType === 'vcard') {
+      payload = `BEGIN:VCARD\nVERSION:3.0\nFN:${vcardData.firstName} ${vcardData.lastName}\nN:${vcardData.lastName};${vcardData.firstName};;;\nTEL;TYPE=CELL:${vcardData.phone}\nEMAIL:${vcardData.email}\nORG:${vcardData.org}\nEND:VCARD`;
+    } else if (recordType === 'wifi') {
+      payload = `WIFI:S:${wifiData.ssid};T:${wifiData.encryption};P:${wifiData.password};;`;
+    } else if (recordType === 'location') {
+      payload = `geo:${geoData.lat},${geoData.lng}`;
+    } else if (recordType === 'navigation') {
+      payload = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(navAddress)}`;
+    } else if (recordType === 'streetview') {
+      payload = `google.streetview:cbll=${svData.lat},${svData.lng}`;
+    } else if (recordType === 'app') {
+      payload = appPackage;
+    } else if (recordType === 'bluetooth') {
+      payload = btAddress;
     }
 
     setWriteStatus("waiting");
     setLastResult(null);
 
     try {
-      await writeCustomRecord(recordType === "phone" || recordType === "sms" || recordType === "email" ? "text" : (recordType === "whatsapp" ? "url" : recordType), payload);
+      const ndef = new (window as any).NDEFReader();
+      let record: any = { recordType: 'url', data: payload };
+
+      if (['text', 'phone', 'sms', 'email', 'bluetooth'].includes(recordType)) {
+        record.recordType = 'text';
+      } else if (recordType === 'vcard') {
+        record.recordType = 'mime';
+        record.mediaType = 'text/vcard';
+      } else if (recordType === 'wifi') {
+        record.recordType = 'mime';
+        record.mediaType = 'application/vnd.wfa.wsc';
+        record.data = new TextEncoder().encode(payload);
+      } else if (recordType === 'app') {
+        record.recordType = 'android.com:pkg';
+      } else if (recordType === 'erase') {
+        record.recordType = 'empty';
+      }
+
+      await ndef.write({ records: [record] });
       setLastResult("success");
     } catch (err) {
       setLastResult("error");
@@ -218,9 +302,25 @@ function NFCWriter() {
             
             {/* Left Column: Type Selection */}
             <div className="space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.mode')}</h3>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar mb-2">
+                {MODE_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border whitespace-nowrap transition-all text-[10px] font-bold ${
+                      activeCategory === cat.id
+                        ? 'bg-primary-500 border-primary-500 text-white shadow-md'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-primary-300'
+                    }`}
+                  >
+                    <cat.icon className="w-3 h-3" />
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.mode')}</h3>
               <div className="grid grid-cols-2 gap-3">
-                {TYPE_OPTIONS.map((t) => {
+                {TYPE_OPTIONS.filter(m => m.category === activeCategory).map((t) => {
                   const Icon = t.icon;
                   const active = recordType === t.id;
                   const isErase = t.id === "erase";
@@ -237,7 +337,7 @@ function NFCWriter() {
                       }`}
                     >
                       <Icon className={`w-6 h-6 ${active && !isErase ? "text-primary-500" : ""}`} />
-                      <span className="text-xs font-bold tracking-wide text-center">{t.label}</span>
+                      <span className="text-[10px] font-bold tracking-wide text-center uppercase">{t.label.split(' ')[0]}</span>
                     </button>
                   );
                 })}
@@ -260,6 +360,146 @@ function NFCWriter() {
                         {t('write.writer.erase.desc')}
                       </p>
                     </div>
+                  </div>
+                ) : recordType === "vcard" ? (
+                  <div className="space-y-3 mt-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input 
+                        type="text"
+                        value={vcardData.firstName}
+                        onChange={(e) => setVcardData({...vcardData, firstName: e.target.value})}
+                        placeholder="Nama Depan"
+                        className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                      />
+                      <input 
+                        type="text"
+                        value={vcardData.lastName}
+                        onChange={(e) => setVcardData({...vcardData, lastName: e.target.value})}
+                        placeholder="Nama Belakang"
+                        className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                      />
+                    </div>
+                    <input 
+                      type="text"
+                      value={vcardData.phone}
+                      onChange={(e) => setVcardData({...vcardData, phone: e.target.value})}
+                      placeholder="No. Telepon"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                    <input 
+                      type="email"
+                      value={vcardData.email}
+                      onChange={(e) => setVcardData({...vcardData, email: e.target.value})}
+                      placeholder="Email"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                    <input 
+                      type="text"
+                      value={vcardData.org}
+                      onChange={(e) => setVcardData({...vcardData, org: e.target.value})}
+                      placeholder="Perusahaan / Organisasi"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                  </div>
+                ) : recordType === "wifi" ? (
+                  <div className="space-y-3 mt-2">
+                    <input 
+                      type="text"
+                      value={wifiData.ssid}
+                      onChange={(e) => setWifiData({...wifiData, ssid: e.target.value})}
+                      placeholder="SSID (Nama Wi-Fi)"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                    <div className="relative">
+                      <input 
+                        type={showPass ? "text" : "password"}
+                        value={wifiData.password}
+                        onChange={(e) => setWifiData({...wifiData, password: e.target.value})}
+                        placeholder="Password Wi-Fi"
+                        className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setShowPass(!showPass)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      >
+                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <select 
+                      value={wifiData.encryption}
+                      onChange={(e) => setWifiData({...wifiData, encryption: e.target.value})}
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all appearance-none"
+                    >
+                      <option value="WPA">WPA / WPA2</option>
+                      <option value="WEP">WEP</option>
+                      <option value="None">Tanpa Password</option>
+                    </select>
+                  </div>
+                ) : recordType === "location" ? (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <input 
+                      type="text"
+                      value={geoData.lat}
+                      onChange={(e) => setGeoData({...geoData, lat: e.target.value})}
+                      placeholder="Latitude"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                    <input 
+                      type="text"
+                      value={geoData.lng}
+                      onChange={(e) => setGeoData({...geoData, lng: e.target.value})}
+                      placeholder="Longitude"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                  </div>
+                ) : recordType === "navigation" ? (
+                  <div className="space-y-3 mt-2">
+                    <input 
+                      type="text"
+                      value={navAddress}
+                      onChange={(e) => setNavAddress(e.target.value)}
+                      placeholder="Alamat Tujuan (Nama Tempat/Alamat)"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                  </div>
+                ) : recordType === "streetview" ? (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <input 
+                      type="text"
+                      value={svData.lat}
+                      onChange={(e) => setSvData({...svData, lat: e.target.value})}
+                      placeholder="Latitude"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                    <input 
+                      type="text"
+                      value={svData.lng}
+                      onChange={(e) => setSvData({...svData, lng: e.target.value})}
+                      placeholder="Longitude"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                  </div>
+                ) : recordType === "app" ? (
+                  <div className="space-y-3 mt-2">
+                    <input 
+                      type="text"
+                      value={appPackage}
+                      onChange={(e) => setAppPackage(e.target.value)}
+                      placeholder="Contoh: com.whatsapp atau id.dana"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
+                    <p className="text-[10px] text-gray-400 px-1 italic">Membuka aplikasi otomatis di Android jika sudah terinstal.</p>
+                  </div>
+                ) : recordType === "bluetooth" ? (
+                  <div className="space-y-3 mt-2">
+                    <input 
+                      type="text"
+                      value={btAddress}
+                      onChange={(e) => setBtAddress(e.target.value)}
+                      placeholder="Mac Address (Contoh: 00:11:22:33:FF:EE)"
+                      className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                    />
                   </div>
                 ) : (
                   <div className="space-y-3 h-full flex flex-col">
@@ -329,7 +569,17 @@ function NFCWriter() {
 
             <motion.button
               onClick={handleWrite}
-              disabled={recordType === "whatsapp" ? !waNumber.trim() : (recordType !== "erase" && !data.trim())}
+              disabled={
+                recordType === "erase" ? false :
+                recordType === "whatsapp" ? !waNumber.trim() : 
+                recordType === "vcard" ? !vcardData.firstName || !vcardData.phone :
+                recordType === "wifi" ? !wifiData.ssid :
+                recordType === "location" ? !geoData.lat || !geoData.lng :
+                recordType === "navigation" ? !navAddress :
+                recordType === "streetview" ? !svData.lat || !svData.lng :
+                recordType === "app" ? !appPackage :
+                !data.trim()
+              }
               whileHover={{ scale: 1.01, y: -2 }}
               whileTap={{ scale: 0.98 }}
               className={`w-full h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl transition-all duration-300 disabled:opacity-50 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed ${
