@@ -664,7 +664,7 @@ function WritePageContent() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#FAFAFA] bg-[url('/images/noise.png')] flex flex-col relative overflow-hidden selection:bg-primary-500/30">
+      <div className="min-h-screen bg-[#FAFAFA] bg-[url('/images/noise.png')] flex flex-col relative selection:bg-primary-500/30">
         
         {/* Ambient background colors */}
         <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-[#FFE5F0]/60 to-transparent pointer-events-none" />
