@@ -73,7 +73,6 @@ type RecordType =
 
 const MODE_CATEGORIES = [
   { id: 'networking', label: 'Networking', icon: User },
-  { id: 'communication', label: 'Komunikasi', icon: MessageCircle },
   { id: 'connectivity', label: 'Konektivitas', icon: Wifi },
   { id: 'maps', label: 'Maps', icon: MapPin },
   { id: 'social', label: 'Sosial', icon: Globe },
@@ -83,13 +82,11 @@ const MODE_CATEGORIES = [
 const TYPE_OPTIONS: { id: RecordType; category: string; label: string; icon: any; placeholder?: string }[] = [
   // Networking
   { id: 'vcard', category: 'networking', label: 'Kontak (vCard)', icon: Contact2, placeholder: 'Nama & No HP' },
+  { id: 'whatsapp', category: 'networking', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
+  { id: 'phone', category: 'networking', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
+  { id: 'sms', category: 'networking', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
+  { id: 'email', category: 'networking', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
   
-  // Communication
-  { id: 'whatsapp', category: 'communication', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
-  { id: 'phone', category: 'communication', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
-  { id: 'sms', category: 'communication', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
-  { id: 'email', category: 'communication', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
-
   // Connectivity
   { id: 'wifi', category: 'connectivity', label: 'Wi-Fi Network', icon: Wifi, placeholder: 'SSID & Password' },
   { id: 'bluetooth', category: 'connectivity', label: 'Bluetooth', icon: Bluetooth, placeholder: 'Mac Address' },
@@ -144,7 +141,27 @@ function NFCWriter() {
   }, []);
 
   async function handleWrite() {
-    if (recordType !== "erase" && !data.trim()) return;
+    const isErase = recordType === "erase";
+    const isVcard = recordType === "vcard";
+    const isWifi = recordType === "wifi";
+    const isLocation = recordType === "location";
+    const isNav = recordType === "navigation";
+    const isSv = recordType === "streetview";
+    const isApp = recordType === "app";
+    const isBt = recordType === "bluetooth";
+    const isWa = recordType === "whatsapp";
+
+    if (!isErase) {
+      if (isVcard && (!vcardData.firstName || !vcardData.phone)) return;
+      if (isWifi && !wifiData.ssid) return;
+      if (isLocation && (!geoData.lat || !geoData.lng)) return;
+      if (isNav && !navAddress) return;
+      if (isSv && (!svData.lat || !svData.lng)) return;
+      if (isApp && !appPackage) return;
+      if (isBt && !btAddress) return;
+      if (isWa && !waNumber) return;
+      if (!isVcard && !isWifi && !isLocation && !isNav && !isSv && !isApp && !isBt && !isWa && !data.trim()) return;
+    }
 
     let payload = data.trim();
 
@@ -234,9 +251,9 @@ function NFCWriter() {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="w-full max-w-2xl mx-auto"
+      className="w-full max-w-2xl mx-auto px-2 sm:px-0"
     >
-      <div className="bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_60px_-15px_rgba(255,95,162,0.12)] rounded-[2.5rem] relative">
+      <div className="bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_60px_-15px_rgba(255,95,162,0.12)] rounded-[1.5rem] sm:rounded-[2.5rem] relative">
         
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-100/40 rounded-full blur-3xl pointer-events-none" />
@@ -297,7 +314,7 @@ function NFCWriter() {
           </motion.div>
         </div>
 
-        <div className="p-8 relative z-10">
+        <div className="p-4 sm:p-8 relative z-10">
           <div className="grid md:grid-cols-[1fr_1.2fr] gap-8">
             
             {/* Left Column: Type Selection */}
@@ -348,11 +365,10 @@ function NFCWriter() {
               </div>
             </div>
 
-            {/* Right Column: Input & Action */}
             <div className="flex flex-col">
               <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">{t('write.writer.content')}</h3>
               
-              <div className="flex-1 bg-slate-50 rounded-3xl p-6 border border-slate-100/50 min-h-[320px] overflow-y-auto max-h-[60vh] md:max-h-none">
+              <div className="flex-1 bg-slate-50 rounded-[1.5rem] sm:rounded-3xl p-4 sm:p-6 border border-slate-100/50 min-h-[280px] sm:min-h-[320px] overflow-y-auto max-h-[60vh] md:max-h-none">
                 {recordType === "erase" ? (
                   <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
@@ -367,7 +383,7 @@ function NFCWriter() {
                   </div>
                 ) : recordType === "vcard" ? (
                   <div className="space-y-3 mt-2">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input 
                         type="text"
                         value={vcardData.firstName}
@@ -575,14 +591,15 @@ function NFCWriter() {
               onClick={handleWrite}
               disabled={
                 recordType === "erase" ? false :
-                recordType === "whatsapp" ? !waNumber.trim() : 
-                recordType === "vcard" ? !vcardData.firstName || !vcardData.phone :
+                (recordType === "vcard" ? !vcardData.firstName || !vcardData.phone :
+                recordType === "whatsapp" ? !waNumber :
                 recordType === "wifi" ? !wifiData.ssid :
                 recordType === "location" ? !geoData.lat || !geoData.lng :
                 recordType === "navigation" ? !navAddress :
                 recordType === "streetview" ? !svData.lat || !svData.lng :
                 recordType === "app" ? !appPackage :
-                !data.trim()
+                recordType === "bluetooth" ? !btAddress :
+                !data.trim())
               }
               whileHover={{ scale: 1.01, y: -2 }}
               whileTap={{ scale: 0.98 }}
