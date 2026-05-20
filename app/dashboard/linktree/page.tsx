@@ -341,12 +341,11 @@ export default function OneTapBuilderPage() {
     }
   };
 
-  const isPageDisabled = (id: string) => {
-    const idx = pages.findIndex(p => p.id === id);
-    return idx !== -1 && idx >= maxProfiles;
-  };
-
-  const currentIsDisabled = !!(currentPageId && isPageDisabled(currentPageId));
+  // currentPageIsInactive: true when viewing a profile that is not currently published
+  // (free/expired plan users can have multiple profiles, but only 1 is live)
+  const currentPageIsInactive = isFreePlan && currentPageId
+    ? (pages.find(p => p.id === currentPageId)?.is_published === false)
+    : false;
 
   if (loading) {
     return (
@@ -386,13 +385,11 @@ export default function OneTapBuilderPage() {
 
               <button
                 onClick={handleSave}
-                disabled={saving || currentIsDisabled}
+                disabled={saving}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 ${
-                  currentIsDisabled
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : saved 
-                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
-                      : 'bg-[#18080F] text-white hover:bg-[#FF5FA2] shadow-lg shadow-[#18080F]/10'
+                  saved 
+                    ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
+                    : 'bg-[#18080F] text-white hover:bg-[#FF5FA2] shadow-lg shadow-[#18080F]/10'
                 }`}
               >
                 {saving ? (
@@ -409,25 +406,36 @@ export default function OneTapBuilderPage() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
-        {currentIsDisabled && (
+        {/* Inactive profile banner: shown when viewing a non-published profile on free plan */}
+        {currentPageIsInactive && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-100 flex items-center gap-4 text-red-600"
+            className="mb-8 p-4 rounded-2xl bg-amber-50 border border-amber-100 flex items-center gap-4"
           >
-            <AlertCircle className="w-6 h-6 flex-shrink-0" />
+            <Radio className="w-5 h-5 text-amber-500 flex-shrink-0" />
             <div className="flex-1">
-              <p className="font-black text-sm uppercase tracking-wider">{t('dashboard.profileLimit.disabled')}</p>
-              <p className="text-xs font-medium opacity-80">{t('dashboard.profileLimit.disabledDesc')}</p>
+              <p className="font-black text-sm text-amber-700 uppercase tracking-wider">Profil Tidak Aktif</p>
+              <p className="text-xs font-medium text-amber-600 mt-0.5">
+                Profil ini tidak ditampilkan secara publik. Klik <strong>"Aktifkan"</strong> di tab atas untuk mempublikasikannya.
+              </p>
             </div>
-            <Link href="/pricing" className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all">
-              {t('dashboard.planInfo.upgrade')}
-            </Link>
+            <button
+              onClick={() => currentPageId && activateProfile(currentPageId)}
+              disabled={activating === currentPageId}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-black hover:bg-amber-600 transition-all whitespace-nowrap disabled:opacity-60"
+            >
+              {activating === currentPageId
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Radio className="w-3.5 h-3.5" />
+              }
+              Aktifkan Profil
+            </button>
           </motion.div>
         )}
 
-        {/* Free/Expired plan: show info banner when user has multiple profiles */}
-        {isFreePlan && pages.length > 1 && !currentIsDisabled && (
+        {/* Free/Expired plan: show info banner when user has multiple profiles (and current is active) */}
+        {isFreePlan && pages.length > 1 && !currentPageIsInactive && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -450,7 +458,7 @@ export default function OneTapBuilderPage() {
         <div className="grid lg:grid-cols-[1fr_360px] gap-12">
 
           {/* ===== LEFT: Editor ===== */}
-          <div className={`space-y-10 ${currentIsDisabled ? 'opacity-60 pointer-events-none grayscale-[0.5]' : ''}`}>
+          <div className="space-y-10">
             
             {/* Header info & Multi-page switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -484,44 +492,57 @@ export default function OneTapBuilderPage() {
 
             {/* Page List (tabs — all plans) */}
             {pages.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5 p-2 bg-white/60 border border-[#F6B7C8]/15 rounded-[24px] shadow-sm shadow-[#18080F]/2 backdrop-blur-md">
                 {pages.map((p: any, idx: number) => {
-                  const isDisabled = idx >= maxProfiles;
                   // On free/expired plan, a page is "inactive" if it's not published
                   const isInactive = isFreePlan && !p.is_published;
                   const isActivePage = currentPageId === p.id;
                   return (
-                    <div key={p.id} className="flex items-center gap-1 group/tab">
+                    <div key={p.id} className="flex items-center gap-1.5 group/tab">
                       <button
                         onClick={() => loadData(p.id)}
-                        className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                        className={`relative px-4 py-2.5 rounded-2xl text-xs font-black tracking-wide transition-all duration-300 flex items-center gap-2 cursor-pointer border select-none ${
                           isActivePage
-                            ? 'bg-[#FF5FA2] text-white shadow-md'
+                            ? 'text-white border-transparent'
                             : isInactive
-                              ? 'bg-gray-50 text-gray-400 border border-gray-100'
-                              : 'bg-white text-gray-500 border border-[#F6B7C8]/10 hover:border-[#FF5FA2]/30'
-                        } ${isDisabled ? 'opacity-40' : ''}`}
+                              ? 'bg-amber-50/40 text-amber-600 border-amber-100/50 hover:bg-amber-50 hover:border-amber-200'
+                              : 'bg-white text-gray-500 border-[#F6B7C8]/10 hover:border-[#FF5FA2]/20 hover:text-[#FF5FA2]'
+                        }`}
                       >
-                        {/* Live dot indicator */}
-                        {!isDisabled && !isInactive && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        {isActivePage && (
+                          <motion.span
+                            layoutId="activeTabBackground"
+                            className="absolute inset-0 bg-gradient-to-r from-[#FF5FA2] to-[#FF8EBE] rounded-2xl shadow-md shadow-[#FF5FA2]/15"
+                            transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                          />
                         )}
-                        {isInactive && <Lock className="w-3 h-3" />}
-                        {p.title || d.untitled}
-                        {isDisabled && !isFreePlan && <Lock className="w-3 h-3" />}
+                        <span className="relative z-10 flex items-center gap-2">
+                          {/* Live dot / inactive indicator */}
+                          {!isInactive ? (
+                            <span className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                              isActivePage 
+                                ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]' 
+                                : 'bg-green-400 animate-pulse'
+                            }`} />
+                          ) : (
+                            <EyeOff className={`w-3.5 h-3.5 ${isActivePage ? 'text-white' : 'text-amber-500'}`} />
+                          )}
+                          {p.title || d.untitled}
+                        </span>
                       </button>
 
                       {/* Activate button — shown for inactive pages on free plan */}
-                      {isFreePlan && isInactive && !isDisabled && (
+                      {isFreePlan && isInactive && (
                         <button
                           onClick={() => activateProfile(p.id)}
                           disabled={activating === p.id}
-                          className="flex items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-[#FF5FA2]/10 text-[#FF5FA2] hover:bg-[#FF5FA2] hover:text-white transition-all disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 border border-amber-500/10 hover:bg-amber-500 hover:text-white hover:border-amber-500 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 disabled:opacity-50 cursor-pointer"
                         >
-                          {activating === p.id
-                            ? <Loader2 className="w-3 h-3 animate-spin" />
-                            : <Radio className="w-3 h-3" />
-                          }
+                          {activating === p.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Radio className="w-3.5 h-3.5" />
+                          )}
                           Aktifkan
                         </button>
                       )}
@@ -530,13 +551,14 @@ export default function OneTapBuilderPage() {
                       <button
                         onClick={() => setDeleteConfirmPage(p)}
                         disabled={deletingPageId === p.id}
-                        className="opacity-0 group-hover/tab:opacity-100 flex items-center justify-center w-7 h-7 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
+                        className="opacity-0 group-hover/tab:opacity-100 flex items-center justify-center w-8 h-8 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50/80 border border-transparent hover:border-red-100 hover:shadow-sm transition-all duration-300 disabled:opacity-50 cursor-pointer"
                         title="Hapus profil"
                       >
-                        {deletingPageId === p.id
-                          ? <Loader2 className="w-3 h-3 animate-spin" />
-                          : <Trash2 className="w-3 h-3" />
-                        }
+                        {deletingPageId === p.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                       </button>
                     </div>
                   );
