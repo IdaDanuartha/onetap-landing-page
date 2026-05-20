@@ -558,11 +558,11 @@ export default function OneTapBuilderPage() {
                         </button>
                       )}
 
-                      {/* Delete button — always visible on hover (desktop), always visible on mobile/tablet */}
+                      {/* Delete button — always visible on desktop and mobile */}
                       <button
                         onClick={() => setDeleteConfirmPage(p)}
                         disabled={deletingPageId === p.id}
-                        className="opacity-100 lg:opacity-0 lg:group-hover/tab:opacity-100 flex items-center justify-center w-8 h-8 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50/80 border border-transparent hover:border-red-100 hover:shadow-sm transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                        className="flex items-center justify-center w-8 h-8 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50/80 border border-transparent hover:border-red-100 hover:shadow-sm transition-all duration-300 disabled:opacity-50 cursor-pointer"
                         title="Hapus profil"
                       >
                         {deletingPageId === p.id ? (
