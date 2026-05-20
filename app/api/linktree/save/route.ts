@@ -193,3 +193,45 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
+
+// DELETE /api/linktree/save?pageId=<id>
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const pageId = searchParams.get('pageId');
+    if (!pageId) return NextResponse.json({ error: 'pageId required' }, { status: 400 });
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Verify ownership
+    const { data: page, error: fetchError } = await supabase
+      .from('linktree_pages')
+      .select('id')
+      .eq('id', pageId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (fetchError || !page) {
+      return NextResponse.json({ error: 'Page not found or unauthorized' }, { status: 404 });
+    }
+
+    // Delete all links for this page first (cascade safety)
+    await supabase.from('linktree_links').delete().eq('page_id', pageId);
+
+    // Delete the page itself
+    const { error: deleteError } = await supabase
+      .from('linktree_pages')
+      .delete()
+      .eq('id', pageId)
+      .eq('user_id', user.id);
+
+    if (deleteError) throw deleteError;
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('[linktree/save DELETE]', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}

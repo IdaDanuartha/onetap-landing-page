@@ -50,6 +50,8 @@ export default function OneTapBuilderPage() {
   const [pages, setPages] = useState<any[]>([]);
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const [activating, setActivating] = useState<string | null>(null);
+  const [deletingPageId, setDeletingPageId] = useState<string | null>(null);
+  const [deleteConfirmPage, setDeleteConfirmPage] = useState<any | null>(null);
 
   const planExpired = isExpired(expiresAt);
   const activePlan = getPlan(plan, expiresAt);
@@ -258,6 +260,52 @@ export default function OneTapBuilderPage() {
     }
   };
 
+  // Delete a profile page permanently
+  const deleteProfile = async (pageId: string) => {
+    setDeletingPageId(pageId);
+    try {
+      const res = await fetch(`/api/linktree/save?pageId=${pageId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setDeleteConfirmPage(null);
+        setToastMsg('Profil berhasil dihapus.');
+        setToastType('success');
+        setShowToast(true);
+        // If we deleted the currently open page, switch to another or reset
+        const remaining = pages.filter(p => p.id !== pageId);
+        if (currentPageId === pageId) {
+          if (remaining.length > 0) {
+            await loadData(remaining[0].id);
+          } else {
+            // No pages left — reset to empty state
+            setCurrentPageId(null);
+            setProfile({ title: '', bio: '', avatar: profile.avatar });
+            setLinks([]);
+            setSlug('');
+            setPages([]);
+            setLoading(false);
+          }
+        } else {
+          await loadData(currentPageId || undefined);
+        }
+      } else {
+        const err = await res.json();
+        setDeleteConfirmPage(null);
+        setToastMsg(err.error || 'Gagal menghapus profil.');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (e) {
+      setDeleteConfirmPage(null);
+      setToastMsg('Gagal menghapus profil.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setDeletingPageId(null);
+    }
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -443,7 +491,7 @@ export default function OneTapBuilderPage() {
                   const isInactive = isFreePlan && !p.is_published;
                   const isActivePage = currentPageId === p.id;
                   return (
-                    <div key={p.id} className="flex items-center gap-1">
+                    <div key={p.id} className="flex items-center gap-1 group/tab">
                       <button
                         onClick={() => loadData(p.id)}
                         className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
@@ -477,6 +525,19 @@ export default function OneTapBuilderPage() {
                           Aktifkan
                         </button>
                       )}
+
+                      {/* Delete button — always visible on hover */}
+                      <button
+                        onClick={() => setDeleteConfirmPage(p)}
+                        disabled={deletingPageId === p.id}
+                        className="opacity-0 group-hover/tab:opacity-100 flex items-center justify-center w-7 h-7 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
+                        title="Hapus profil"
+                      >
+                        {deletingPageId === p.id
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : <Trash2 className="w-3 h-3" />
+                        }
+                      </button>
                     </div>
                   );
                 })}
@@ -912,7 +973,63 @@ export default function OneTapBuilderPage() {
         type={toastType} 
         onClose={() => setShowToast(false)} 
       />
+
+      {/* ===== DELETE CONFIRMATION MODAL ===== */}
+      <AnimatePresence>
+        {deleteConfirmPage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirmPage(null); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 space-y-6"
+            >
+              {/* Icon */}
+              <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
+                <Trash2 className="w-7 h-7 text-red-500" />
+              </div>
+
+              {/* Text */}
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-black text-[#18080F]">Hapus Profil?</h3>
+                <p className="text-sm font-medium text-gray-400 leading-relaxed">
+                  Profil <strong className="text-[#18080F]">&quot;{deleteConfirmPage.title || 'Tanpa Judul'}&quot;</strong> dan semua link di dalamnya akan dihapus permanen dan tidak bisa dikembalikan.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirmPage(null)}
+                  disabled={deletingPageId === deleteConfirmPage.id}
+                  className="flex-1 px-5 py-3 rounded-2xl border border-gray-100 text-sm font-black text-gray-500 hover:bg-gray-50 transition-all disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => deleteProfile(deleteConfirmPage.id)}
+                  disabled={deletingPageId === deleteConfirmPage.id}
+                  className="flex-1 px-5 py-3 rounded-2xl bg-red-500 text-white text-sm font-black hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {deletingPageId === deleteConfirmPage.id
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Menghapus...</>
+                    : <><Trash2 className="w-4 h-4" /> Hapus Sekarang</>
+                  }
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+
   );
 }
 
