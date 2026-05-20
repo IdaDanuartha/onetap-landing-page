@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getPlan } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,17 +13,20 @@ export async function POST(req: Request) {
 
     const { profile, links, theme, pageId, slug: requestedSlug, isPublished } = await req.json();
 
-    // Check user plan for limits
+    // Check user plan — IMPORTANT: must include plan_expires_at to correctly enforce expiry
     const { data: userProfile } = await supabase
       .from('users_profile')
-      .select('plan')
+      .select('plan, plan_expires_at')
       .eq('id', user.id)
       .single();
-    
+
     const userPlan = userProfile?.plan || 'starter';
-    const isPro = userPlan === 'professional';
-    const isEdu = userPlan === 'education';
-    
+    const expiresAt = userProfile?.plan_expires_at || null;
+
+    // Use getPlan() which falls back to 'starter' when plan is expired
+    const activePlan = getPlan(userPlan, expiresAt);
+    const maxPages = activePlan.features.maxProfiles;
+
     // Check current pages count
     const { count } = await supabase
       .from('linktree_pages')
@@ -39,16 +43,16 @@ export async function POST(req: Request) {
         .eq('id', pageId)
         .eq('user_id', user.id)
         .single();
-      
+
       if (fetchError || !existingPage) {
         return NextResponse.json({ error: 'Page not found or unauthorized' }, { status: 404 });
       }
 
       const { data: updatedPage, error: updateError } = await supabase
         .from('linktree_pages')
-        .update({ 
-          title: profile.title, 
-          bio: profile.bio, 
+        .update({
+          title: profile.title,
+          bio: profile.bio,
           theme_id: theme,
           slug: requestedSlug,
           is_published: isPublished !== false,
@@ -57,35 +61,44 @@ export async function POST(req: Request) {
         .eq('id', pageId)
         .select()
         .single();
-      
+
       if (updateError) throw updateError;
       page = updatedPage;
     } else {
-      // Create new page
-      // Limit check: Starter 1, Pro 3, Edu Unlimited (999)
-      const maxPages = isEdu ? 999 : isPro ? 3 : 1;
+      // Create new page — enforce plan limit with expiry-aware check
       if ((count ?? 0) >= maxPages) {
-        const planName = isEdu ? 'Education' : isPro ? 'Professional' : 'Starter';
-        return NextResponse.json({ 
-          error: `Batas maksimal halaman untuk paket ${planName} tercapai. Paket ${planName} dibatasi maksimal ${maxPages === 999 ? 'Tak Terbatas' : maxPages} halaman.` 
+        const planName = activePlan.nameId;
+        const limitStr = maxPages >= 9999 ? 'Tak Terbatas' : maxPages.toString();
+        return NextResponse.json({
+          error: `Batas maksimal halaman untuk paket ${planName} tercapai. Paket ${planName} dibatasi maksimal ${limitStr} halaman.`
         }, { status: 403 });
       }
 
       const { data: newPage, error: insertError } = await supabase
         .from('linktree_pages')
-        .insert({ 
-          user_id: user.id, 
-          title: profile.title || 'Profil Baru', 
-          bio: profile.bio, 
+        .insert({
+          user_id: user.id,
+          title: profile.title || 'Profil Baru',
+          bio: profile.bio,
           theme_id: theme || 'pink',
           slug: requestedSlug,
           is_published: isPublished !== false
         })
         .select()
         .single();
-      
+
       if (insertError) throw insertError;
       page = newPage;
+    }
+
+    // === FREE/EXPIRED PLAN: enforce 1 active profile ===
+    // If maxPages === 1, auto-unpublish all OTHER pages so only this one is live
+    if (maxPages === 1 && page.is_published) {
+      await supabase
+        .from('linktree_pages')
+        .update({ is_published: false })
+        .eq('user_id', user.id)
+        .neq('id', page.id);
     }
 
     // Delete all existing links for THIS page and re-insert
@@ -123,21 +136,23 @@ export async function GET(req: Request) {
     // 1. Get all pages for this user to show in switcher
     const { data: pages } = await supabase
       .from('linktree_pages')
-      .select('id, title, slug, updated_at')
+      .select('id, title, slug, is_published, updated_at')
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
     // 2. Determine which page to load
     let targetPageId = requestedPageId;
     if (!targetPageId && pages && pages.length > 0) {
-      targetPageId = pages[0].id;
+      // Prefer the first published page, fallback to first page
+      const firstPublished = pages.find(p => p.is_published);
+      targetPageId = (firstPublished ?? pages[0]).id;
     }
 
     if (!targetPageId) {
       // No pages yet
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('username, display_name, avatar_url, plan')
+        .select('username, display_name, avatar_url, plan, plan_expires_at')
         .eq('id', user.id)
         .single();
       return NextResponse.json({ page: null, links: [], profile, pages: [] });
@@ -163,13 +178,13 @@ export async function GET(req: Request) {
 
     const { data: profile } = await supabase
       .from('users_profile')
-      .select('username, display_name, avatar_url, plan')
+      .select('username, display_name, avatar_url, plan, plan_expires_at')
       .eq('id', user.id)
       .single();
 
-    return NextResponse.json({ 
-      page, 
-      links: links ?? [], 
+    return NextResponse.json({
+      page,
+      links: links ?? [],
       profile,
       pages: pages ?? []
     });

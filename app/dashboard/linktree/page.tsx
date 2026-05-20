@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, EyeOff, Layers, AlertCircle } from 'lucide-react';
+import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, EyeOff, Layers, AlertCircle, Radio } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { createClient } from '@/lib/supabase/client';
 import { themes, templates } from '@/lib/themes';
@@ -49,10 +49,13 @@ export default function OneTapBuilderPage() {
   // Multi-page state
   const [pages, setPages] = useState<any[]>([]);
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
+  const [activating, setActivating] = useState<string | null>(null);
 
   const planExpired = isExpired(expiresAt);
   const activePlan = getPlan(plan, expiresAt);
   const maxProfiles = activePlan.features.maxProfiles;
+  // Whether user is on a restricted plan (only 1 active profile)
+  const isFreePlan = maxProfiles === 1;
 
   // Load existing data
   const loadData = useCallback(async (pageId?: string) => {
@@ -225,6 +228,36 @@ export default function OneTapBuilderPage() {
     setSlug(''); // User will need to enter a new slug
   };
 
+  // Instantly activate a profile (free/expired plan: only 1 can be published)
+  const activateProfile = async (pageId: string) => {
+    setActivating(pageId);
+    try {
+      const res = await fetch('/api/linktree/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageId }),
+      });
+      if (res.ok) {
+        setToastMsg('Profil berhasil diaktifkan! Profil lain telah dinonaktifkan.');
+        setToastType('success');
+        setShowToast(true);
+        // Refresh page list to reflect updated is_published states
+        await loadData(pageId);
+      } else {
+        const err = await res.json();
+        setToastMsg(err.error || 'Gagal mengaktifkan profil.');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (e) {
+      setToastMsg('Gagal mengaktifkan profil.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setActivating(null);
+    }
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -345,6 +378,27 @@ export default function OneTapBuilderPage() {
           </motion.div>
         )}
 
+        {/* Free/Expired plan: show info banner when user has multiple profiles */}
+        {isFreePlan && pages.length > 1 && !currentIsDisabled && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-4 rounded-2xl bg-amber-50 border border-amber-100 flex items-start gap-4"
+          >
+            <Radio className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-black text-sm text-amber-700 uppercase tracking-wider">1 Profil Aktif</p>
+              <p className="text-xs font-medium text-amber-600 mt-1 leading-relaxed">
+                Paket {locale === 'id' ? activePlan.nameId : activePlan.nameEn} hanya mendukung <strong>1 profil aktif</strong> sekaligus.
+                Klik <strong>"Aktifkan"</strong> pada profil yang ingin dipublikasikan. Profil lain akan otomatis dinonaktifkan.
+              </p>
+            </div>
+            <Link href="/pricing" className="px-3 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all whitespace-nowrap">
+              Upgrade
+            </Link>
+          </motion.div>
+        )}
+
         <div className="grid lg:grid-cols-[1fr_360px] gap-12">
 
           {/* ===== LEFT: Editor ===== */}
@@ -380,24 +434,50 @@ export default function OneTapBuilderPage() {
               </div>
             </div>
 
-            {/* Page List (For Pro Users) */}
+            {/* Page List (tabs — all plans) */}
             {pages.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {pages.map((p: any, idx: number) => {
                   const isDisabled = idx >= maxProfiles;
+                  // On free/expired plan, a page is "inactive" if it's not published
+                  const isInactive = isFreePlan && !p.is_published;
+                  const isActivePage = currentPageId === p.id;
                   return (
-                    <button
-                      key={p.id}
-                      onClick={() => loadData(p.id)}
-                      className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                        currentPageId === p.id 
-                          ? 'bg-[#FF5FA2] text-white shadow-md' 
-                          : 'bg-white text-gray-500 border border-[#F6B7C8]/10 hover:border-[#FF5FA2]/30'
-                      } ${isDisabled ? 'opacity-50' : ''}`}
-                    >
-                      {p.title || d.untitled}
-                      {isDisabled && <Lock className="w-3 h-3" />}
-                    </button>
+                    <div key={p.id} className="flex items-center gap-1">
+                      <button
+                        onClick={() => loadData(p.id)}
+                        className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                          isActivePage
+                            ? 'bg-[#FF5FA2] text-white shadow-md'
+                            : isInactive
+                              ? 'bg-gray-50 text-gray-400 border border-gray-100'
+                              : 'bg-white text-gray-500 border border-[#F6B7C8]/10 hover:border-[#FF5FA2]/30'
+                        } ${isDisabled ? 'opacity-40' : ''}`}
+                      >
+                        {/* Live dot indicator */}
+                        {!isDisabled && !isInactive && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        )}
+                        {isInactive && <Lock className="w-3 h-3" />}
+                        {p.title || d.untitled}
+                        {isDisabled && !isFreePlan && <Lock className="w-3 h-3" />}
+                      </button>
+
+                      {/* Activate button — shown for inactive pages on free plan */}
+                      {isFreePlan && isInactive && !isDisabled && (
+                        <button
+                          onClick={() => activateProfile(p.id)}
+                          disabled={activating === p.id}
+                          className="flex items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-[#FF5FA2]/10 text-[#FF5FA2] hover:bg-[#FF5FA2] hover:text-white transition-all disabled:opacity-50"
+                        >
+                          {activating === p.id
+                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                            : <Radio className="w-3 h-3" />
+                          }
+                          Aktifkan
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
               </div>
