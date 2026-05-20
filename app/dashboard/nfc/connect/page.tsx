@@ -38,7 +38,6 @@ const MODE_OPTIONS: { id: Mode; category: string; label: string; icon: any; plac
   // Networking
   { id: 'profile', category: 'networking', label: 'Profil Digital', icon: User, placeholder: 'onetap-charm.com/l/...' },
   { id: 'vcard', category: 'networking', label: 'Kontak (vCard)', icon: Contact2, placeholder: 'Nama & No HP' },
-  { id: 'bridge', category: 'networking', label: 'Payment Bridge', icon: Zap, placeholder: 'QRIS Bridge Page' },
   
   // Communication
   { id: 'whatsapp', category: 'communication', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
@@ -59,7 +58,6 @@ const MODE_OPTIONS: { id: Mode; category: string; label: string; icon: any; plac
   // Social
   { id: 'url', category: 'social', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
   { id: 'text', category: 'social', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
-  { id: 'payment', category: 'social', label: 'Pembayaran', icon: CreditCard, placeholder: 'Gopay/OVO/QRIS' },
   
   // Utility
   { id: 'erase', category: 'utility', label: 'Format NFC', icon: Eraser, placeholder: 'Hapus data' },
