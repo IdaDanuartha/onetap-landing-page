@@ -516,7 +516,7 @@ export default function DashboardPage() {
               iconColor: 'text-[#FF5FA2]'
             },
             {
-              href: '/dashboard/nfc/connect',
+              href: '/dashboard/nfc',
               icon: Wifi,
               title: t('dashboard.menu.nfc'),
               desc: t('dashboard.menu.nfcDesc'),
