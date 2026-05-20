@@ -8,7 +8,9 @@ import {
   ArrowLeft, Wifi, User, Phone, Mail, Building2, 
   ExternalLink, Key, Plus, Trash2, Edit2, Save, 
   Loader2, Check, AlertCircle, Copy, HelpCircle, 
-  ChevronRight, Smartphone, Eye, EyeOff, Globe
+  ChevronRight, Smartphone, Eye, EyeOff, Globe,
+  MessageCircle, Contact2, Bluetooth, AppWindow, MapPin, 
+  Navigation, Map, Type, MessageSquare, Link2, CheckCircle2, Lock, Info
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
@@ -16,7 +18,7 @@ interface Keychain {
   id: string;
   token: string;
   label: string;
-  active_mode: 'profile' | 'vcard' | 'whatsapp' | 'wifi' | 'url';
+  active_mode: any;
   payload_data: any;
   created_at: string;
   updated_at: string;
@@ -28,6 +30,40 @@ interface ProfilePage {
   slug: string;
   updated_at: string;
 }
+
+const MODE_CATEGORIES = [
+  { id: 'networking', label: 'Networking', icon: User },
+  { id: 'communication', label: 'Komunikasi', icon: MessageCircle },
+  { id: 'connectivity', label: 'Konektivitas', icon: Wifi },
+  { id: 'maps', label: 'Maps', icon: MapPin },
+  { id: 'social', label: 'Sosial', icon: Globe },
+];
+
+const MODE_OPTIONS = [
+  // Networking
+  { id: 'profile', category: 'networking', label: 'Profil Digital', icon: User, placeholder: 'onetap-charm.com/l/...' },
+  { id: 'vcard', category: 'networking', label: 'Kontak (vCard)', icon: Contact2, placeholder: 'Nama & No HP' },
+  
+  // Communication
+  { id: 'whatsapp', category: 'communication', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
+  { id: 'phone', category: 'communication', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
+  { id: 'sms', category: 'communication', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
+  { id: 'email', category: 'communication', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
+
+  // Connectivity
+  { id: 'wifi', category: 'connectivity', label: 'Wi-Fi Network', icon: Wifi, placeholder: 'SSID & Password' },
+  { id: 'bluetooth', category: 'connectivity', label: 'Bluetooth', icon: Bluetooth, placeholder: 'Mac Address' },
+  { id: 'app', category: 'connectivity', label: 'Open App', icon: AppWindow, placeholder: 'com.package.name' },
+
+  // Maps
+  { id: 'location', category: 'maps', label: 'Lokasi (Geo)', icon: MapPin, placeholder: 'Lat, Lng' },
+  { id: 'navigation', category: 'maps', label: 'Navigasi', icon: Navigation, placeholder: 'Alamat Tujuan' },
+  { id: 'streetview', category: 'maps', label: 'Street View', icon: Map, placeholder: 'Lat, Lng' },
+
+  // Social
+  { id: 'url', category: 'social', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
+  { id: 'text', category: 'social', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
+];
 
 export default function KeychainsManagerPage() {
   const { locale } = useLanguage();
@@ -53,6 +89,7 @@ export default function KeychainsManagerPage() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [activeCategory, setActiveCategory] = useState('networking');
 
   // Delete/Unclaim state
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -141,6 +178,12 @@ export default function KeychainsManagerPage() {
     setEditPayload(kc.payload_data || {});
     setSaveSuccess(false);
     setSaveError('');
+
+    // Find category for kc.active_mode
+    const option = MODE_OPTIONS.find(o => o.id === kc.active_mode);
+    if (option) {
+      setActiveCategory(option.category);
+    }
     
     // Auto-fill some defaults if blank
     if (kc.active_mode === 'profile' && !kc.payload_data?.slug && profiles.length > 0) {
@@ -240,17 +283,67 @@ export default function KeychainsManagerPage() {
       case 'whatsapp':
         return {
           bg: 'bg-[#ecfdf5]', border: 'border-[#10b981]/15', text: 'text-[#10b981]', label: 'WhatsApp',
+          icon: <MessageCircle className="w-3.5 h-3.5" />
+        };
+      case 'phone':
+        return {
+          bg: 'bg-[#faf5ff]', border: 'border-[#d8b4fe]/15', text: 'text-[#a855f7]', label: t('Telepon', 'Phone Call'),
           icon: <Phone className="w-3.5 h-3.5" />
+        };
+      case 'sms':
+        return {
+          bg: 'bg-[#f0fdf4]', border: 'border-[#bbf7d0]/15', text: 'text-[#22c55e]', label: t('Kirim SMS', 'Send SMS'),
+          icon: <MessageSquare className="w-3.5 h-3.5" />
+        };
+      case 'email':
+        return {
+          bg: 'bg-[#f0f9ff]', border: 'border-[#bae6fd]/15', text: 'text-[#0284c7]', label: t('Kirim Email', 'Send Email'),
+          icon: <Mail className="w-3.5 h-3.5" />
         };
       case 'wifi':
         return {
           bg: 'bg-[#eef2ff]', border: 'border-[#6366f1]/15', text: 'text-[#6366f1]', label: 'Wi-Fi',
           icon: <Wifi className="w-3.5 h-3.5" />
         };
+      case 'bluetooth':
+        return {
+          bg: 'bg-[#f5f3ff]', border: 'border-[#c084fc]/15', text: 'text-[#7c3aed]', label: 'Bluetooth',
+          icon: <Bluetooth className="w-3.5 h-3.5" />
+        };
+      case 'app':
+        return {
+          bg: 'bg-[#fff1f2]', border: 'border-[#fecdd3]/15', text: 'text-[#f43f5e]', label: 'Open App',
+          icon: <AppWindow className="w-3.5 h-3.5" />
+        };
+      case 'location':
+        return {
+          bg: 'bg-[#fff7ed]', border: 'border-[#ffedd5]/15', text: 'text-[#ea580c]', label: t('Lokasi Geo', 'Geo Location'),
+          icon: <MapPin className="w-3.5 h-3.5" />
+        };
+      case 'navigation':
+        return {
+          bg: 'bg-[#fffbeb]', border: 'border-[#fef3c7]/15', text: 'text-[#d97706]', label: t('Navigasi', 'Navigation'),
+          icon: <Navigation className="w-3.5 h-3.5" />
+        };
+      case 'streetview':
+        return {
+          bg: 'bg-[#fff1f2]', border: 'border-[#ffe4e6]/15', text: 'text-[#e11d48]', label: 'Street View',
+          icon: <Map className="w-3.5 h-3.5" />
+        };
       case 'vcard':
         return {
           bg: 'bg-[#fffbeb]', border: 'border-[#f59e0b]/15', text: 'text-[#f59e0b]', label: t('Kartu Nama', 'Business Card'),
-          icon: <Building2 className="w-3.5 h-3.5" />
+          icon: <Contact2 className="w-3.5 h-3.5" />
+        };
+      case 'text':
+        return {
+          bg: 'bg-[#f8fafc]', border: 'border-[#e2e8f0]/15', text: 'text-[#475569]', label: t('Pesan Teks', 'Text Message'),
+          icon: <Type className="w-3.5 h-3.5" />
+        };
+      default:
+        return {
+          bg: 'bg-gray-50', border: 'border-gray-200/50', text: 'text-gray-400', label: String(mode),
+          icon: <HelpCircle className="w-3.5 h-3.5" />
         };
     }
   };
@@ -509,43 +602,68 @@ export default function KeychainsManagerPage() {
                     />
                   </div>
 
-                  {/* Mode Grid Select */}
+                  {/* Category Selection */}
                   <div className="space-y-3">
                     <label className="text-xs font-black text-[#18080F] uppercase tracking-wider block">
-                      {t('Pilih Mode Pengalihan', 'Select Redirection Mode')}
+                      {t('Pilih Kategori Aksi', 'Select Action Category')}
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                      {[
-                        { mode: 'profile', icon: <User className="w-5 h-5" />, title: t('Profil', 'Profile'), activeColor: 'bg-[#f5f3ff] text-[#8b5cf6] border-[#8b5cf6]/40' },
-                        { mode: 'url', icon: <Globe className="w-5 h-5" />, title: t('Link', 'Link'), activeColor: 'bg-[#FFF1F7] text-[#FF5FA2] border-[#FF5FA2]/40' },
-                        { mode: 'whatsapp', icon: <Phone className="w-5 h-5" />, title: 'WhatsApp', activeColor: 'bg-[#ecfdf5] text-[#10b981] border-[#10b981]/40' },
-                        { mode: 'wifi', icon: <Wifi className="w-5 h-5" />, title: 'Wi-Fi', activeColor: 'bg-[#eef2ff] text-[#6366f1] border-[#6366f1]/40' },
-                        { mode: 'vcard', icon: <Building2 className="w-5 h-5" />, title: t('Kontak', 'Contact'), activeColor: 'bg-[#fffbeb] text-[#f59e0b] border-[#f59e0b]/40' },
-                      ].map(btn => {
-                        const isModeActive = editMode === btn.mode;
+                    <div className="relative">
+                      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-1 px-1 touch-pan-x">
+                        {MODE_CATEGORIES.map((cat) => {
+                          const IconComponent = cat.icon;
+                          const isCatActive = activeCategory === cat.id;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setActiveCategory(cat.id)}
+                              className={`flex items-center gap-2 px-4 py-2.5 rounded-full border whitespace-nowrap transition-all text-xs font-bold ${
+                                isCatActive
+                                  ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-md'
+                                  : 'bg-white border-[#F6B7C8]/20 text-gray-500 hover:border-[#FF5FA2]/30'
+                              }`}
+                            >
+                              <IconComponent className="w-3.5 h-3.5" />
+                              {cat.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
 
+                  {/* Mode Card Grid Selection (Filtered by Category) */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-black text-[#18080F] uppercase tracking-wider block">
+                      {t('Pilih Aksi / Mode Pengalihan', 'Select Action / Redirect Mode')}
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {MODE_OPTIONS.filter(m => m.category === activeCategory).map((m) => {
+                        const IconComponent = m.icon;
+                        const isModeActive = editMode === m.id;
+                        
                         return (
                           <button
-                            key={btn.mode}
+                            key={m.id}
                             type="button"
                             onClick={() => {
-                              setEditMode(btn.mode as any);
-                              // Reset payload template for type if completely blank
-                              if (!editPayload || Object.keys(editPayload).length === 0) {
+                              setEditMode(m.id as any);
+                              // Keep existing payload if matching mode, otherwise reset empty
+                              if (!editPayload || typeof editPayload !== 'object') {
                                 setEditPayload({});
                               }
                             }}
-                            className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl border text-center transition-all active:scale-95 ${
+                            className={`flex flex-col items-center justify-center p-4 rounded-2xl border text-center transition-all active:scale-[0.97] ${
                               isModeActive
-                                ? btn.activeColor + ' font-black shadow-sm'
+                                ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-lg shadow-[#FF5FA2]/20 font-black'
                                 : 'bg-white hover:bg-slate-50 border-[#F6B7C8]/10 text-gray-400 font-medium'
                             }`}
                           >
-                            <div className={`mb-2 ${isModeActive ? 'scale-110' : ''} transition-transform`}>
-                              {btn.icon}
+                            <div className={`mb-2 ${isModeActive ? 'scale-110 text-white' : 'text-gray-400'} transition-transform`}>
+                              <IconComponent className="w-5 h-5" />
                             </div>
                             <span className="text-[10px] tracking-wide uppercase font-bold">
-                              {btn.title}
+                              {m.label}
                             </span>
                           </button>
                         );
@@ -751,6 +869,19 @@ export default function KeychainsManagerPage() {
                                 </button>
                               </div>
                             </div>
+
+                            <div className="space-y-2 col-span-1 sm:col-span-2">
+                              <label className="text-xs font-bold text-gray-500 block">{t('Keamanan (Enkripsi)', 'Security (Encryption)')}</label>
+                              <select
+                                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                                value={editPayload.encryption || 'WPA'}
+                                onChange={(e) => setEditPayload({ ...editPayload, encryption: e.target.value })}
+                              >
+                                <option value="WPA">WPA / WPA2</option>
+                                <option value="WEP">WEP</option>
+                                <option value="None">{t('Tanpa Password', 'None (No Password)')}</option>
+                              </select>
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -830,6 +961,365 @@ export default function KeychainsManagerPage() {
                                 placeholder="OneTap Inc."
                               />
                             </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 6. TELEPON MODE */}
+                      {editMode === 'phone' && (
+                        <motion.div
+                          key="form-phone"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#0ea5e9]">
+                            <Phone className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Panggilan Telepon', 'Phone Call')}</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk membuka dialer telepon dan otomatis memanggil nomor yang ditentukan.',
+                              'Tap the keychain to automatically open the phone dialer and call the specified number.'
+                            )}
+                          </p>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Nomor Telepon', 'Phone Number')}</label>
+                            <input
+                              type="tel"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.phone || ''}
+                              onChange={(e) => setEditPayload({ phone: e.target.value })}
+                              placeholder="081234567890"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 7. KIRIM SMS MODE */}
+                      {editMode === 'sms' && (
+                        <motion.div
+                          key="form-sms"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#ec4899]">
+                            <MessageSquare className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Kirim SMS', 'Send SMS')}</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk membuka aplikasi SMS dan memicu draf SMS ke nomor tujuan dengan pesan kustom.',
+                              'Tap the keychain to automatically launch the SMS application with a preset drafted message.'
+                            )}
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 block">{t('Nomor Telepon Penerima', 'Recipient Phone Number')}</label>
+                              <input
+                                type="tel"
+                                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                                value={editPayload.phone || ''}
+                                onChange={(e) => setEditPayload({ ...editPayload, phone: e.target.value })}
+                                placeholder="081234567890"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 block">{t('Pesan SMS', 'SMS Message')}</label>
+                              <textarea
+                                rows={2}
+                                className="w-full p-3 rounded-xl bg-white border border-slate-200 outline-none text-xs font-bold text-[#18080F] resize-none"
+                                value={editPayload.message || ''}
+                                onChange={(e) => setEditPayload({ ...editPayload, message: e.target.value })}
+                                placeholder={t('Halo, ini pesan otomatis...', 'Hello, this is an auto-generated message...')}
+                              />
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 8. EMAIL MODE */}
+                      {editMode === 'email' && (
+                        <motion.div
+                          key="form-email"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#ef4444]">
+                            <Mail className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Kirim Email', 'Send Email')}</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk membuka klien email default dengan draf surat ke alamat tujuan.',
+                              'Tap the keychain to automatically open the default mail client with a draft prepared for the recipient.'
+                            )}
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 block">{t('Alamat Email Tujuan', 'Recipient Email Address')}</label>
+                              <input
+                                type="email"
+                                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                                value={editPayload.email || ''}
+                                onChange={(e) => setEditPayload({ ...editPayload, email: e.target.value })}
+                                placeholder="nama@email.com"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 block">{t('Subjek / Judul Email', 'Email Subject')}</label>
+                              <input
+                                type="text"
+                                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                                value={editPayload.subject || ''}
+                                onChange={(e) => setEditPayload({ ...editPayload, subject: e.target.value })}
+                                placeholder={t('Halo OneTap', 'Hello OneTap')}
+                              />
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 9. BLUETOOTH MODE */}
+                      {editMode === 'bluetooth' && (
+                        <motion.div
+                          key="form-bluetooth"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#3b82f6]">
+                            <Bluetooth className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Koneksi Bluetooth', 'Bluetooth Connection')}</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Menampilkan halaman dengan alamat MAC perangkat Bluetooth Anda untuk memudahkan penyalinan satu klik.',
+                              'Presents a page showing your Bluetooth MAC address for quick one-click clipboard copying.'
+                            )}
+                          </p>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Alamat MAC Perangkat', 'Device MAC Address')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.mac || ''}
+                              onChange={(e) => setEditPayload({ mac: e.target.value })}
+                              placeholder="00:11:22:33:FF:EE"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 10. OPEN APP MODE */}
+                      {editMode === 'app' && (
+                        <motion.div
+                          key="form-app"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#8b5cf6]">
+                            <AppWindow className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Buka Aplikasi (Android)', 'Open App (Android)')}</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Memicu Android Intent untuk langsung membuka aplikasi tertentu jika terinstal. Contoh: WhatsApp atau DANA.',
+                              'Triggers an Android Intent to launch a specific application on tap if it is installed.'
+                            )}
+                          </p>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Nama Paket Aplikasi (Android)', 'Application Package Name (Android)')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.package || ''}
+                              onChange={(e) => setEditPayload({ package: e.target.value })}
+                              placeholder="com.whatsapp"
+                            />
+                            <span className="text-[10px] text-gray-400 font-semibold italic block">
+                              {t('Contoh: com.whatsapp untuk WhatsApp, atau id.dana untuk DANA.', 'Example: com.whatsapp for WhatsApp, id.dana for DANA.')}
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 11. GEO COORDINATES MODE */}
+                      {editMode === 'location' && (
+                        <motion.div
+                          key="form-location"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#f43f5e]">
+                            <MapPin className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Koordinat Lokasi (Geo)', 'Location Coordinates (Geo)')}</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Mengalihkan pengguna langsung ke titik koordinat peta spesifik di Google Maps atau Apple Maps.',
+                              'Directs users instantly to a specific geographical coordinate point on Google Maps or Apple Maps.'
+                            )}
+                          </p>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 block">Latitude</label>
+                              <input
+                                type="text"
+                                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                                value={editPayload.lat || ''}
+                                onChange={(e) => setEditPayload({ ...editPayload, lat: e.target.value })}
+                                placeholder="-6.175392"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 block">Longitude</label>
+                              <input
+                                type="text"
+                                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                                value={editPayload.lng || ''}
+                                onChange={(e) => setEditPayload({ ...editPayload, lng: e.target.value })}
+                                placeholder="106.827153"
+                              />
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 12. NAVIGATION MODE */}
+                      {editMode === 'navigation' && (
+                        <motion.div
+                          key="form-navigation"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#06b6d4]">
+                            <Navigation className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Navigasi Lokasi', 'Location Navigation')}</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Arahkan pemindai langsung ke panduan rute navigasi di Google Maps menuju alamat atau tempat yang Anda tetapkan.',
+                              'Directs the scanner straight into turn-by-turn routing navigation on Google Maps to your designated place.'
+                            )}
+                          </p>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Alamat Tujuan / Nama Tempat', 'Destination Address / Place Name')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.address || ''}
+                              onChange={(e) => setEditPayload({ address: e.target.value })}
+                              placeholder="Grand Indonesia, Jakarta"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 13. STREET VIEW MODE */}
+                      {editMode === 'streetview' && (
+                        <motion.div
+                          key="form-streetview"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#10b981]">
+                            <Map className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">Google Street View</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung memproyeksikan visual panorama 360 derajat Street View di lokasi koordinat ini.',
+                              'Tap the keychain to instantly project the 360-degree interactive panorama Street View for these coordinates.'
+                            )}
+                          </p>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 block">Latitude</label>
+                              <input
+                                type="text"
+                                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                                value={editPayload.lat || ''}
+                                onChange={(e) => setEditPayload({ ...editPayload, lat: e.target.value })}
+                                placeholder="-6.175392"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 block">Longitude</label>
+                              <input
+                                type="text"
+                                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                                value={editPayload.lng || ''}
+                                onChange={(e) => setEditPayload({ ...editPayload, lng: e.target.value })}
+                                placeholder="106.827153"
+                              />
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 14. PESAN TEKS MODE */}
+                      {editMode === 'text' && (
+                        <motion.div
+                          key="form-text"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#64748b]">
+                            <Type className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Pesan Teks / Catatan', 'Custom Text Message')}</h4>
+                          </div>
+
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tampilkan memo pesan teks, kutipan, petunjuk, atau informasi kustom premium dengan tombol copy satu klik.',
+                              'Presents a beautiful text memo card for custom messages, quotes, or notes, with one-click copy functionality.'
+                            )}
+                          </p>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Isi Pesan Teks', 'Text Message Content')}</label>
+                            <textarea
+                              rows={4}
+                              className="w-full p-4 rounded-xl bg-white border border-slate-200 focus:border-[#FF5FA2]/20 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.text || ''}
+                              onChange={(e) => setEditPayload({ text: e.target.value })}
+                              placeholder={t('Halo, selamat datang di gantungan kunci OneTap saya! Silakan salin info ini...', 'Hello, welcome to my OneTap keychain! Feel free to copy this info...')}
+                            />
                           </div>
                         </motion.div>
                       )}

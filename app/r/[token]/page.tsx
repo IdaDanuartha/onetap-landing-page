@@ -4,7 +4,8 @@ import { useState, useEffect, use } from 'react';
 import { 
   Lock, Loader2, AlertCircle, ArrowRight, Wifi, 
   Copy, Check, Eye, EyeOff, User, Phone, Mail, 
-  Building2, Download, ExternalLink, ShieldCheck 
+  Building2, Download, ExternalLink, ShieldCheck,
+  Bluetooth, Type
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -308,6 +309,148 @@ export default function RedirectPage({ params }: RedirectPageProps) {
           >
             <Download className="w-5 h-5" />
             Simpan Kontak
+          </button>
+
+          <div className="mt-8 flex flex-col items-center gap-1 opacity-40">
+            <span className="text-[9px] font-black tracking-[0.2em] text-[#18080F] uppercase">
+              Powered by OneTap NFC
+            </span>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // --- INTERACTIVE MODE: BLUETOOTH ---
+  if (keychainData && keychainData.active_mode === 'bluetooth') {
+    const bluetooth = keychainData.payload_data || {};
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#FFF8F2]">
+        <div className="w-full max-w-sm bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-[#FF5FA2]/5 overflow-hidden border border-white/60 p-8 flex flex-col items-center">
+          
+          <div className="w-20 h-20 rounded-3xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-6 shadow-inner text-blue-600">
+            <Bluetooth className="w-10 h-10 animate-pulse" />
+          </div>
+
+          <div className="text-center mb-8">
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
+              Koneksi Bluetooth
+            </span>
+            <h1 className="text-2xl font-black text-[#18080F] mt-3">
+              OneTap Bluetooth
+            </h1>
+            <p className="text-xs text-gray-400 mt-1 max-w-[240px] mx-auto">
+              Silakan salin alamat MAC di bawah ini untuk menghubungkan perangkat Anda.
+            </p>
+          </div>
+
+          {/* Bluetooth Details Card */}
+          <div className="w-full bg-white border border-[#F6B7C8]/10 rounded-3xl p-5 space-y-4 shadow-sm mb-6">
+            <div>
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Alamat MAC Perangkat (MAC Address)</p>
+              <p className="text-base font-black text-[#18080F] bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-xl flex items-center justify-between select-all font-mono tracking-wider">
+                {bluetooth.mac || '00:00:00:00:00:00'}
+              </p>
+            </div>
+          </div>
+
+          {/* Copy MAC CTA */}
+          <button
+            onClick={() => handleCopyPassword(bluetooth.mac || '')}
+            className={`w-full h-14 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-blue-600/10 active:scale-[0.98] ${
+              copied 
+                ? 'bg-green-600 text-white shadow-green-500/20' 
+                : 'bg-[#0F172A] text-white hover:bg-slate-800'
+            }`}
+          >
+            {copied ? (
+              <>
+                <Check className="w-5 h-5" />
+                Alamat MAC Disalin!
+              </>
+            ) : (
+              <>
+                <Copy className="w-5 h-5" />
+                Salin Alamat MAC
+              </>
+            )}
+          </button>
+
+          {/* Instruction Details */}
+          <div className="w-full mt-6 bg-slate-50 rounded-2xl p-4 border border-slate-100 text-left">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Panduan Koneksi:</p>
+            <ol className="text-[10px] text-gray-500 font-medium space-y-1.5 list-decimal pl-4 leading-relaxed">
+              <li>Klik tombol <b>Salin Alamat MAC</b> di atas.</li>
+              <li>Buka pengaturan Bluetooth/aplikasi pairing perangkat Anda.</li>
+              <li>Gunakan alamat MAC yang disalin untuk mendaftarkan atau memprogram koneksi manual ke perangkat Anda.</li>
+            </ol>
+          </div>
+
+          <div className="mt-8 flex flex-col items-center gap-1 opacity-40">
+            <span className="text-[9px] font-black tracking-[0.2em] text-[#18080F] uppercase">
+              Powered by OneTap NFC
+            </span>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // --- INTERACTIVE MODE: PESAN TEKS / MEMO ---
+  if (keychainData && keychainData.active_mode === 'text') {
+    const textMsg = keychainData.payload_data || {};
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#FFF8F2]">
+        <div className="w-full max-w-sm bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-[#FF5FA2]/5 overflow-hidden border border-white/60 p-8 flex flex-col items-center">
+          
+          <div className="w-20 h-20 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 shadow-inner text-slate-600">
+            <Type className="w-10 h-10 animate-pulse" />
+          </div>
+
+          <div className="text-center mb-8">
+            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-slate-50 border border-slate-100 px-3 py-1 rounded-full">
+              Pesan Teks / Memo
+            </span>
+            <h1 className="text-2xl font-black text-[#18080F] mt-3">
+              OneTap Memo
+            </h1>
+            <p className="text-xs text-gray-400 mt-1 max-w-[240px] mx-auto">
+              Memo kustom yang dibagikan melalui gantungan kunci.
+            </p>
+          </div>
+
+          {/* Text Message Card */}
+          <div className="w-full bg-slate-50 border border-[#F6B7C8]/10 rounded-3xl p-5 shadow-inner mb-6 text-left relative overflow-hidden min-h-[100px] flex items-center">
+            <div className="absolute top-2 right-3 opacity-[0.03] pointer-events-none select-none">
+              <Type className="w-32 h-32" />
+            </div>
+            <p className="text-sm font-semibold text-gray-700 leading-relaxed whitespace-pre-wrap relative z-10 w-full">
+              {textMsg.text || 'Tidak ada pesan teks.'}
+            </p>
+          </div>
+
+          {/* Copy Text CTA */}
+          <button
+            onClick={() => handleCopyPassword(textMsg.text || '')}
+            className={`w-full h-14 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-slate-600/10 active:scale-[0.98] ${
+              copied 
+                ? 'bg-green-600 text-white shadow-green-500/20' 
+                : 'bg-[#0F172A] text-white hover:bg-slate-800'
+            }`}
+          >
+            {copied ? (
+              <>
+                <Check className="w-5 h-5" />
+                Pesan Disalin!
+              </>
+            ) : (
+              <>
+                <Copy className="w-5 h-5" />
+                Salin Isi Pesan
+              </>
+            )}
           </button>
 
           <div className="mt-8 flex flex-col items-center gap-1 opacity-40">

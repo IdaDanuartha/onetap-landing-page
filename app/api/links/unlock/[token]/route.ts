@@ -26,7 +26,7 @@ export async function POST(
       const payload = keychain.payload_data || {};
 
       // Direct Redirect Modes
-      if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview'].includes(mode)) {
+      if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app'].includes(mode)) {
         let redirectUrl = '';
 
         switch (mode) {
@@ -67,6 +67,9 @@ export async function POST(
             break;
           case 'streetview':
             redirectUrl = `google.streetview:cbll=${payload.lat || ''},${payload.lng || ''}`;
+            break;
+          case 'app':
+            redirectUrl = `intent://#Intent;package=${payload.package || ''};end`;
             break;
         }
 
