@@ -341,11 +341,19 @@ export default function OneTapBuilderPage() {
     }
   };
 
+  // Find the single active page ID for free plan users
+  // (the first page in the pages list that has is_published === true)
+  const activePageIdOnFreePlan = isFreePlan 
+    ? pages.find(p => p.is_published)?.id 
+    : null;
+
   // currentPageIsInactive: true when viewing a profile that is not currently published
   // (free/expired plan users can have multiple profiles, but only 1 is live)
   const currentPageIsInactive = isFreePlan && currentPageId
-    ? (pages.find(p => p.id === currentPageId)?.is_published === false)
-    : false;
+    ? (activePageIdOnFreePlan ? currentPageId !== activePageIdOnFreePlan : true)
+    : currentPageId
+      ? (pages.find(p => p.id === currentPageId)?.is_published === false)
+      : false;
 
   if (loading) {
     return (
@@ -494,8 +502,11 @@ export default function OneTapBuilderPage() {
             {pages.length > 0 && (
               <div className="flex flex-wrap gap-2.5 p-2 bg-white/60 border border-[#F6B7C8]/15 rounded-[24px] shadow-sm shadow-[#18080F]/2 backdrop-blur-md">
                 {pages.map((p: any, idx: number) => {
-                  // On free/expired plan, a page is "inactive" if it's not published
-                  const isInactive = isFreePlan && !p.is_published;
+                  // On free/expired plan, only 1 page can be active (the first published one in the list).
+                  // All other pages are considered inactive.
+                  const isInactive = isFreePlan
+                    ? (activePageIdOnFreePlan ? p.id !== activePageIdOnFreePlan : true)
+                    : !p.is_published;
                   const isActivePage = currentPageId === p.id;
                   return (
                     <div key={p.id} className="flex items-center gap-1.5 group/tab">
@@ -547,11 +558,11 @@ export default function OneTapBuilderPage() {
                         </button>
                       )}
 
-                      {/* Delete button — always visible on hover */}
+                      {/* Delete button — always visible on hover (desktop), always visible on mobile/tablet */}
                       <button
                         onClick={() => setDeleteConfirmPage(p)}
                         disabled={deletingPageId === p.id}
-                        className="opacity-0 group-hover/tab:opacity-100 flex items-center justify-center w-8 h-8 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50/80 border border-transparent hover:border-red-100 hover:shadow-sm transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                        className="opacity-100 lg:opacity-0 lg:group-hover/tab:opacity-100 flex items-center justify-center w-8 h-8 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50/80 border border-transparent hover:border-red-100 hover:shadow-sm transition-all duration-300 disabled:opacity-50 cursor-pointer"
                         title="Hapus profil"
                       >
                         {deletingPageId === p.id ? (
@@ -630,20 +641,34 @@ export default function OneTapBuilderPage() {
                         className="w-full px-5 py-4 rounded-2xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/50 focus:bg-white focus:border-[#FF5FA2]/40 outline-none transition-all font-medium text-gray-600 resize-none"
                       />
                     </div>
-                    <div className="sm:w-48 flex flex-col justify-center">
+                    <div className="sm:w-56 flex flex-col justify-center">
                       <label className="text-[10px] font-black text-[#FF5FA2] uppercase tracking-[0.2em] mb-3 ml-1 block">{d.profile.status}</label>
                       <div 
-                        onClick={() => setIsPublished(!isPublished)}
-                        className={`group relative w-full h-[64px] rounded-2xl border-2 cursor-pointer transition-all duration-300 flex items-center px-4 gap-3 ${
-                          isPublished 
-                            ? 'bg-green-50/50 border-green-200/50' 
-                            : 'bg-gray-50 border-gray-200/60'
+                        onClick={() => {
+                          if (isFreePlan && currentPageIsInactive) {
+                            setToastMsg('Aktifkan profil ini melalui tombol "Aktifkan" di atas untuk mempublikasikannya.');
+                            setToastType('info');
+                            setShowToast(true);
+                            return;
+                          }
+                          setIsPublished(!isPublished);
+                        }}
+                        className={`group relative w-full h-[64px] rounded-2xl border-2 transition-all duration-300 flex items-center px-4 gap-3 select-none ${
+                          isFreePlan && currentPageIsInactive
+                            ? 'bg-amber-50/30 border-amber-200/40 cursor-not-allowed opacity-80'
+                            : isPublished 
+                              ? 'bg-green-50/50 border-green-200/50 cursor-pointer' 
+                              : 'bg-gray-50 border-gray-200/60 cursor-pointer'
                         }`}
                       >
                         {/* Toggle Track */}
-                        <div className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${isPublished ? 'bg-green-500' : 'bg-gray-300'}`}>
+                        <div className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${
+                          isFreePlan && currentPageIsInactive
+                            ? 'bg-amber-200'
+                            : isPublished ? 'bg-green-500' : 'bg-gray-300'
+                        }`}>
                           <motion.div 
-                            animate={{ x: isPublished ? 22 : 2 }}
+                            animate={{ x: (isFreePlan && currentPageIsInactive) ? 2 : isPublished ? 22 : 2 }}
                             initial={false}
                             className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm"
                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -652,17 +677,25 @@ export default function OneTapBuilderPage() {
                         
                         {/* Label */}
                         <div className="flex flex-col">
-                          <span className={`text-xs font-black uppercase tracking-wider ${isPublished ? 'text-green-600' : 'text-gray-500'}`}>
-                            {isPublished ? 'Live' : 'Draft'}
+                          <span className={`text-xs font-black uppercase tracking-wider ${
+                            isFreePlan && currentPageIsInactive
+                              ? 'text-amber-600'
+                              : isPublished ? 'text-green-600' : 'text-gray-500'
+                          }`}>
+                            {isFreePlan && currentPageIsInactive ? 'Tidak Aktif' : isPublished ? 'Live' : 'Draft'}
                           </span>
                           <span className="text-[9px] font-bold text-gray-400 leading-none">
-                            {isPublished ? d.profile.public : d.profile.private}
+                            {isFreePlan && currentPageIsInactive ? 'Profil dinonaktifkan' : isPublished ? d.profile.public : d.profile.private}
                           </span>
                         </div>
 
                         {/* Decoration Icon */}
-                        <div className={`ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-all ${isPublished ? 'bg-green-500/10 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
-                          {isPublished ? <Check className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        <div className={`ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                          isFreePlan && currentPageIsInactive
+                            ? 'bg-amber-500/10 text-amber-600'
+                            : isPublished ? 'bg-green-500/10 text-green-600' : 'bg-gray-200 text-gray-400'
+                        }`}>
+                          {isFreePlan && currentPageIsInactive ? <EyeOff className="w-4 h-4" /> : isPublished ? <Check className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </div>
                       </div>
                     </div>
