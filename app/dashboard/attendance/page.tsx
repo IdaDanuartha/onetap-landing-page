@@ -1062,7 +1062,7 @@ export default function AttendanceManagementPage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative z-10 overflow-hidden"
+              className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-black text-[#18080F] tracking-tight">
@@ -1452,7 +1452,7 @@ export default function AttendanceManagementPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl"
+              className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-black text-[#18080F]">{d.import.title}</h3>

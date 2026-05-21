@@ -377,11 +377,10 @@ export default function DashboardPage() {
                   ) : (
                     <>
                       <Link
-                        href={`/l/${user?.slug || user?.username}`}
-                        target="_blank"
+                        href="/dashboard/linktree"
                         className="text-[#FF5FA2] font-bold hover:underline transition-all"
                       >
-                        onetap-charm.com/l/{user?.slug || user?.username}
+                        {locale === 'id' ? 'Dashboard Linktree' : 'Linktree Dashboard'}
                       </Link>
                       <button
                         onClick={() => setIsEditingUsername(true)}
@@ -390,6 +389,14 @@ export default function DashboardPage() {
                       >
                         <Settings className="w-3.5 h-3.5" />
                       </button>
+                      <Link
+                        href={`/l/${user?.slug || user?.username}`}
+                        target="_blank"
+                        className="p-1.5 rounded-lg hover:bg-[#FF5FA2]/5 text-gray-400 hover:text-[#FF5FA2] transition-all"
+                        title={locale === 'id' ? 'Lihat Halaman Publik' : 'View Public Page'}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
                     </>
                   )}
                 </div>

@@ -494,7 +494,7 @@ export const translations = {
         }
       },
       welcome: "Halo",
-      manageLink: "Kelola kartu digitalmu di",
+      manageLink: "Kelola halaman Linktree Anda di",
       copyLink: "Link disalin ke clipboard!",
       editPage: "Edit Halaman",
       actions: {
@@ -1355,7 +1355,7 @@ export const translations = {
         }
       },
       welcome: "Hello",
-      manageLink: "Manage your digital card at",
+      manageLink: "Manage your Linktree page at",
       copyLink: "Link copied to clipboard!",
       editPage: "Edit Page",
       actions: {
