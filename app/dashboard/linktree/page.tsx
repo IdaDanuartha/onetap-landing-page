@@ -866,9 +866,12 @@ export default function OneTapBuilderPage() {
                 ))}
               </div>
               {!canAccess(plan, 'customBranding', expiresAt) && (
-                <p className="text-xs font-medium text-amber-600 bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                  <strong>💡 Info:</strong> {d.appearance.premiumInfo}
-                </p>
+                <div className="text-xs font-medium text-amber-600 bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="font-bold">Info:</strong> {d.appearance.premiumInfo}
+                  </div>
+                </div>
               )}
             </div>
 

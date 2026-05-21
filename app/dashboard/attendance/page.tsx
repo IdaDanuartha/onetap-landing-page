@@ -841,8 +841,8 @@ export default function AttendanceManagementPage() {
                 <p className="text-sm font-bold text-amber-700/80">{d.warning.waMissingDesc}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-black shadow-lg shadow-amber-600/20">
-              <Lightbulb className="w-4 h-4" /> {d.warning.bulkWaUpdate}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100/80 border border-amber-200 text-amber-800 rounded-xl text-xs font-black shrink-0">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-600" /> {d.warning.bulkWaUpdate}
             </div>
           </motion.div>
         )}
@@ -1134,11 +1134,11 @@ export default function AttendanceManagementPage() {
                   </div>
                 ) : (
                   <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-3">
-                    <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <Lightbulb className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs font-black text-blue-700 mb-1 uppercase tracking-wider">💡 Tips Pengisian</p>
+                      <p className="text-xs font-black text-blue-700 mb-1 uppercase tracking-wider">Tips Pengisian</p>
                       <p className="text-xs font-bold text-blue-600/80 leading-relaxed">
-                        Nomor WA tidak perlu diisi sekarang. Anda bisa mengisi nomor WA banyak siswa sekaligus menggunakan fitur <span className="text-blue-700 underline">Bulk Update WA</span> di tabel utama.
+                        Nomor WA tidak perlu diisi sekarang. Anda bisa mengisi nomor WA banyak siswa sekaligus menggunakan fitur <span className="text-blue-700 underline font-extrabold">Bulk Update WA</span> di tabel utama.
                       </p>
                     </div>
                   </div>
