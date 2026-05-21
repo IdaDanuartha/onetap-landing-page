@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { BarChart2, ExternalLink, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Share2, CheckCircle2, X, Loader2, Lock, Calendar, ShieldCheck, Clock, Globe } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { BarChart2, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Lock, Calendar, ShieldCheck, Clock, Globe } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { canAccess, PLANS, PLAN_BADGE_COLORS, isExpired, getPlan } from '@/lib/plans';
 import type { PlanId } from '@/lib/plans';
 import Toast from '@/app/components/Toast';
@@ -171,25 +171,6 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  const handleShare = async () => {
-    const shareUrl = `https://onetap-charm.com/l/${user?.slug || user?.username}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'OneTap - My Digital Card',
-          text: t('dashboard.url.shareText'),
-          url: shareUrl,
-        });
-      } catch (err) {
-        console.log('Share cancelled or failed');
-      }
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      setToastMsg(t('dashboard.copyLink'));
-      setShowToast(true);
-    }
-  };
-
   // Calculate dynamic conversion rate
   const conversionRate = stats.totalClicks > 0
     ? ((stats.totalClicks / (stats.totalClicks + 15)) * 100).toFixed(1)
@@ -328,86 +309,12 @@ export default function DashboardPage() {
               </h1>
               <div className="text-base sm:text-lg text-gray-500 mt-2 font-medium flex flex-wrap items-center gap-2">
                 {t('dashboard.manageLink')}
-                <div className="flex items-center gap-2">
-                  {isEditingUsername ? (
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#FF5FA2] font-bold">onetap-charm.com/l/</span>
-                        <input
-                          type="text"
-                          value={newUsername}
-                          onChange={(e) => {
-                            setNewUsername(e.target.value.toLowerCase());
-                            setUsernameError('');
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleUpdateUsername();
-                            if (e.key === 'Escape') {
-                              setIsEditingUsername(false);
-                              setNewUsername(user?.slug || user?.username || '');
-                              setUsernameError('');
-                            }
-                          }}
-                          className="bg-white border-2 border-[#FF5FA2] rounded-lg px-2 py-0.5 text-sm font-bold text-[#FF5FA2] outline-none w-32 focus:ring-2 focus:ring-[#FF5FA2]/20 transition-all"
-                          placeholder={t('dashboard.url.placeholder')}
-                          autoFocus
-                        />
-                        <button
-                          onClick={handleUpdateUsername}
-                          disabled={isUpdating}
-                          className="p-1.5 rounded-lg bg-[#FF5FA2] text-white hover:bg-[#E8457E] disabled:opacity-50 transition-all"
-                          title={t('dashboard.actions.save')}
-                        >
-                          {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsEditingUsername(false);
-                            setNewUsername(user?.username || '');
-                            setUsernameError('');
-                          }}
-                          className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-all"
-                          title={t('dashboard.actions.cancel')}
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      {usernameError && <p className="text-[10px] text-red-500 font-bold">{usernameError}</p>}
-                    </div>
-                  ) : (
-                    <>
-                      <Link
-                        href="/dashboard/linktree"
-                        className="text-[#FF5FA2] font-bold hover:underline transition-all"
-                      >
-                        {locale === 'id' ? 'Dashboard Linktree' : 'Linktree Dashboard'}
-                      </Link>
-                      <button
-                        onClick={() => setIsEditingUsername(true)}
-                        className="p-1.5 rounded-lg hover:bg-[#FF5FA2]/5 text-gray-400 hover:text-[#FF5FA2] transition-all"
-                        title={t('dashboard.actions.editUrl')}
-                      >
-                        <Settings className="w-3.5 h-3.5" />
-                      </button>
-                      <Link
-                        href={`/l/${user?.slug || user?.username}`}
-                        target="_blank"
-                        className="p-1.5 rounded-lg hover:bg-[#FF5FA2]/5 text-gray-400 hover:text-[#FF5FA2] transition-all"
-                        title={locale === 'id' ? 'Lihat Halaman Publik' : 'View Public Page'}
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </Link>
-                    </>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleShare}
-                  className="p-2 rounded-xl bg-white border border-gray-200 hover:border-[#FF5FA2] text-gray-400 hover:text-[#FF5FA2] transition-all shadow-sm hover:shadow-md ml-auto sm:ml-0"
-                  title={t('dashboard.actions.share')}
+                <Link
+                  href="/dashboard/linktree"
+                  className="text-[#FF5FA2] font-bold hover:underline transition-all"
                 >
-                  <Share2 className="w-4 h-4" />
-                </button>
+                  OneTap Card Dashboard
+                </Link>
               </div>
             </div>
 
