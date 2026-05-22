@@ -36,7 +36,7 @@ export default function FirstTimePopup() {
       localStorage.setItem("onetap_hide_first_time_popup", "true");
     }
     setIsOpen(false);
-    router.push("/dashboard/nfc");
+    router.push("/write");
   };
 
   return (

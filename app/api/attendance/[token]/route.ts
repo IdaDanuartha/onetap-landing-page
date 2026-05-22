@@ -111,6 +111,7 @@ export async function POST(
         error: 'Sudah Absen', 
         message: 'Siswa sudah tercatat hadir hari ini.',
         studentName: tag.student_name,
+        className: tag.class_name,
         alreadyLogged: true
       }, { status: 400 });
     }
@@ -160,7 +161,7 @@ export async function POST(
       timeZone: 'Asia/Jakarta',
     });
 
-    const defaultTemplate = '🔔 *PRESENSI KEHADIRAN* 🔔\n\nHalo Pendamping *{student_name}*,\nAnanda telah hadir di sekolah pada:\n\n📅 Hari/Tgl: *{date}*\n⏰ Pukul: *{time}*\n🏫 Sekolah: *{school_name}*\n\nTerima kasih atas perhatiannya.';
+    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB';
     const template = (tag.message_template as string) || defaultTemplate;
 
     const message = template

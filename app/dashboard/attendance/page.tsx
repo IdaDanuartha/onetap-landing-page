@@ -26,7 +26,7 @@ interface Tag {
 interface ScanLog {
   student_name: string;
   class_name: string;
-  status: "success" | "error";
+  status: "success" | "warning" | "error";
   time: string;
   message?: string;
 }
@@ -47,7 +47,7 @@ export default function AttendanceManagementPage() {
   const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
   const [presentToday, setPresentToday] = useState(0);
   const [schoolName, setSchoolName] = useState("Umum");
-  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("🔔 *PRESENSI KEHADIRAN* 🔔\n\nHalo Pendamping *{student_name}*,\nAnanda telah hadir di sekolah pada:\n\n📅 Hari/Tgl: *{date}*\n⏰ Pukul: *{time}*\n🏫 Sekolah: *{school_name}*\n\nTerima kasih atas perhatiannya.");
+  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB");
   const [user, setUser] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -436,21 +436,21 @@ export default function AttendanceManagementPage() {
   const processAttendance = async (token: string) => {
     if (processingTokens.current[token]) return;
     
-    const todayStr = new Date().toISOString().split('T')[0];
-    const cacheKey = `onetap_attended_${token}_${todayStr}`;
-    
     processingTokens.current[token] = true;
 
     try {
       const res = await fetch(`/api/attendance/${token}`, { method: 'POST' });
       const result = await res.json();
       
+      const isAlreadyLogged = result.alreadyLogged === true;
       const newLog: ScanLog = {
         student_name: result.studentName || "Tag Baru",
         class_name: result.className || "-",
-        status: res.ok ? "success" : "error",
+        status: res.ok ? "success" : (isAlreadyLogged ? "warning" : "error"),
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        message: result.message ? `${result.error}: ${result.message}` : (result.error || (res.ok ? "Kehadiran Berhasil!" : "Gagal"))
+        message: isAlreadyLogged 
+          ? "Sudah Absen" 
+          : (result.message ? `${result.error}: ${result.message}` : (result.error || (res.ok ? "Kehadiran Berhasil!" : "Gagal")))
       };
 
       setScanLogs(prev => [newLog, ...prev].slice(0, 50));
@@ -468,18 +468,8 @@ export default function AttendanceManagementPage() {
     }
   };
 
-  const handleWriteNFC = async (token: string, isBulk = false, studentName = "") => {
-    if (!('NDEFReader' in window)) {
-      const url = `${window.location.origin}/attend/${token}`;
-      await navigator.clipboard.writeText(url);
-      setFallbackToken(token);
-      setShowNFCFallback(true);
-      return;
-    }
-
+  const performNFCWrite = async (token: string, index: number) => {
     try {
-      setIsWritingNFC(true);
-      setWriteStatus("writing");
       // @ts-ignore
       const ndef = new NDEFReader();
       await ndef.write({
@@ -488,14 +478,14 @@ export default function AttendanceManagementPage() {
       
       setWriteStatus("success");
       
-      if (isBulk && currentBulkIndex < bulkWriteQueue.length - 1) {
-        // Prepare for next student in bulk
+      if (index < bulkWriteQueue.length - 1) {
+        // Wait 2 seconds so the user has time to swap cards, then trigger the next write
         setTimeout(() => {
-          const nextIndex = currentBulkIndex + 1;
-          setCurrentBulkIndex(nextIndex);
+          setCurrentBulkIndex(index + 1);
           setWriteStatus("writing");
-        }, 1500);
+        }, 2000);
       } else {
+        // Complete bulk write
         setTimeout(() => {
           setIsWritingNFC(false);
           setWriteStatus("idle");
@@ -504,22 +494,44 @@ export default function AttendanceManagementPage() {
         }, 2000);
       }
     } catch (error) {
-      console.error(error);
+      console.error("NFC Write Error at index", index, error);
       setWriteStatus("error");
-      if (!isBulk) {
-        setTimeout(() => {
-          setIsWritingNFC(false);
-          setWriteStatus("idle");
-        }, 3000);
-      }
     }
+  };
+
+  useEffect(() => {
+    if (isWritingNFC && currentBulkIndex >= 0 && currentBulkIndex < bulkWriteQueue.length && writeStatus === "writing") {
+      const currentTag = bulkWriteQueue[currentBulkIndex];
+      performNFCWrite(currentTag.token, currentBulkIndex);
+    }
+  }, [currentBulkIndex, writeStatus, isWritingNFC, bulkWriteQueue]);
+
+  const startSingleWrite = (tag: Tag) => {
+    if (!('NDEFReader' in window)) {
+      const url = `${window.location.origin}/attend/${tag.token}`;
+      navigator.clipboard.writeText(url);
+      setFallbackToken(tag.token);
+      setShowNFCFallback(true);
+      return;
+    }
+    setBulkWriteQueue([tag]);
+    setCurrentBulkIndex(0);
+    setIsWritingNFC(true);
+    setWriteStatus("writing");
   };
 
   const startBulkWrite = () => {
     if (filteredTags.length === 0) return;
+    if (!('NDEFReader' in window)) {
+      setToastMsg("Browser Anda tidak mendukung NFC. Gunakan Chrome di Android.");
+      setToastType("warning");
+      setShowToast(true);
+      return;
+    }
     setBulkWriteQueue(filteredTags);
     setCurrentBulkIndex(0);
-    handleWriteNFC(filteredTags[0].token, true, filteredTags[0].student_name);
+    setIsWritingNFC(true);
+    setWriteStatus("writing");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1018,7 +1030,7 @@ export default function AttendanceManagementPage() {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
-                          onClick={() => handleWriteNFC(tag.token)}
+                          onClick={() => startSingleWrite(tag)}
                           className="p-2 hover:bg-[#FF5FA2]/5 text-[#FF5FA2] rounded-lg transition-colors"
                           title="Write NFC Tag"
                         >
@@ -1376,14 +1388,12 @@ export default function AttendanceManagementPage() {
                     <p className="text-gray-400 text-sm font-medium mt-2">Pastikan NFC aktif dan kartu tidak terkunci.</p>
                   </div>
                   <div className="flex gap-2">
-                    {currentBulkIndex !== -1 && (
-                      <button 
-                        onClick={() => handleWriteNFC(bulkWriteQueue[currentBulkIndex].token, true)}
-                        className="flex-1 py-3 rounded-xl bg-[#18080F] text-white font-bold"
-                      >
-                        Coba Lagi
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => setWriteStatus("writing")}
+                      className="flex-1 py-3 rounded-xl bg-[#18080F] text-white font-bold"
+                    >
+                      Coba Lagi
+                    </button>
                     <button 
                       onClick={() => {
                         setIsWritingNFC(false);
@@ -1593,14 +1603,43 @@ export default function AttendanceManagementPage() {
                           key={i}
                           initial={{ x: 20, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
-                          className={`p-3 md:p-4 rounded-xl md:rounded-2xl border flex items-center gap-3 md:gap-4 ${log.status === 'success' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}
+                          className={`p-3 md:p-4 rounded-xl md:rounded-2xl border flex items-center justify-between gap-3 md:gap-4 ${
+                            log.status === 'success' 
+                              ? 'bg-green-50 border-green-100' 
+                              : log.status === 'warning'
+                                ? 'bg-amber-50 border-amber-100'
+                                : 'bg-red-50 border-red-100'
+                          }`}
                         >
-                          <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 ${log.status === 'success' ? 'bg-white text-green-500' : 'bg-white text-red-500'}`}>
-                            {log.status === 'success' ? <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" /> : <AlertTriangle className="w-4 h-4 md:w-5 md:h-5" />}
+                          <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 ${
+                              log.status === 'success' 
+                                ? 'bg-white text-green-500' 
+                                : log.status === 'warning'
+                                  ? 'bg-white text-amber-500'
+                                  : 'bg-white text-red-500'
+                            }`}>
+                              {log.status === 'success' && <CheckCircle2 className="w-4 h-4 md:w-5 h-5" />}
+                              {log.status === 'warning' && <AlertCircle className="w-4 h-4 md:w-5 h-5" />}
+                              {log.status === 'error' && <AlertTriangle className="w-4 h-4 md:w-5 h-5" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs md:text-sm font-black text-[#18080F] truncate">{log.student_name}</p>
+                              <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase">{log.class_name} • {log.time}</p>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-xs md:text-sm font-black text-[#18080F] truncate">{log.student_name}</p>
-                            <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase">{log.class_name} • {log.time}</p>
+                          <div className="shrink-0">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                              log.status === 'success' 
+                                ? 'bg-green-100 text-green-700' 
+                                : log.status === 'warning'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-red-100 text-red-700'
+                            }`}>
+                              {log.status === 'success' && "Hadir"}
+                              {log.status === 'warning' && "Sudah Absen"}
+                              {log.status === 'error' && "Gagal"}
+                            </span>
                           </div>
                         </motion.div>
                       ))

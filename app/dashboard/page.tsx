@@ -11,6 +11,7 @@ import { canAccess, PLANS, PLAN_BADGE_COLORS, isExpired, getPlan } from '@/lib/p
 import type { PlanId } from '@/lib/plans';
 import Toast from '@/app/components/Toast';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import LogoutConfirmModal from '@/app/components/LogoutConfirmModal';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   const [newUsername, setNewUsername] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const planExpired = isExpired(expiresAt);
 
@@ -165,10 +167,8 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/');
+  const handleLogout = () => {
+    setIsLogoutModalOpen(true);
   };
 
   // Calculate dynamic conversion rate
@@ -565,6 +565,15 @@ export default function DashboardPage() {
         isVisible={showToast} 
         message={toastMsg} 
         onClose={() => setShowToast(false)} 
+      />
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={async () => {
+          const supabase = createClient();
+          await supabase.auth.signOut();
+          router.push('/');
+        }}
       />
     </div>
   );

@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import LogoutConfirmModal from "@/app/components/LogoutConfirmModal";
 
 export default function Header() {
   const { t, locale, setLocale } = useLanguage();
@@ -16,6 +17,7 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
 
@@ -67,7 +69,7 @@ export default function Header() {
 
   const navLinks = [
     { label: t('nav.howItWorks'), href: "/#how-it-works" },
-    { label: t('nav.scan'), href: "/dashboard/nfc" },
+    { label: t('nav.scan'), href: "/write" },
     { label: t('nav.products'), href: "https://lynk.id/onetap.charm" },
     { label: t('nav.pricing'), href: "/pricing" },
   ];
@@ -161,10 +163,9 @@ export default function Header() {
                           Dashboard
                         </Link>
                         <button
-                          onClick={async () => {
-                            const supabase = createClient();
-                            await supabase.auth.signOut();
-                            window.location.href = "/";
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            setIsLogoutModalOpen(true);
                           }}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors w-full text-left"
                         >
@@ -305,10 +306,9 @@ export default function Header() {
                   
                   {user && (
                     <button
-                      onClick={async () => {
-                        const supabase = createClient();
-                        await supabase.auth.signOut();
-                        window.location.href = "/";
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsLogoutModalOpen(true);
                       }}
                       className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-red-50 transition-colors group text-left"
                     >
@@ -335,6 +335,16 @@ export default function Header() {
           </>
         )}
       </AnimatePresence>
+
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={async () => {
+          const supabase = createClient();
+          await supabase.auth.signOut();
+          window.location.href = "/";
+        }}
+      />
     </header>
   );
 }

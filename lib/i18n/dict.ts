@@ -868,6 +868,12 @@ export const translations = {
       manualScan: "Scan QRIS {name}",
       screenshotInfo: "Screenshot QRIS di atas untuk discan dari galeri aplikasi pembayaran Anda.",
       fallbackInfo: "Jika aplikasi tidak terbuka otomatis, silakan pilih \"Tampilkan Gambar QRIS\" dan scan secara manual.",
+    },
+    logoutConfirm: {
+      title: "Konfirmasi Logout",
+      desc: "Apakah Anda yakin ingin keluar dari akun OneTap Anda?",
+      confirm: "Ya, Keluar",
+      cancel: "Batal"
     }
   },
   en: {
@@ -1737,6 +1743,12 @@ export const translations = {
       manualScan: "Scan {name} QRIS",
       screenshotInfo: "Screenshot the QRIS above to scan it from your payment app's gallery.",
       fallbackInfo: "If the app doesn't open automatically, please select \"Show QRIS Image\" and scan manually.",
+    },
+    logoutConfirm: {
+      title: "Confirm Logout",
+      desc: "Are you sure you want to log out of your OneTap account?",
+      confirm: "Yes, Logout",
+      cancel: "Cancel"
     }
   },
 };
