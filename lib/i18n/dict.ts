@@ -355,11 +355,11 @@ export const translations = {
         },
         {
           q: "Berapa lama proses produksi?",
-          a: "Estimasi produksi adalah 5–8 hari kerja setelah desain dan pembayaran dikonfirmasi, dan bisa lebih cepat. Pengiriman tersedia ke seluruh Indonesia.",
+          a: "Estimasi produksi adalah 5-8 hari kerja setelah desain dan pembayaran dikonfirmasi, dan bisa lebih cepat. Pengiriman tersedia ke seluruh Indonesia.",
         },
         {
           q: "Apakah bisa custom desain?",
-          a: "Tentu saja bisa! Yang dimaksud custom desain di sini adalah Anda bisa request custom karakter pada keychain gantungan kunci Anda sendiri. Sebagai catatan, kami tidak memiliki paket khusus bernama Custom Edition.",
+          a: "Tentu saja bisa! Anda bebas memesan gantungan kunci dengan bentuk karakter custom sesuai dengan keinginan Anda.",
         },
         {
           q: "Berapa harga gantungan kunci OneTap?",
@@ -1270,11 +1270,11 @@ export const translations = {
         },
         {
           q: "How long is the production process?",
-          a: "The production process takes about 5–8 business days after design and payment are confirmed, but it can be faster. Shipping is available throughout Indonesia.",
+          a: "The production process takes about 5-8 business days after design and payment are confirmed, but it can be faster. Shipping is available throughout Indonesia.",
         },
         {
           q: "Can I customize the design?",
-          a: "Yes, you absolutely can! By custom design, we mean you can request a custom character on your own keychain. Please note that we do not have a specific package named 'Custom Edition'.",
+          a: "Yes, you absolutely can! You can freely order a keychain with a custom character shape of your choice.",
         },
         {
           q: "How much does a OneTap keychain cost?",
