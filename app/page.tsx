@@ -11,6 +11,7 @@ import TestimonialsSection from "./components/TestimonialsSection";
 import FAQSection from "./components/FAQSection";
 import CTABannerSection from "./components/CTABannerSection";
 import Footer from "./components/Footer";
+import FirstTimePopup from "./components/FirstTimePopup";
 
 export default function Home() {
   return (
@@ -29,6 +30,7 @@ export default function Home() {
         <CTABannerSection />
       </main>
       <Footer />
+      <FirstTimePopup />
     </>
   );
 }

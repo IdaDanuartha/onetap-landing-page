@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Zap, Menu, X, ChevronRight, Globe, Play, User, Users, LogOut, LayoutDashboard, Instagram, Twitter, Linkedin, MessageCircle, Link2 } from "lucide-react";
+import { Zap, Menu, X, ChevronRight, Globe, Play, User, Users, LogOut, LayoutDashboard, Instagram, Twitter, Linkedin, MessageCircle, Link2, QrCode } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { usePathname } from "next/navigation";
@@ -66,8 +66,8 @@ export default function Header() {
   }, [isMobileMenuOpen]);
 
   const navLinks = [
-    { label: t('nav.features'), href: "/#features" },
     { label: t('nav.howItWorks'), href: "/#how-it-works" },
+    { label: t('nav.scan'), href: "/dashboard/nfc" },
     { label: t('nav.products'), href: "https://lynk.id/onetap.charm" },
     { label: t('nav.pricing'), href: "/pricing" },
   ];
@@ -258,8 +258,8 @@ export default function Header() {
                       className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group"
                     >
                       <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-[#FF5FA2]/10 transition-colors">
-                        {link.label === t('nav.features') && <Zap className="w-4 h-4 text-[#FF5FA2]" />}
                         {link.label === t('nav.howItWorks') && <Play className="w-4 h-4 text-[#FF5FA2]" />}
+                        {link.label === t('nav.scan') && <QrCode className="w-4 h-4 text-[#FF5FA2]" />}
                         {link.label === t('nav.products') && <Link2 className="w-4 h-4 text-[#FF5FA2]" />}
                         {link.label === t('nav.pricing') && <Users className="w-4 h-4 text-[#FF5FA2]" />}
                       </div>
