@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Joyride, STATUS } from "react-joyride";
+import * as ReactJoyrideNamespace from "react-joyride";
 import type { Step } from "react-joyride";
 import { motion, AnimatePresence } from "framer-motion";
+
+const Joyride = ((ReactJoyrideNamespace as any).default || (ReactJoyrideNamespace as any).Joyride || ReactJoyrideNamespace) as any;
+const STATUS = ReactJoyrideNamespace.STATUS;
 import {
   X,
   ChevronRight,
