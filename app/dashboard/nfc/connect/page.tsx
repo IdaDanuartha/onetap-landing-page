@@ -10,8 +10,9 @@ import {
   Eye, EyeOff, Zap, Eraser, MessageCircle, CreditCard, Wallet, QrCode,
   Contact2, Bluetooth, AppWindow, MapPin, Navigation, Map, Search,
   Share2, Globe, Building2, ShieldCheck, Info, Smartphone, Activity,
-  Lock, Shield, Sparkles
+  Lock, Shield, Sparkles, BookOpen
 } from 'lucide-react';
+import GuidedTour from '@/app/components/GuidedTour';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -79,6 +80,10 @@ export default function ConnectNfcPage() {
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [activeCategory, setActiveCategory] = useState('networking');
 
+  // Guided Tour State
+  const [runTour, setRunTour] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
+
   // New Mode States
   const [vcardData, setVcardData] = useState({ firstName: '', lastName: '', phone: '', email: '', org: '' });
   const [wifiData, setWifiData] = useState({ ssid: '', password: '', encryption: 'WPA' });
@@ -138,8 +143,52 @@ export default function ConnectNfcPage() {
     reader.readAsDataURL(file);
     e.target.value = '';
   };
-  const { locale, setLocale } = useLanguage();
+  const { locale, setLocale, t } = useLanguage();
   const d = dict[locale].dashboard.nfc || { title: 'NFC Activator' };
+
+  const tourSteps = [
+    {
+      target: '#tour-nfc-scan',
+      title: t('dashboard.tour.nfc.scan.title'),
+      content: t('dashboard.tour.nfc.scan.desc'),
+      disableBeacon: true,
+      data: { id: 'scan' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-nfc-link-input',
+      title: t('dashboard.tour.nfc.linkInput.title'),
+      content: t('dashboard.tour.nfc.linkInput.desc'),
+      data: { id: 'linkInput' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-nfc-write',
+      title: t('dashboard.tour.nfc.write.title'),
+      content: t('dashboard.tour.nfc.write.desc'),
+      data: { id: 'write' },
+      spotlightClicks: true,
+    }
+  ];
+
+  const handleTourClose = () => {
+    setRunTour(false);
+    localStorage.setItem('onetap_tour_nfc_completed', 'true');
+  };
+
+  const handleTourRestart = () => {
+    setTourStepIndex(0);
+    setRunTour(true);
+  };
+
+  const handleTourCallback = (data: any) => {
+    const { action, index, status, type } = data;
+    if (type === "step:after" || type === "target:not_found") {
+      setTourStepIndex(index + (action === "prev" ? -1 : 1));
+    } else if (type === "tour:status" && ["finished", "skipped"].includes(status)) {
+      handleTourClose();
+    }
+  };
   
   // Security states
   const [showSecurity, setShowSecurity] = useState(false);
@@ -186,6 +235,10 @@ export default function ConnectNfcPage() {
         }
       }
       setLoading(false);
+      const completed = localStorage.getItem('onetap_tour_nfc_completed');
+      if (!completed) {
+        setRunTour(true);
+      }
     }
     load();
   }, [router]);
@@ -413,6 +466,9 @@ export default function ConnectNfcPage() {
           await ndef.write({ records });
           setConnected(true);
           setIsConnecting(false);
+          if (runTour && tourStepIndex === 2) {
+            handleTourClose();
+          }
         } catch (err) {
           setError('Gagal menulis. Pastikan tag tetap menempel.');
           setIsConnecting(false);
@@ -479,20 +535,33 @@ export default function ConnectNfcPage() {
             </Link>
             <h1 className="text-xl font-black text-[#18080F]">NFC Activator</h1>
           </div>
-          <button
-            onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
-          >
-            <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
-            {locale}
-          </button>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={handleTourRestart}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4" />
+              {t('dashboard.tour.restart')}
+            </button>
+
+            <div className="h-6 w-px bg-gray-100 mx-1" />
+
+            <button
+              onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+            >
+              <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
+              {locale}
+            </button>
+          </div>
         </div>
       </nav>
 
       <div className="max-w-xl mx-auto px-4 py-8 sm:py-12 relative z-10">
         
         {/* Animated NFC Visual */}
-        <div className="relative mx-auto w-40 h-40 mb-10">
+        <div id="tour-nfc-scan" className="relative mx-auto w-40 h-40 mb-10">
           <AnimatePresence>
             {!connected && isConnecting && (
               <motion.div 
@@ -602,7 +671,7 @@ export default function ConnectNfcPage() {
 
 
             {/* Input Area */}
-            <div className={`p-6 bg-white border rounded-[32px] shadow-sm space-y-4 transition-all ${mode === 'erase' ? 'border-red-100 ring-4 ring-red-50' : 'border-[#F6B7C8]/10'}`}>
+            <div id="tour-nfc-link-input" className={`p-6 bg-white border rounded-[32px] shadow-sm space-y-4 transition-all ${mode === 'erase' ? 'border-red-100 ring-4 ring-red-50' : 'border-[#F6B7C8]/10'}`}>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 w-full">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${mode === 'erase' ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-500'}`}>
@@ -1042,6 +1111,7 @@ export default function ConnectNfcPage() {
             )}
 
             <motion.button
+              id="tour-nfc-write"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleConnectNfc}
@@ -1100,6 +1170,15 @@ export default function ConnectNfcPage() {
 
       {/* Decorative background element */}
       <div className="fixed bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-white to-transparent -z-10 opacity-50" />
+      
+      <GuidedTour 
+        pageKey="nfc"
+        steps={tourSteps}
+        run={runTour}
+        onClose={handleTourClose}
+        stepIndex={tourStepIndex}
+        callback={handleTourCallback}
+      />
     </div>
   );
 }

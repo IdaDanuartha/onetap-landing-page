@@ -680,6 +680,83 @@ export const translations = {
           error: "Gagal menghapus akun. Silakan coba lagi.",
         },
       },
+      tour: {
+        restart: "Panduan",
+        skip: "Lewati",
+        next: "Lanjut",
+        back: "Kembali",
+        finish: "Selesai",
+        builder: {
+          profile: {
+            title: "Kustomisasi Profil",
+            desc: "Ubah foto avatar, nama brand, biografi singkat, dan atur status publikasi halaman digital Anda."
+          },
+          addLink: {
+            title: "Tambah Link Baru",
+            desc: "Klik di sini untuk menambahkan link media sosial, website portofolio, WhatsApp, atau tautan penting lainnya."
+          },
+          linksList: {
+            title: "Kelola Koleksi Link",
+            desc: "Semua tautan yang Anda buat akan muncul di sini. Anda bisa menggeser posisinya (drag & drop), mengubah label, menonaktifkan, atau menghapus link dengan mudah."
+          },
+          themes: {
+            title: "Warna & Tema",
+            desc: "Pilih skema warna dan template menarik yang paling sesuai dengan identitas profesional Anda."
+          },
+          save: {
+            title: "Simpan Perubahan",
+            desc: "Jangan lupa untuk mengklik tombol simpan di atas untuk memperbarui profil digital Anda di internet secara instan!"
+          }
+        },
+        nfc: {
+          scan: {
+            title: "Scan Keychain NFC",
+            desc: "Tempelkan keychain OneTap Anda ke bagian belakang handphone untuk membaca link yang tersimpan di dalamnya secara instan."
+          },
+          write: {
+            title: "Tulis ke Keychain NFC",
+            desc: "Gunakan fitur ini untuk merekam link atau mode profil digital baru langsung ke dalam keychain NFC Anda."
+          },
+          linkInput: {
+            title: "Input Link Kustom",
+            desc: "Masukkan link apa pun yang ingin Anda rekam ke dalam keychain NFC (misalnya link WhatsApp, Portofolio, atau Linktree)."
+          }
+        },
+        attendance: {
+          schoolName: {
+            title: "Nama Sekolah & Instansi",
+            desc: "Ketik nama sekolah atau instansi Anda di sini dan tekan Enter untuk menyimpan identitas instansi absensi Anda."
+          },
+          addStudent: {
+            title: "Tambah Siswa Baru",
+            desc: "Klik tombol ini untuk membuka formulir registrasi data siswa baru."
+          },
+          studentForm: {
+            title: "Isi Formulir Siswa",
+            desc: "Lengkapi data siswa (Nama, Kelas, dan No. WhatsApp orang tua) agar notifikasi kehadiran terkirim dengan benar, lalu simpan."
+          },
+          writeNFC: {
+            title: "Hubungkan Gantungan Kunci NFC",
+            desc: "Klik tombol ikon sinyal WiFi di kolom siswa pertama untuk mulai mendaftarkan data siswa tersebut ke keychain/kartu NFC fisik."
+          },
+          writingModal: {
+            title: "Proses Penulisan NFC",
+            desc: "Dekatkan gantungan kunci NFC siswa ke bagian belakang handphone Anda untuk menulis data token absensi unik siswa secara instan."
+          },
+          bulkScan: {
+            title: "Mulai Absensi Massal",
+            desc: "Klik tombol 'Scan Massal' untuk membuka layar pemindaian absensi multi-siswa berturut-turut tanpa jeda."
+          },
+          scanModal: {
+            title: "Layar Absensi Real-Time",
+            desc: "Di layar ini, guru cukup mendekatkan keychain NFC masing-masing siswa. Sistem akan otomatis mencatat kehadiran dan mengirim notifikasi WhatsApp!"
+          },
+          historyLink: {
+            title: "Riwayat Kehadiran",
+            desc: "Setelah selesai praktik absensi, klik di sini untuk memeriksa laporan, grafik rekapitulasi, dan histori kehadiran harian siswa."
+          }
+        }
+      },
       attendance: {
         title: "Manajemen Absensi",
         back: "Kembali ke Dashboard",
@@ -1701,6 +1778,83 @@ export const translations = {
           modalCancelBtn: "Cancel",
           confirmPhrase: "DELETE MY ACCOUNT",
           error: "Failed to delete account. Please try again.",
+        }
+      },
+      tour: {
+        restart: "Guide",
+        skip: "Skip",
+        next: "Next",
+        back: "Back",
+        finish: "Finish",
+        builder: {
+          profile: {
+            title: "Profile Customization",
+            desc: "Change your avatar photo, brand name, short biography, and manage your digital page's publication status."
+          },
+          addLink: {
+            title: "Add New Link",
+            desc: "Click here to add social media links, portfolio websites, WhatsApp, or other important links."
+          },
+          linksList: {
+            title: "Manage Link Collection",
+            desc: "All links you create will appear here. You can easily drag and drop to reorder, edit labels, disable, or delete links."
+          },
+          themes: {
+            title: "Color & Theme",
+            desc: "Select attractive color schemes and templates that best fit your professional identity."
+          },
+          save: {
+            title: "Save Changes",
+            desc: "Do not forget to click the save button above to instantly update your digital profile on the internet!"
+          }
+        },
+        nfc: {
+          scan: {
+            title: "Scan NFC Keychain",
+            desc: "Tap your OneTap keychain to the back of your smartphone to instantly read the saved link inside."
+          },
+          write: {
+            title: "Write to NFC Keychain",
+            desc: "Use this feature to record a new link or digital profile mode directly into your NFC keychain."
+          },
+          linkInput: {
+            title: "Custom Link Input",
+            desc: "Enter any link you want to write to the NFC keychain (e.g., WhatsApp, Portfolio, or Linktree link)."
+          }
+        },
+        attendance: {
+          schoolName: {
+            title: "School & Institution Name",
+            desc: "Type your school or institution name here and press Enter to save your institution's identity for attendance."
+          },
+          addStudent: {
+            title: "Add New Student",
+            desc: "Click this button to open the registration form modal for a new student."
+          },
+          studentForm: {
+            title: "Fill Student Details",
+            desc: "Complete the student details (Name, Class, and Parent's WhatsApp number) to ensure notifications are sent correctly, then save."
+          },
+          writeNFC: {
+            title: "Register NFC Keychain",
+            desc: "Click the WiFi icon in the first student row to start registering this student's digital token onto a physical NFC card/keychain."
+          },
+          writingModal: {
+            title: "NFC Writing Process",
+            desc: "Hold a physical NFC keychain against the back of your phone to write the unique student token instantly."
+          },
+          bulkScan: {
+            title: "Start Bulk Attendance",
+            desc: "Click 'Bulk Scan' to open the high-speed scanning screen for registering multiple students in sequence."
+          },
+          scanModal: {
+            title: "Real-Time Attendance Monitor",
+            desc: "On this screen, simply tap each student's NFC keychain. The system records presence and sends WhatsApp updates automatically!"
+          },
+          historyLink: {
+            title: "Attendance History",
+            desc: "Once done with practice, click here to examine complete reports, recap charts, and daily attendance logs."
+          }
         }
       }
     },

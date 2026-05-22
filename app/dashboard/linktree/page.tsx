@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, EyeOff, Layers, AlertCircle, Radio } from 'lucide-react';
+import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, EyeOff, Layers, AlertCircle, Radio, BookOpen } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { createClient } from '@/lib/supabase/client';
 import { themes, templates } from '@/lib/themes';
@@ -19,6 +19,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { dict } from '@/lib/i18n/dict';
 import { canAccess, isExpired, getPlan } from '@/lib/plans';
 import type { PlanId } from '@/lib/plans';
+import GuidedTour from '@/app/components/GuidedTour';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,82 @@ export default function OneTapBuilderPage() {
   const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
   const language = locale;
   const d = dict[language].dashboard.builder;
+
+  // Guided Tour State
+  const [runTour, setRunTour] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      const completed = localStorage.getItem('onetap_tour_builder_completed');
+      if (!completed) {
+        setRunTour(true);
+      }
+    }
+  }, [loading]);
+
+  const handleTourClose = () => {
+    setRunTour(false);
+    localStorage.setItem('onetap_tour_builder_completed', 'true');
+  };
+
+  const handleTourRestart = () => {
+    setTourStepIndex(0);
+    setRunTour(true);
+  };
+
+  const handleTourCallback = (data: any) => {
+    const { action, index, status, type } = data;
+    if (type === "step:after" || type === "target:not_found") {
+      setTourStepIndex(index + (action === "prev" ? -1 : 1));
+    } else if (type === "tour:status" && ["finished", "skipped"].includes(status)) {
+      handleTourClose();
+    }
+  };
+
+  const tourSteps = [
+    {
+      target: '#tour-profile-section',
+      title: t('dashboard.tour.builder.profile.title'),
+      content: t('dashboard.tour.builder.profile.desc'),
+      placement: 'bottom' as const,
+      data: { id: 'profile' },
+      disableBeacon: true,
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-add-link',
+      title: t('dashboard.tour.builder.addLink.title'),
+      content: t('dashboard.tour.builder.addLink.desc'),
+      placement: 'bottom' as const,
+      data: { id: 'addLink' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-links-list',
+      title: t('dashboard.tour.builder.linksList.title'),
+      content: t('dashboard.tour.builder.linksList.desc'),
+      placement: 'top' as const,
+      data: { id: 'linksList' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-theme-picker',
+      title: t('dashboard.tour.builder.themes.title'),
+      content: t('dashboard.tour.builder.themes.desc'),
+      placement: 'top' as const,
+      data: { id: 'themes' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-save-btn',
+      title: t('dashboard.tour.builder.save.title'),
+      content: t('dashboard.tour.builder.save.desc'),
+      placement: 'bottom' as const,
+      data: { id: 'save' },
+      spotlightClicks: true,
+    },
+  ];
   
   // Multi-page state
   const [pages, setPages] = useState<any[]>([]);
@@ -134,6 +211,9 @@ export default function OneTapBuilderPage() {
       ...prev,
       { id: uuid(), label: '', url: '', icon: 'link', isActive: true, clickCount: 0 },
     ]);
+    if (runTour && tourStepIndex === 1) {
+      setTourStepIndex(2);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -199,6 +279,9 @@ export default function OneTapBuilderPage() {
         setShowToast(true);
         // Refresh page list if new page was created or slug changed
         loadData(result.pageId);
+        if (runTour && tourStepIndex === 4) {
+          handleTourClose();
+        }
       } else {
         setToastMsg(result.error || d.profile.saveFailed);
         setToastType('error');
@@ -382,6 +465,16 @@ export default function OneTapBuilderPage() {
 
             <div className="flex items-center gap-2 sm:gap-3">
               <button
+                onClick={handleTourRestart}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4" />
+                {t('dashboard.tour.restart')}
+              </button>
+
+              <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
+
+              <button
                 onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
               >
@@ -392,6 +485,7 @@ export default function OneTapBuilderPage() {
               <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
 
               <button
+                id="tour-save-btn"
                 onClick={handleSave}
                 disabled={saving}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 ${
@@ -578,7 +672,7 @@ export default function OneTapBuilderPage() {
             )}
 
             {/* Profile section */}
-            <div className="p-6 sm:p-8 bg-white border border-[#F6B7C8]/10 rounded-[32px] shadow-sm space-y-8">
+            <div id="tour-profile-section" className="p-6 sm:p-8 bg-white border border-[#F6B7C8]/10 rounded-[32px] shadow-sm space-y-8">
               <div className="flex flex-col sm:flex-row items-center gap-8">
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-[32px] bg-[#FFF8F2] border-2 border-dashed border-[#F6B7C8]/30 flex items-center justify-center overflow-hidden relative shadow-inner">
@@ -735,6 +829,7 @@ export default function OneTapBuilderPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black text-[#18080F] tracking-tight">{d.links.title}</h2>
                 <button
+                  id="tour-add-link"
                   onClick={addLink}
                   className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#FF5FA2] text-white text-xs sm:text-sm font-bold shadow-lg shadow-[#FF5FA2]/20 hover:-translate-y-0.5 transition-all"
                 >
@@ -743,52 +838,54 @@ export default function OneTapBuilderPage() {
                 </button>
               </div>
 
-              <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={links.map((l) => l.id)} strategy={verticalListSortingStrategy}>
-                  <AnimatePresence mode="popLayout">
-                    {links.length === 0 ? (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="py-16 sm:py-20 text-center bg-white/50 border-2 border-dashed border-[#F6B7C8]/20 rounded-[40px]"
-                      >
-                        <div className="w-20 h-20 rounded-3xl bg-white shadow-xl mx-auto flex items-center justify-center mb-6">
-                          <Share2 className="w-10 h-10 text-gray-200" />
+              <div id="tour-links-list">
+                <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={links.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+                    <AnimatePresence mode="popLayout">
+                      {links.length === 0 ? (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="py-16 sm:py-20 text-center bg-white/50 border-2 border-dashed border-[#F6B7C8]/20 rounded-[40px]"
+                        >
+                          <div className="w-20 h-20 rounded-3xl bg-white shadow-xl mx-auto flex items-center justify-center mb-6">
+                            <Share2 className="w-10 h-10 text-gray-200" />
+                          </div>
+                          <p className="text-lg font-black text-[#18080F]">{d.links.empty}</p>
+                          <p className="text-sm font-medium text-gray-400 mt-1">{d.links.emptyDesc}</p>
+                        </motion.div>
+                      ) : (
+                        <div className="grid gap-4">
+                          {links.map((link) => (
+                            <motion.div
+                              key={link.id}
+                              layout
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                            >
+                              <SortableLinkCard
+                                link={link}
+                                onUpdate={(updated) =>
+                                  setLinks((prev) => prev.map((l) => (l.id === link.id ? updated : l)))
+                                }
+                                onDelete={() =>
+                                  setLinks((prev) => prev.filter((l) => l.id !== link.id))
+                                }
+                              />
+                            </motion.div>
+                          ))}
                         </div>
-                        <p className="text-lg font-black text-[#18080F]">{d.links.empty}</p>
-                        <p className="text-sm font-medium text-gray-400 mt-1">{d.links.emptyDesc}</p>
-                      </motion.div>
-                    ) : (
-                      <div className="grid gap-4">
-                        {links.map((link) => (
-                          <motion.div
-                            key={link.id}
-                            layout
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                          >
-                            <SortableLinkCard
-                              link={link}
-                              onUpdate={(updated) =>
-                                setLinks((prev) => prev.map((l) => (l.id === link.id ? updated : l)))
-                              }
-                              onDelete={() =>
-                                setLinks((prev) => prev.filter((l) => l.id !== link.id))
-                              }
-                            />
-                          </motion.div>
-                        ))}
-                      </div>
-                    )}
-                  </AnimatePresence>
-                </SortableContext>
-              </DndContext>
+                      )}
+                    </AnimatePresence>
+                  </SortableContext>
+                </DndContext>
+              </div>
             </div>
 
             {/* Theme picker */}
-            <div className="space-y-6">
+            <div id="tour-theme-picker" className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black text-[#18080F] tracking-tight">{d.appearance.theme}</h2>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full">Standard</span>
@@ -797,7 +894,12 @@ export default function OneTapBuilderPage() {
                 {themes.map((theme) => (
                   <button
                     key={theme.id}
-                    onClick={() => setSelectedTheme(theme.id)}
+                    onClick={() => {
+                      setSelectedTheme(theme.id);
+                      if (runTour && tourStepIndex === 3) {
+                        setTourStepIndex(4);
+                      }
+                    }}
                     className={`group relative p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 flex flex-col items-center gap-2 sm:gap-3 ${
                       selectedTheme === theme.id 
                         ? 'border-[#FF5FA2] bg-white shadow-xl shadow-[#FF5FA2]/10 -translate-y-1' 
@@ -1030,6 +1132,15 @@ export default function OneTapBuilderPage() {
         message={toastMsg} 
         type={toastType} 
         onClose={() => setShowToast(false)} 
+      />
+
+      <GuidedTour 
+        pageKey="builder"
+        steps={tourSteps}
+        run={runTour}
+        onClose={handleTourClose}
+        stepIndex={tourStepIndex}
+        callback={handleTourCallback}
       />
 
       {/* ===== DELETE CONFIRMATION MODAL ===== */}

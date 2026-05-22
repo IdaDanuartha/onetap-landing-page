@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users, Globe, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb } from "lucide-react";
+import { User, Users, Globe, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb, BookOpen } from "lucide-react";
 import Link from "next/link";
 import Toast from "@/app/components/Toast";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { dict } from "@/lib/i18n/dict";
 import { canAccess, isExpired } from "@/lib/plans";
+import GuidedTour from "@/app/components/GuidedTour";
 
 interface Tag {
   id: string;
@@ -69,12 +70,112 @@ export default function AttendanceManagementPage() {
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
   const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
-  const { locale, setLocale } = useLanguage();
+  const { locale, setLocale, t } = useLanguage();
   const d = dict[locale].dashboard.attendance;
 
   const [plan, setPlan] = useState<string>("starter");
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const [hasAccess, setHasAccess] = useState(true);
+
+  // Guided Tour State
+  const [runTour, setRunTour] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!loading && hasAccess) {
+      const completed = localStorage.getItem('onetap_tour_attendance_completed');
+      if (!completed) {
+        setRunTour(true);
+      }
+    }
+  }, [loading, hasAccess]);
+
+  const handleTourClose = () => {
+    setRunTour(false);
+    localStorage.setItem('onetap_tour_attendance_completed', 'true');
+  };
+
+  const handleTourRestart = () => {
+    setTourStepIndex(0);
+    setRunTour(true);
+  };
+
+  const handleTourCallback = (data: any) => {
+    const { action, index, status, type } = data;
+    if (type === "step:after" || type === "target:not_found") {
+      setTourStepIndex(index + (action === "prev" ? -1 : 1));
+    } else if (type === "tour:status" && ["finished", "skipped"].includes(status)) {
+      handleTourClose();
+    }
+  };
+
+  const tourSteps = [
+    {
+      target: '#tour-school-name',
+      title: t('dashboard.tour.attendance.schoolName.title'),
+      content: t('dashboard.tour.attendance.schoolName.desc'),
+      placement: 'bottom' as const,
+      data: { id: 'save' },
+      disableBeacon: true,
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-add-student-btn',
+      title: t('dashboard.tour.attendance.addStudent.title'),
+      content: t('dashboard.tour.attendance.addStudent.desc'),
+      placement: 'bottom' as const,
+      data: { id: 'addLink' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-student-form',
+      title: t('dashboard.tour.attendance.studentForm.title'),
+      content: t('dashboard.tour.attendance.studentForm.desc'),
+      placement: 'bottom' as const,
+      data: { id: 'linksList' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-write-nfc-btn',
+      title: t('dashboard.tour.attendance.writeNFC.title'),
+      content: t('dashboard.tour.attendance.writeNFC.desc'),
+      placement: 'left' as const,
+      data: { id: 'scan' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-writing-modal',
+      title: t('dashboard.tour.attendance.writingModal.title'),
+      content: t('dashboard.tour.attendance.writingModal.desc'),
+      placement: 'top' as const,
+      data: { id: 'write' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-bulk-scan-btn',
+      title: t('dashboard.tour.attendance.bulkScan.title'),
+      content: t('dashboard.tour.attendance.bulkScan.desc'),
+      placement: 'bottom' as const,
+      data: { id: 'bulk' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-scan-modal',
+      title: t('dashboard.tour.attendance.scanModal.title'),
+      content: t('dashboard.tour.attendance.scanModal.desc'),
+      placement: 'top' as const,
+      data: { id: 'scanner' },
+      spotlightClicks: true,
+    },
+    {
+      target: '#tour-history-link',
+      title: t('dashboard.tour.attendance.historyLink.title'),
+      content: t('dashboard.tour.attendance.historyLink.desc'),
+      placement: 'bottom' as const,
+      data: { id: 'export' },
+      spotlightClicks: true,
+    },
+  ];
 
 
   const [formData, setFormData] = useState({
@@ -334,6 +435,11 @@ export default function AttendanceManagementPage() {
       });
     }
     setShowModal(true);
+    
+    // Advance tour if active
+    if (runTour && tourStepIndex === 1) {
+      setTourStepIndex(2);
+    }
   };
 
   const handleDeleteTrigger = (tag: Tag) => {
@@ -358,6 +464,11 @@ export default function AttendanceManagementPage() {
       setSuccessMessage(d.school.saveSuccess);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
+      
+      // Advance tour if active
+      if (runTour && tourStepIndex === 0) {
+        setTourStepIndex(1);
+      }
     }
   };
 
@@ -390,6 +501,12 @@ export default function AttendanceManagementPage() {
     try {
       setIsBulkScanning(true);
       setShowScanModal(true);
+      
+      // Advance tour if active
+      if (runTour && tourStepIndex === 5) {
+        setTourStepIndex(6);
+      }
+      
       // @ts-ignore
       const ndef = new NDEFReader();
       await ndef.scan();
@@ -491,6 +608,10 @@ export default function AttendanceManagementPage() {
           setWriteStatus("idle");
           setCurrentBulkIndex(-1);
           setBulkWriteQueue([]);
+          
+          if (runTour && tourStepIndex === 4) {
+            setTourStepIndex(5);
+          }
         }, 2000);
       }
     } catch (error) {
@@ -512,12 +633,20 @@ export default function AttendanceManagementPage() {
       navigator.clipboard.writeText(url);
       setFallbackToken(tag.token);
       setShowNFCFallback(true);
+      
+      if (runTour && tourStepIndex === 3) {
+        setTourStepIndex(4);
+      }
       return;
     }
     setBulkWriteQueue([tag]);
     setCurrentBulkIndex(0);
     setIsWritingNFC(true);
     setWriteStatus("writing");
+    
+    if (runTour && tourStepIndex === 3) {
+      setTourStepIndex(4);
+    }
   };
 
   const startBulkWrite = () => {
@@ -582,6 +711,10 @@ export default function AttendanceManagementPage() {
     setIsSubmitting(false);
     setShowModal(false);
     fetchData();
+    
+    if (runTour && tourStepIndex === 2) {
+      setTourStepIndex(3);
+    }
   };
 
   const confirmDelete = async () => {
@@ -613,6 +746,43 @@ export default function AttendanceManagementPage() {
 
   const uniqueClasses = Array.from(new Set(tags.map(t => t.class_name).filter(Boolean)));
   const uniqueSubjects = Array.from(new Set(tags.map(t => t.subject).filter(Boolean)));
+
+  // Sync Tour Step Index with Modal / NFC states
+  useEffect(() => {
+    if (!runTour) return;
+
+    if (tourStepIndex === 2) {
+      if (!showModal) {
+        handleOpenModal();
+      }
+    } else {
+      if (showModal && (tourStepIndex < 2 || tourStepIndex > 2)) {
+        setShowModal(false);
+      }
+    }
+
+    if (tourStepIndex === 4) {
+      if (!isWritingNFC && tags.length > 0) {
+        startSingleWrite(tags[0]);
+      }
+    } else {
+      if (isWritingNFC && (tourStepIndex < 4 || tourStepIndex > 4)) {
+        setIsWritingNFC(false);
+        setWriteStatus("idle");
+      }
+    }
+
+    if (tourStepIndex === 6) {
+      if (!showScanModal) {
+        startBulkScan();
+      }
+    } else {
+      if (showScanModal && (tourStepIndex < 6 || tourStepIndex > 6)) {
+        setShowScanModal(false);
+        setIsBulkScanning(false);
+      }
+    }
+  }, [tourStepIndex, runTour]);
 
   if (loading) {
     return (
@@ -701,7 +871,7 @@ export default function AttendanceManagementPage() {
               <div>
                 <h1 className="text-3xl font-black text-[#18080F] tracking-tight leading-none">{d.title}</h1>
                 <div className="flex items-center gap-3 mt-3">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm group/school focus-within:ring-2 focus-within:ring-[#FF5FA2]/20 transition-all">
+                  <div id="tour-school-name" className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm group/school focus-within:ring-2 focus-within:ring-[#FF5FA2]/20 transition-all">
                     <School className="w-3.5 h-3.5 text-[#FF5FA2]" />
                     <input
                       type="text"
@@ -744,8 +914,16 @@ export default function AttendanceManagementPage() {
               <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
               {locale}
             </button>
+            <button
+              onClick={handleTourRestart}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+            >
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4" />
+              {t('dashboard.tour.restart')}
+            </button>
             <div className="h-8 w-px bg-gray-100 mx-1 hidden lg:block" />
             <Link 
+              id="tour-history-link"
               href="/dashboard/attendance/logs"
               className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-sm"
             >
@@ -762,6 +940,7 @@ export default function AttendanceManagementPage() {
               <span className="sm:hidden">Import</span>
             </button>
             <button 
+              id="tour-bulk-scan-btn"
               onClick={startBulkScan}
               className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 text-sm"
             >
@@ -907,6 +1086,7 @@ export default function AttendanceManagementPage() {
               )}
 
               <button 
+                id="tour-add-student-btn"
                 onClick={() => handleOpenModal()}
                 className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl bg-[#FF5FA2] text-white font-black text-sm hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-lg shadow-[#FF5FA2]/20"
               >
@@ -1001,7 +1181,7 @@ export default function AttendanceManagementPage() {
                       </div>
                     </td>
                   </tr>
-                ) : filteredTags.map((tag) => (
+                ) : filteredTags.map((tag, index) => (
                   <tr key={tag.id} className={`hover:bg-gray-50/30 transition-colors ${selectedTags.includes(tag.id) ? 'bg-[#FF5FA2]/5' : ''}`}>
                     <td className="px-6 py-5">
                       <input 
@@ -1030,6 +1210,7 @@ export default function AttendanceManagementPage() {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
+                          id={index === 0 ? "tour-write-nfc-btn" : undefined}
                           onClick={() => startSingleWrite(tag)}
                           className="p-2 hover:bg-[#FF5FA2]/5 text-[#FF5FA2] rounded-lg transition-colors"
                           title="Write NFC Tag"
@@ -1071,6 +1252,7 @@ export default function AttendanceManagementPage() {
               className="absolute inset-0 bg-[#18080F]/40 backdrop-blur-sm"
             />
             <motion.div 
+              id="tour-student-form"
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -1324,6 +1506,7 @@ export default function AttendanceManagementPage() {
               className="absolute inset-0 bg-[#18080F]/60 backdrop-blur-md"
             />
             <motion.div 
+              id="tour-writing-modal"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -1400,6 +1583,9 @@ export default function AttendanceManagementPage() {
                         setWriteStatus("idle");
                         setCurrentBulkIndex(-1);
                         setBulkWriteQueue([]);
+                        if (runTour && tourStepIndex === 4) {
+                          setTourStepIndex(5);
+                        }
                       }}
                       className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold"
                     >
@@ -1445,7 +1631,12 @@ export default function AttendanceManagementPage() {
               </div>
 
               <button 
-                onClick={() => setShowNFCFallback(false)}
+                onClick={() => {
+                  setShowNFCFallback(false);
+                  if (runTour && tourStepIndex === 4) {
+                    setTourStepIndex(5);
+                  }
+                }}
                 className="w-full py-4 rounded-2xl bg-[#18080F] text-white font-black hover:bg-black transition-all shadow-lg"
               >
                 {d.table.understand}
@@ -1534,6 +1725,7 @@ export default function AttendanceManagementPage() {
         {showScanModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-[#18080F]/60 backdrop-blur-md">
             <motion.div
+              id="tour-scan-modal"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -1560,6 +1752,9 @@ export default function AttendanceManagementPage() {
                   onClick={() => {
                     setIsBulkScanning(false);
                     setShowScanModal(false);
+                    if (runTour && tourStepIndex === 6) {
+                      setTourStepIndex(7);
+                    }
                   }}
                   className="p-2.5 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-xl md:rounded-2xl transition-colors group"
                 >
@@ -1675,6 +1870,14 @@ export default function AttendanceManagementPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <GuidedTour
+        pageKey="attendance"
+        steps={tourSteps}
+        run={runTour}
+        onClose={handleTourClose}
+        stepIndex={tourStepIndex}
+        callback={handleTourCallback}
+      />
       <Toast 
         isVisible={showToast} 
         message={toastMsg} 
