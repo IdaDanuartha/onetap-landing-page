@@ -885,13 +885,13 @@ export default function AttendanceManagementPage() {
               <ArrowRight className="w-4 h-4 rotate-180" />
               {d.back}
             </Link>
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-[#FF5FA2]/10 rounded-2xl flex items-center justify-center">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 bg-[#FF5FA2]/10 rounded-2xl flex items-center justify-center shrink-0">
                 <Users className="w-7 h-7 text-[#FF5FA2]" />
               </div>
-              <div>
-                <h1 className="text-3xl font-black text-[#18080F] tracking-tight leading-none">{d.title}</h1>
-                <div className="flex items-center gap-3 mt-3">
+              <div className="space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-[#18080F] tracking-tight leading-tight">{d.title}</h1>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
                   <div id="tour-school-name" className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm group/school focus-within:ring-2 focus-within:ring-[#FF5FA2]/20 transition-all">
                     <School className="w-3.5 h-3.5 text-[#FF5FA2]" />
                     <input
@@ -927,36 +927,36 @@ export default function AttendanceManagementPage() {
             </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto mt-4 lg:mt-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full md:w-auto">
             {/* Utility buttons row */}
-            <div className="flex items-center gap-1 sm:gap-2 bg-gray-50/50 p-1 rounded-2xl border border-gray-100 flex-shrink-0">
-              <button
-                onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-white transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap shadow-sm border border-transparent hover:border-gray-100"
-              >
-                <Globe className="w-3.5 h-3.5 sm:w-4 h-4 text-gray-400" />
-                <span>{locale.toUpperCase()}</span>
-              </button>
-              
-              <div className="h-4 w-px bg-gray-200" />
-              
-              <button
-                onClick={handleTourRestart}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-white transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap shadow-sm border border-transparent hover:border-gray-100 cursor-pointer"
-              >
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4 text-gray-400" />
-                <span className="hidden sm:inline">{t('dashboard.tour.restart')}</span>
-              </button>
+            <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-1 sm:gap-2 bg-gray-50/50 p-1 rounded-2xl border border-gray-100">
+                <button
+                  onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-white transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap shadow-sm border border-transparent hover:border-gray-100"
+                >
+                  <Globe className="w-3.5 h-3.5 sm:w-4 h-4 text-gray-400" />
+                  <span>{locale.toUpperCase()}</span>
+                </button>
+                
+                <div className="h-4 w-px bg-gray-200" />
+                
+                <button
+                  onClick={handleTourRestart}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-white transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap shadow-sm border border-transparent hover:border-gray-100 cursor-pointer"
+                >
+                  <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4 text-gray-400" />
+                  <span>{t('dashboard.tour.restart')}</span>
+                </button>
+              </div>
             </div>
 
-            <div className="h-8 w-px bg-gray-100 mx-1 hidden lg:block" />
-
             {/* Action buttons row */}
-            <div className="flex flex-wrap items-center gap-2 flex-1 lg:flex-initial">
+            <div className="grid grid-cols-3 gap-2 w-full md:flex md:items-center md:gap-3 md:w-auto">
               <Link 
                 id="tour-history-link"
                 href="/dashboard/attendance/logs"
-                className="flex-1 lg:flex-none px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-sm whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 hover:border-gray-200 transition-all shadow-sm text-xs sm:text-sm whitespace-nowrap"
               >
                 <Calendar className="w-4 h-4 sm:w-5 h-5 text-[#FF5FA2]" />
                 <span className="hidden sm:inline">{d.actions.history}</span>
@@ -964,7 +964,7 @@ export default function AttendanceManagementPage() {
               </Link>
               <button 
                 onClick={() => setShowImportModal(true)}
-                className="flex-1 lg:flex-none px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-sm whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 hover:border-gray-200 transition-all shadow-sm text-xs sm:text-sm whitespace-nowrap"
               >
                 <Download className="w-4 h-4 sm:w-5 h-5 rotate-180 text-gray-400" />
                 <span className="hidden sm:inline">{d.actions.importCsv}</span>
@@ -973,7 +973,7 @@ export default function AttendanceManagementPage() {
               <button 
                 id="tour-bulk-scan-btn"
                 onClick={startBulkScan}
-                className="flex-1 lg:flex-none px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 text-xs sm:text-sm whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Radio className="w-4 h-4 sm:w-5 h-5 animate-pulse text-white/95" />
                 <span className="hidden sm:inline">{d.actions.bulkScan}</span>
