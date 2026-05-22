@@ -2039,10 +2039,10 @@ export default function KeychainsManagerPage() {
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               className="relative z-10 bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden"
             >
-              {/* Gradient Header */}
-              <div className="relative bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-6 pb-8 overflow-hidden">
+              {/* Gradient Header — OneTap Pink */}
+              <div className="relative bg-gradient-to-br from-[#FF5FA2] via-[#E8457E] to-[#c73469] p-6 pb-8 overflow-hidden">
                 <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
-                <div className="absolute -left-10 -bottom-10 w-32 h-32 rounded-full bg-indigo-400/20 blur-2xl" />
+                <div className="absolute -left-10 -bottom-10 w-32 h-32 rounded-full bg-[#FF5FA2]/20 blur-2xl" />
                 <button
                   onClick={handleCloseWriteModal}
                   className="absolute top-4 right-4 p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
@@ -2050,11 +2050,11 @@ export default function KeychainsManagerPage() {
                   <X className="w-4 h-4" />
                 </button>
                 <div className="relative">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-1">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FFF8F2]/80 block mb-1">
                     {t('Gantungan Kunci', 'Keychain')} • {writingKeychain.token}
                   </span>
                   <h3 className="text-xl font-black text-white">{t('Tulis ke Tag NFC', 'Write to NFC Tag')}</h3>
-                  <p className="text-xs text-indigo-200 font-medium mt-1 leading-relaxed">
+                  <p className="text-xs text-[#FFF8F2]/80 font-medium mt-1 leading-relaxed">
                     {t('Dekatkan tag NFC Anda ke belakang perangkat', 'Bring your NFC tag close to the back of this device')}
                   </p>
                 </div>
@@ -2074,13 +2074,13 @@ export default function KeychainsManagerPage() {
                       className="space-y-5"
                     >
                       {/* URL Preview */}
-                      <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                        <p className="text-[9px] font-black uppercase tracking-wider text-indigo-400 mb-1">{t('URL yang akan ditulis', 'URL to be written')}</p>
-                        <p className="text-xs font-black text-indigo-700 break-all">
+                      <div className="p-4 bg-[#FFF1F7] rounded-2xl border border-[#F6B7C8]/30">
+                        <p className="text-[9px] font-black uppercase tracking-wider text-[#FF5FA2] mb-1">{t('URL yang akan ditulis', 'URL to be written')}</p>
+                        <p className="text-xs font-black text-[#c73469] break-all">
                           https://onetap-charm.com/r/{writingKeychain.token}
                         </p>
                         {writingKeychain.payload_data?.tag_password && (
-                          <p className="text-[9px] text-indigo-400 font-semibold mt-2 flex items-center gap-1">
+                          <p className="text-[9px] text-[#FF5FA2] font-semibold mt-2 flex items-center gap-1">
                             <Lock className="w-3 h-3" />
                             {t('Lock password akan diperbarui otomatis', 'Lock password will be updated automatically')}
                           </p>
@@ -2106,7 +2106,7 @@ export default function KeychainsManagerPage() {
                             value={nfcUnlockPassword}
                             onChange={(e) => setNfcUnlockPassword(e.target.value)}
                             placeholder={t('Masukkan password tag...', 'Enter tag password...')}
-                            className="w-full h-11 px-4 rounded-xl bg-gray-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-[#18080F]"
+                            className="w-full h-11 px-4 rounded-xl bg-gray-50 border border-slate-200 focus:border-[#FF5FA2]/40 outline-none text-sm font-bold text-[#18080F]"
                           />
                         </motion.div>
                       )}
@@ -2114,9 +2114,9 @@ export default function KeychainsManagerPage() {
                       <button
                         onClick={() => handleStartNfcWrite(writingKeychain, showUnlockInput ? nfcUnlockPassword : undefined)}
                         disabled={showUnlockInput && !nfcUnlockPassword.trim()}
-                        className="w-full h-13 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-50"
+                        className="w-full py-3.5 bg-[#FF5FA2] hover:bg-[#E8457E] text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-[#FF5FA2]/25 active:scale-[0.98] disabled:opacity-50"
                       >
-                        <Wifi className="w-4.5 h-4.5 rotate-90" />
+                        <Wifi className="w-4 h-4 rotate-90" />
                         {showUnlockInput
                           ? t('Unlock & Tulis NFC', 'Unlock & Write NFC')
                           : t('Mulai Tulis NFC', 'Start NFC Write')}
@@ -2136,24 +2136,24 @@ export default function KeychainsManagerPage() {
                       {/* Pulsing Phone + Tag Animation */}
                       <div className="relative w-32 h-32 flex items-center justify-center">
                         <motion.div
-                          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+                          animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.5, 0.2] }}
                           transition={{ duration: 2, repeat: Infinity }}
-                          className="absolute inset-0 rounded-full bg-indigo-200"
+                          className="absolute inset-0 rounded-full bg-[#F6B7C8]"
                         />
                         <motion.div
-                          animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.8, 0.4] }}
+                          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.7, 0.3] }}
                           transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-                          className="absolute inset-3 rounded-full bg-indigo-300"
+                          className="absolute inset-3 rounded-full bg-[#FF5FA2]/40"
                         />
-                        <div className="relative w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/30">
+                        <div className="relative w-16 h-16 bg-[#FF5FA2] rounded-2xl flex items-center justify-center shadow-xl shadow-[#FF5FA2]/30">
                           <Smartphone className="w-8 h-8 text-white" />
                         </div>
                         <motion.div
                           animate={{ y: [0, -8, 0], opacity: [0.5, 1, 0.5] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
-                          className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-xl flex items-center justify-center shadow-lg border border-indigo-100"
+                          className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-xl flex items-center justify-center shadow-lg border border-[#F6B7C8]/40"
                         >
-                          <Wifi className="w-4 h-4 text-indigo-500 rotate-90" />
+                          <Wifi className="w-4 h-4 text-[#FF5FA2] rotate-90" />
                         </motion.div>
                       </div>
                       <div className="space-y-1.5">
@@ -2162,11 +2162,11 @@ export default function KeychainsManagerPage() {
                           {t('Tempelkan tag OneTap ke bagian belakang ponsel Anda', 'Hold your OneTap tag against the back of your phone')}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-500 bg-indigo-50 px-4 py-2 rounded-full">
+                      <div className="flex items-center gap-1.5 text-[10px] font-black text-[#FF5FA2] bg-[#FFF1F7] px-4 py-2 rounded-full">
                         <motion.div
                           animate={{ scale: [1, 1.3, 1] }}
                           transition={{ duration: 1, repeat: Infinity }}
-                          className="w-1.5 h-1.5 bg-indigo-500 rounded-full"
+                          className="w-1.5 h-1.5 bg-[#FF5FA2] rounded-full"
                         />
                         {t('Siap membaca tag', 'Ready to read tag')}
                       </div>
@@ -2186,9 +2186,9 @@ export default function KeychainsManagerPage() {
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                          className="absolute inset-0 rounded-full border-4 border-transparent border-t-violet-500"
+                          className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FF5FA2]"
                         />
-                        <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
+                        <div className="w-16 h-16 bg-[#FF5FA2] rounded-2xl flex items-center justify-center shadow-xl shadow-[#FF5FA2]/25">
                           <Save className="w-8 h-8 text-white" />
                         </div>
                       </div>
@@ -2228,7 +2228,7 @@ export default function KeychainsManagerPage() {
                       </div>
                       <button
                         onClick={handleCloseWriteModal}
-                        className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-black rounded-2xl text-sm transition-all hover:opacity-90 shadow-lg shadow-green-400/20"
+                        className="w-full py-3 bg-[#FF5FA2] hover:bg-[#E8457E] text-white font-black rounded-2xl text-sm transition-all shadow-lg shadow-[#FF5FA2]/20"
                       >
                         {t('Selesai', 'Done')}
                       </button>
@@ -2265,7 +2265,7 @@ export default function KeychainsManagerPage() {
                             setNfcWriteStatus('idle');
                             setNfcWriteError('');
                           }}
-                          className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black rounded-2xl text-xs hover:opacity-90 transition-all shadow-md shadow-indigo-400/20"
+                          className="flex-1 py-3 bg-[#FF5FA2] hover:bg-[#E8457E] text-white font-black rounded-2xl text-xs transition-all shadow-md shadow-[#FF5FA2]/20"
                         >
                           {t('Coba Lagi', 'Try Again')}
                         </button>
