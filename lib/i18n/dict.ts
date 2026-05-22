@@ -351,23 +351,23 @@ export const translations = {
         },
         {
           q: "Apakah perlu aplikasi khusus untuk menggunakannya?",
-          a: "Tidak perlu aplikasi apapun! Semua smartphone Android dan iPhone modern sudah mendukung NFC bawaan.",
+          a: "Tidak perlu! Untuk membaca/scan keychain, semua smartphone Android & iOS bisa langsung tap tanpa aplikasi. Untuk menulis/memprogram data, pengguna Android bisa langsung scan & write via browser. Sedangkan untuk pengguna iOS/iPhone, Anda tetap bisa mengaturnya dengan flow yang sangat mudah, yaitu mengklaim kode keychain di Dashboard OneTap Anda (Gantungan Kunci Dinamis) dan mengelolanya secara online tanpa perlu scan fisik.",
         },
         {
           q: "Berapa lama proses produksi?",
-          a: "Estimasi produksi 3–7 hari kerja setelah desain dan pembayaran dikonfirmasi. Pengiriman ke seluruh Indonesia.",
+          a: "Estimasi produksi adalah 5–8 hari kerja setelah desain dan pembayaran dikonfirmasi, dan bisa lebih cepat. Pengiriman tersedia ke seluruh Indonesia.",
         },
         {
-          q: "Apakah bisa custom desain sepenuhnya?",
-          a: "Tentu! Kami menerima desain custom sesuai keinginan Anda — logo, warna, ukuran, bahkan bentuk khusus tersedia di paket Custom Edition.",
+          q: "Apakah bisa custom desain?",
+          a: "Tentu saja bisa! Yang dimaksud custom desain di sini adalah Anda bisa request custom karakter pada keychain gantungan kunci Anda sendiri. Sebagai catatan, kami tidak memiliki paket khusus bernama Custom Edition.",
         },
         {
-          q: "Berapa harga minimum order?",
-          a: "Mulai dari Rp 25.000 untuk Basic Keychain dan Rp 45.000 untuk NFC Keychain. Untuk bulk order 10 pcs ke atas ada diskon khusus.",
+          q: "Berapa harga gantungan kunci OneTap?",
+          a: "Harga minimum gantungan kunci kami adalah Rp 35.000 untuk ukuran 5x5 cm dan Rp 40.000 untuk ukuran 6x6 cm. Menariknya, saat ini sedang ada promo diskon sebesar Rp 5.000 per pcs!",
         },
         {
           q: "Apakah data di chip NFC bisa diubah?",
-          a: "Ya! Data yang tersimpan di chip bisa diubah kapan saja melalui platform kami tanpa perlu mengganti fisik keychain.",
+          a: "Tentu saja! Anda bisa mengubah data atau link di dalam keychain Anda kapan saja dengan sangat praktis, baik melalui scan langsung keychain-nya (untuk menulis ulang) maupun dengan mengganti datanya langsung melalui dashboard akun OneTap Anda.",
         },
         {
           q: "Bagaimana cara order?",
@@ -375,7 +375,7 @@ export const translations = {
         },
         {
           q: "Apakah ada garansi produk?",
-          a: "Ya, kami memberikan garansi 30 hari untuk cacat produksi. Jika ada masalah, kami ganti tanpa biaya tambahan.",
+          a: "Ya! Kami memberikan garansi resmi selama 2 minggu (14 hari) untuk segala jenis cacat produksi. Jika ada masalah pada keychain Anda, kami ganti dengan yang baru tanpa biaya tambahan.",
         },
       ],
     },
@@ -1266,23 +1266,23 @@ export const translations = {
         },
         {
           q: "Do I need a special app to use it?",
-          a: "No app required! All modern Android smartphones and iPhones have built-in NFC support.",
+          a: "No app required! To read/scan the keychain, all Android & iOS smartphones can tap it directly without any app. To program/write data, Android users can scan & write directly via browser. For iOS/iPhone users, you can still set it up easily with a different flow: simply claim your keychain code in the OneTap Dashboard (Dynamic Keychain) and manage it online without physically scanning it.",
         },
         {
           q: "How long is the production process?",
-          a: "Production estimated at 3–7 business days after design and payment are confirmed. Shipping across Indonesia.",
+          a: "The production process takes about 5–8 business days after design and payment are confirmed, but it can be faster. Shipping is available throughout Indonesia.",
         },
         {
-          q: "Can I fully customize the design?",
-          a: "Certainly! We accept custom designs according to your wishes — logos, colors, sizes, and even special shapes are available in the Custom Edition package.",
+          q: "Can I customize the design?",
+          a: "Yes, you absolutely can! By custom design, we mean you can request a custom character on your own keychain. Please note that we do not have a specific package named 'Custom Edition'.",
         },
         {
-          q: "What is the minimum order price?",
-          a: "Starting from Rp 25,000 for Basic Keychain and Rp 45,000 for NFC Keychain. Special discounts for bulk orders of 10 pcs or more.",
+          q: "How much does a OneTap keychain cost?",
+          a: "The minimum price is Rp 35,000 for the 5x5 cm size and Rp 40,000 for the 6x6 cm size. Better yet, we are currently running a promo discount of Rp 5,000 per pcs!",
         },
         {
           q: "Can the data on the NFC chip be changed?",
-          a: "Yes! The data stored on the chip can be changed anytime through our platform without needing to replace the physical keychain.",
+          a: "Of course! You can easily update the data or link stored in your keychain anytime, either by directly scanning/rewriting the physical keychain or by changing the data directly inside your OneTap dashboard.",
         },
         {
           q: "How do I order?",
@@ -1290,7 +1290,7 @@ export const translations = {
         },
         {
           q: "Is there a product warranty?",
-          a: "Yes, we provide a 30-day warranty for production defects. If there are any issues, we replace it at no additional cost.",
+          a: "Yes! We provide a 2-week (14-day) warranty for any production defects. If there is any issue with your keychain, we will replace it with a new one at no extra charge.",
         },
       ],
     },
