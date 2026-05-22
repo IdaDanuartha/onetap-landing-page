@@ -81,6 +81,7 @@ export default function AttendanceManagementPage() {
   // Guided Tour State
   const [runTour, setRunTour] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
+  const [tourKey, setTourKey] = useState(0);
 
   useEffect(() => {
     if (!loading && hasAccess) {
@@ -111,6 +112,7 @@ export default function AttendanceManagementPage() {
 
   const handleTourRestart = () => {
     setTourStepIndex(0);
+    setTourKey(prev => prev + 1);
     setRunTour(true);
   };
 
@@ -137,7 +139,7 @@ export default function AttendanceManagementPage() {
       }
       
       setTourStepIndex(nextIndex);
-    } else if (type === "tour:status" && ["finished", "skipped"].includes(status)) {
+    } else if (["finished", "skipped"].includes(status) || type === "tour:end") {
       handleTourClose();
     }
   };
@@ -1955,6 +1957,7 @@ export default function AttendanceManagementPage() {
         )}
       </AnimatePresence>
       <GuidedTour
+        key={`attendance-${tourKey}`}
         pageKey="attendance"
         steps={tourSteps}
         run={runTour}

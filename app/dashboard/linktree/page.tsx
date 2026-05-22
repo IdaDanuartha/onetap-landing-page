@@ -51,6 +51,7 @@ export default function OneTapBuilderPage() {
   // Guided Tour State
   const [runTour, setRunTour] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
+  const [tourKey, setTourKey] = useState(0);
 
   useEffect(() => {
     if (!loading) {
@@ -79,6 +80,7 @@ export default function OneTapBuilderPage() {
 
   const handleTourRestart = () => {
     setTourStepIndex(0);
+    setTourKey(prev => prev + 1);
     setRunTour(true);
   };
 
@@ -86,7 +88,7 @@ export default function OneTapBuilderPage() {
     const { action, index, status, type } = data;
     if (type === "step:after") {
       setTourStepIndex(index + (action === "prev" ? -1 : 1));
-    } else if (type === "tour:status" && ["finished", "skipped"].includes(status)) {
+    } else if (["finished", "skipped"].includes(status) || type === "tour:end") {
       handleTourClose();
     }
   };
@@ -1150,7 +1152,8 @@ export default function OneTapBuilderPage() {
         onClose={() => setShowToast(false)} 
       />
 
-      <GuidedTour 
+      <GuidedTour
+        key={`builder-${tourKey}`}
         pageKey="builder"
         steps={tourSteps}
         run={runTour}

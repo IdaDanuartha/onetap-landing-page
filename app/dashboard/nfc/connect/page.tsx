@@ -84,6 +84,7 @@ export default function ConnectNfcPage() {
   // Guided Tour State
   const [runTour, setRunTour] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
+  const [tourKey, setTourKey] = useState(0);
 
   // New Mode States
   const [vcardData, setVcardData] = useState({ firstName: '', lastName: '', phone: '', email: '', org: '' });
@@ -108,7 +109,6 @@ export default function ConnectNfcPage() {
   const handleQrisUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsDecoding(true);
     setError('');
 
@@ -182,6 +182,7 @@ export default function ConnectNfcPage() {
   const handleTourRestart = () => {
     setConnected(false);
     setTourStepIndex(0);
+    setTourKey(prev => prev + 1);
     setRunTour(true);
   };
 
@@ -189,7 +190,7 @@ export default function ConnectNfcPage() {
     const { action, index, status, type } = data;
     if (type === "step:after") {
       setTourStepIndex(index + (action === "prev" ? -1 : 1));
-    } else if (type === "tour:status" && ["finished", "skipped"].includes(status)) {
+    } else if (["finished", "skipped"].includes(status) || type === "tour:end") {
       handleTourClose();
     }
   };
@@ -1189,6 +1190,7 @@ export default function ConnectNfcPage() {
       <div className="fixed bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-white to-transparent -z-10 opacity-50" />
       
       <GuidedTour 
+        key={`nfc-${tourKey}`}
         pageKey="nfc"
         steps={tourSteps}
         run={runTour}

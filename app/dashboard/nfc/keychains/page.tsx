@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import jsQR from 'jsqr';
 import { 
   ArrowLeft, Wifi, User, Phone, Mail, Building2, 
-  ExternalLink, Key, Plus, Trash2, Edit2, Save, 
+  ExternalLink, Key, Plus, Trash2, Edit2, Save, X,
   Loader2, Check, AlertCircle, Copy, HelpCircle, 
   ChevronRight, Smartphone, Eye, EyeOff, Globe,
   MessageCircle, Contact2, Bluetooth, AppWindow, MapPin, 
@@ -113,6 +113,15 @@ export default function KeychainsManagerPage() {
   // UI Helpers
   const [showWifiPassword, setShowWifiPassword] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  // NFC Writing states
+  const [showWriteModal, setShowWriteModal] = useState(false);
+  const [writingKeychain, setWritingKeychain] = useState<Keychain | null>(null);
+  const [nfcWriteStatus, setNfcWriteStatus] = useState<'idle' | 'scanning' | 'writing' | 'success' | 'error'>('idle');
+  const [nfcWriteError, setNfcWriteError] = useState('');
+  const [nfcUnlockPassword, setNfcUnlockPassword] = useState('');
+  const [showUnlockInput, setShowUnlockInput] = useState(false);
+  const nfcWriteReaderRef = useRef<any>(null);
 
   // Translations
   const t = (id: string, en: string) => (locale === 'id' ? id : en);
@@ -377,6 +386,145 @@ export default function KeychainsManagerPage() {
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
+  // NFC Write: Hash password
+  const hashTagPassword = async (pass: string) => {
+    const msgUint8 = new TextEncoder().encode(pass + 'onetap_salt');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  // NFC Write: Open modal and start scanning/writing
+  const handleOpenWriteNfc = (kc: Keychain) => {
+    if (!('NDEFReader' in window)) {
+      setWritingKeychain(kc);
+      setNfcWriteStatus('error');
+      setNfcWriteError(t(
+        'Web NFC tidak didukung di browser ini. Gunakan Chrome di Android dengan NFC aktif.',
+        'Web NFC is not supported in this browser. Use Chrome on Android with NFC enabled.'
+      ));
+      setShowWriteModal(true);
+      return;
+    }
+    setWritingKeychain(kc);
+    setNfcWriteStatus('idle');
+    setNfcWriteError('');
+    setNfcUnlockPassword('');
+    setShowUnlockInput(false);
+    setShowWriteModal(true);
+  };
+
+  const handleStartNfcWrite = async (kc: Keychain, unlockPass?: string) => {
+    setNfcWriteStatus('scanning');
+    setNfcWriteError('');
+    try {
+      const ndef = new (window as any).NDEFReader();
+      nfcWriteReaderRef.current = ndef;
+      await ndef.scan();
+
+      ndef.onreading = async (event: any) => {
+        const message = event.message;
+        let isProtected = false;
+        let existingPassHash = '';
+        let isLegacyProtection = false;
+        let legacyPass = '';
+
+        for (const record of message.records) {
+          try {
+            const decoder = new TextDecoder();
+            const rawData = decoder.decode(record.data);
+            if (rawData.startsWith('ot_p:')) {
+              isProtected = true;
+              existingPassHash = rawData.substring(5);
+              break;
+            }
+            const pMatch = rawData.match(/[?&]p=([^& \n\r\t]+)/);
+            if (pMatch) {
+              isProtected = true;
+              isLegacyProtection = true;
+              legacyPass = decodeURIComponent(pMatch[1]);
+            }
+          } catch { /* ignore */ }
+        }
+
+        if (isProtected) {
+          if (!unlockPass) {
+            setNfcWriteStatus('idle');
+            setShowUnlockInput(true);
+            setNfcWriteError(t(
+              'Tag ini dilindungi password. Masukkan password untuk melanjutkan.',
+              'This tag is password-protected. Enter the password to continue.'
+            ));
+            return;
+          }
+          if (isLegacyProtection) {
+            if (legacyPass !== unlockPass) {
+              setNfcWriteStatus('error');
+              setNfcWriteError(t('Password Tag salah! Akses ditolak.', 'Wrong tag password! Access denied.'));
+              return;
+            }
+          } else {
+            const inputHash = await hashTagPassword(unlockPass);
+            if (existingPassHash !== inputHash) {
+              setNfcWriteStatus('error');
+              setNfcWriteError(t('Password Tag salah! Akses ditolak.', 'Wrong tag password! Access denied.'));
+              return;
+            }
+          }
+        }
+
+        setNfcWriteStatus('writing');
+        try {
+          const writeUrl = `https://onetap-charm.com/r/${kc.token}`;
+          const records: any[] = [{ recordType: 'url', data: writeUrl }];
+
+          const savedTagPass = kc.payload_data?.tag_password;
+          if (savedTagPass) {
+            const passHash = await hashTagPassword(savedTagPass);
+            records.push({ recordType: 'text', data: `ot_p:${passHash}` });
+          } else if (unlockPass) {
+            // Preserve the existing password lock
+            const passHash = await hashTagPassword(unlockPass);
+            records.push({ recordType: 'text', data: `ot_p:${passHash}` });
+          }
+
+          await ndef.write({ records });
+          setNfcWriteStatus('success');
+        } catch {
+          setNfcWriteStatus('error');
+          setNfcWriteError(t(
+            'Gagal menulis ke tag. Tahan tag tetap menempel.',
+            'Failed to write to tag. Keep tag close to the device.'
+          ));
+        }
+      };
+
+      ndef.onerror = () => {
+        setNfcWriteStatus('error');
+        setNfcWriteError(t('Kesalahan NFC. Coba lagi.', 'NFC error. Please try again.'));
+      };
+    } catch (err: any) {
+      setNfcWriteStatus('error');
+      if (err.name === 'NotAllowedError') {
+        setNfcWriteError(t('Izin NFC ditolak.', 'NFC permission denied.'));
+      } else if (err.name === 'NotSupportedError') {
+        setNfcWriteError(t('NFC tidak didukung perangkat ini.', 'NFC not supported on this device.'));
+      } else {
+        setNfcWriteError(t('Gagal menginisialisasi NFC.', 'Failed to initialize NFC.'));
+      }
+    }
+  };
+
+  const handleCloseWriteModal = () => {
+    setShowWriteModal(false);
+    setWritingKeychain(null);
+    setNfcWriteStatus('idle');
+    setNfcWriteError('');
+    setNfcUnlockPassword('');
+    setShowUnlockInput(false);
+    nfcWriteReaderRef.current = null;
+  };
+
   // Helper: Render active mode icon
   const getModeBadge = (mode: Keychain['active_mode']) => {
     switch (mode) {
@@ -463,13 +611,13 @@ export default function KeychainsManagerPage() {
       
       {/* Navbar Navigation */}
       <nav className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-[#F6B7C8]/20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/nfc" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <Link href="/dashboard/nfc" className="p-2 sm:p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div>
-              <h1 className="text-lg sm:text-xl font-black text-[#18080F] tracking-tight">
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-lg md:text-xl font-black text-[#18080F] tracking-tight truncate">
                 {t('Gantungan Kunci Dinamis', 'Dynamic Keychains')}
               </h1>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden sm:block">
@@ -480,10 +628,12 @@ export default function KeychainsManagerPage() {
 
           <button
             onClick={() => setShowClaimModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#FF5FA2] hover:bg-[#E8457E] text-white rounded-xl text-xs sm:text-sm font-black transition-all shadow-md active:scale-95"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-[#FF5FA2] hover:bg-[#E8457E] text-white rounded-xl text-xs sm:text-sm font-black transition-all shadow-md active:scale-95 shrink-0"
           >
             <Plus className="w-4 h-4" />
-            {t('Daftarkan Keychain', 'Register Keychain')}
+            <span className="hidden xs:inline sm:hidden">{t('Daftar', 'Register')}</span>
+            <span className="hidden sm:inline">{t('Daftarkan Keychain', 'Register Keychain')}</span>
+            <span className="xs:hidden">{t('Daftar', 'Register')}</span>
           </button>
         </div>
       </nav>
@@ -606,29 +756,41 @@ export default function KeychainsManagerPage() {
 
                         {/* Interactive CTA buttons in card footer */}
                         <div className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyLink(kc.token);
-                            }}
-                            className={`flex items-center gap-1 text-[10px] font-black transition-colors ${
-                              copiedToken === kc.token 
-                                ? 'text-green-600' 
-                                : 'text-gray-400 hover:text-[#FF5FA2]'
-                            }`}
-                          >
-                            {copiedToken === kc.token ? (
-                              <>
-                                <Check className="w-3.5 h-3.5" />
-                                {t('Tautan Disalin!', 'Link Copied!')}
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5" />
-                                {t('Salin Tautan', 'Copy Link')}
-                              </>
-                            )}
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyLink(kc.token);
+                              }}
+                              className={`flex items-center gap-1 text-[10px] font-black transition-colors ${
+                                copiedToken === kc.token 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400 hover:text-[#FF5FA2]'
+                              }`}
+                            >
+                              {copiedToken === kc.token ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5" />
+                                  {t('Tautan Disalin!', 'Link Copied!')}
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  {t('Salin Tautan', 'Copy Link')}
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenWriteNfc(kc);
+                              }}
+                              className="flex items-center gap-1 text-[10px] font-black text-gray-400 hover:text-indigo-500 transition-colors"
+                            >
+                              <Wifi className="w-3.5 h-3.5 rotate-90" />
+                              {t('Tulis NFC', 'Write NFC')}
+                            </button>
+                          </div>
 
                           <div className="flex items-center gap-3">
                             <button
@@ -1626,7 +1788,7 @@ export default function KeychainsManagerPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-[2rem] w-full max-w-md border border-[#F6B7C8]/10 p-8 shadow-2xl relative z-10 overflow-hidden"
+              className="bg-white rounded-[2rem] w-full max-w-md border border-[#F6B7C8]/10 p-5 sm:p-8 shadow-2xl relative z-10 overflow-hidden max-h-[90vh] overflow-y-auto"
             >
               
               {/* Corner Glowing Accent */}
@@ -1654,7 +1816,7 @@ export default function KeychainsManagerPage() {
                     {scanning ? (
                       <div className="space-y-3">
                         {/* Viewfinder */}
-                        <div className="relative w-full aspect-square bg-[#18080F] rounded-2xl overflow-hidden border border-[#F6B7C8]/20 shadow-2xl flex items-center justify-center">
+                        <div className="relative w-full max-h-[220px] sm:max-h-none sm:aspect-square bg-[#18080F] rounded-2xl overflow-hidden border border-[#F6B7C8]/20 shadow-2xl flex items-center justify-center" style={{ height: '220px' }}>
                           <video 
                             ref={videoRef} 
                             className="w-full h-full object-cover"
@@ -1851,6 +2013,267 @@ export default function KeychainsManagerPage() {
                 </button>
               </div>
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- MODAL: TULIS NFC --- */}
+      <AnimatePresence>
+        {showWriteModal && writingKeychain && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#18080F]/60 backdrop-blur-md"
+              onClick={handleCloseWriteModal}
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="relative z-10 bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden"
+            >
+              {/* Gradient Header */}
+              <div className="relative bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-6 pb-8 overflow-hidden">
+                <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+                <div className="absolute -left-10 -bottom-10 w-32 h-32 rounded-full bg-indigo-400/20 blur-2xl" />
+                <button
+                  onClick={handleCloseWriteModal}
+                  className="absolute top-4 right-4 p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="relative">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-1">
+                    {t('Gantungan Kunci', 'Keychain')} • {writingKeychain.token}
+                  </span>
+                  <h3 className="text-xl font-black text-white">{t('Tulis ke Tag NFC', 'Write to NFC Tag')}</h3>
+                  <p className="text-xs text-indigo-200 font-medium mt-1 leading-relaxed">
+                    {t('Dekatkan tag NFC Anda ke belakang perangkat', 'Bring your NFC tag close to the back of this device')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-5">
+                <AnimatePresence mode="wait">
+
+                  {/* IDLE STATE */}
+                  {nfcWriteStatus === 'idle' && (
+                    <motion.div
+                      key="idle"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="space-y-5"
+                    >
+                      {/* URL Preview */}
+                      <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                        <p className="text-[9px] font-black uppercase tracking-wider text-indigo-400 mb-1">{t('URL yang akan ditulis', 'URL to be written')}</p>
+                        <p className="text-xs font-black text-indigo-700 break-all">
+                          https://onetap-charm.com/r/{writingKeychain.token}
+                        </p>
+                        {writingKeychain.payload_data?.tag_password && (
+                          <p className="text-[9px] text-indigo-400 font-semibold mt-2 flex items-center gap-1">
+                            <Lock className="w-3 h-3" />
+                            {t('Lock password akan diperbarui otomatis', 'Lock password will be updated automatically')}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Unlock Password Input (shown if tag is protected) */}
+                      {showUnlockInput && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="space-y-2"
+                        >
+                          <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                            <p className="text-xs font-semibold text-amber-700">{nfcWriteError}</p>
+                          </div>
+                          <label className="text-xs font-black text-[#18080F] uppercase tracking-wider block">
+                            {t('Password Unlock Tag', 'Tag Unlock Password')}
+                          </label>
+                          <input
+                            type="password"
+                            value={nfcUnlockPassword}
+                            onChange={(e) => setNfcUnlockPassword(e.target.value)}
+                            placeholder={t('Masukkan password tag...', 'Enter tag password...')}
+                            className="w-full h-11 px-4 rounded-xl bg-gray-50 border border-slate-200 focus:border-indigo-400 outline-none text-sm font-bold text-[#18080F]"
+                          />
+                        </motion.div>
+                      )}
+
+                      <button
+                        onClick={() => handleStartNfcWrite(writingKeychain, showUnlockInput ? nfcUnlockPassword : undefined)}
+                        disabled={showUnlockInput && !nfcUnlockPassword.trim()}
+                        className="w-full h-13 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-50"
+                      >
+                        <Wifi className="w-4.5 h-4.5 rotate-90" />
+                        {showUnlockInput
+                          ? t('Unlock & Tulis NFC', 'Unlock & Write NFC')
+                          : t('Mulai Tulis NFC', 'Start NFC Write')}
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* SCANNING STATE */}
+                  {nfcWriteStatus === 'scanning' && (
+                    <motion.div
+                      key="scanning"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="flex flex-col items-center text-center py-4 space-y-5"
+                    >
+                      {/* Pulsing Phone + Tag Animation */}
+                      <div className="relative w-32 h-32 flex items-center justify-center">
+                        <motion.div
+                          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="absolute inset-0 rounded-full bg-indigo-200"
+                        />
+                        <motion.div
+                          animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.8, 0.4] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+                          className="absolute inset-3 rounded-full bg-indigo-300"
+                        />
+                        <div className="relative w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/30">
+                          <Smartphone className="w-8 h-8 text-white" />
+                        </div>
+                        <motion.div
+                          animate={{ y: [0, -8, 0], opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-xl flex items-center justify-center shadow-lg border border-indigo-100"
+                        >
+                          <Wifi className="w-4 h-4 text-indigo-500 rotate-90" />
+                        </motion.div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-base font-black text-[#18080F]">{t('Menunggu Tag NFC...', 'Waiting for NFC Tag...')}</p>
+                        <p className="text-xs text-gray-400 font-medium max-w-[220px] mx-auto leading-relaxed">
+                          {t('Tempelkan tag OneTap ke bagian belakang ponsel Anda', 'Hold your OneTap tag against the back of your phone')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-500 bg-indigo-50 px-4 py-2 rounded-full">
+                        <motion.div
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                          className="w-1.5 h-1.5 bg-indigo-500 rounded-full"
+                        />
+                        {t('Siap membaca tag', 'Ready to read tag')}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* WRITING STATE */}
+                  {nfcWriteStatus === 'writing' && (
+                    <motion.div
+                      key="writing"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="flex flex-col items-center text-center py-4 space-y-5"
+                    >
+                      <div className="relative w-24 h-24 flex items-center justify-center">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                          className="absolute inset-0 rounded-full border-4 border-transparent border-t-violet-500"
+                        />
+                        <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
+                          <Save className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-base font-black text-[#18080F]">{t('Menulis ke Tag...', 'Writing to Tag...')}</p>
+                        <p className="text-xs text-gray-400 font-medium">{t('Jangan angkat ponsel Anda', 'Do not move your phone')}</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* SUCCESS STATE */}
+                  {nfcWriteStatus === 'success' && (
+                    <motion.div
+                      key="success"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                      className="flex flex-col items-center text-center py-4 space-y-5"
+                    >
+                      <motion.div
+                        initial={{ scale: 0.5 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 20, delay: 0.1 }}
+                        className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl shadow-green-400/30"
+                      >
+                        <CheckCircle2 className="w-12 h-12 text-white" />
+                      </motion.div>
+                      <div className="space-y-1.5">
+                        <p className="text-lg font-black text-[#18080F]">{t('Berhasil Ditulis! 🎉', 'Successfully Written! 🎉')}</p>
+                        <p className="text-xs text-gray-400 font-medium leading-relaxed max-w-[220px] mx-auto">
+                          {t(
+                            `Tag NFC "${writingKeychain.label}" sekarang mengarah ke tautan dinamis Anda.`,
+                            `NFC tag "${writingKeychain.label}" now points to your dynamic redirect link.`
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleCloseWriteModal}
+                        className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-black rounded-2xl text-sm transition-all hover:opacity-90 shadow-lg shadow-green-400/20"
+                      >
+                        {t('Selesai', 'Done')}
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* ERROR STATE */}
+                  {nfcWriteStatus === 'error' && (
+                    <motion.div
+                      key="error"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col items-center text-center py-4 space-y-5"
+                    >
+                      <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center border-2 border-red-100">
+                        <AlertCircle className="w-10 h-10 text-red-500" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-base font-black text-[#18080F]">{t('Gagal Menulis', 'Write Failed')}</p>
+                        <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-[230px] mx-auto">
+                          {nfcWriteError}
+                        </p>
+                      </div>
+                      <div className="flex gap-3 w-full">
+                        <button
+                          onClick={handleCloseWriteModal}
+                          className="flex-1 py-3 border border-gray-200 text-gray-600 font-black rounded-2xl text-xs hover:bg-gray-50 transition-all"
+                        >
+                          {t('Tutup', 'Close')}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setNfcWriteStatus('idle');
+                            setNfcWriteError('');
+                          }}
+                          className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black rounded-2xl text-xs hover:opacity-90 transition-all shadow-md shadow-indigo-400/20"
+                        >
+                          {t('Coba Lagi', 'Try Again')}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           </div>
         )}
