@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users, Globe, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb, BookOpen } from "lucide-react";
+import { User, Users, Globe, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Upload, Zap, Radio, Signal, AlertCircle, Info, Lightbulb, BookOpen } from "lucide-react";
 import Link from "next/link";
 import Toast from "@/app/components/Toast";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -299,7 +299,7 @@ export default function AttendanceManagementPage() {
         }
 
         // Skip header if it exists
-        const startLine = lines[0].toLowerCase().includes('nama') ? 1 : 0;
+        const startLine = (lines[0].toLowerCase().includes('nama') || lines[0].toLowerCase().includes('name')) ? 1 : 0;
         const newTags = [];
 
         for (let i = startLine; i < lines.length; i++) {
@@ -309,7 +309,7 @@ export default function AttendanceManagementPage() {
           const [name, className, subject, phone] = row.map(s => s?.trim());
           
           if (!name || !className) {
-            setImportError(`Baris ${i + 1} tidak valid: Nama dan Kelas wajib diisi.`);
+            setImportError(d.import.invalidRow.replace("{row}", (i + 1).toString()));
             return;
           }
 
@@ -326,7 +326,7 @@ export default function AttendanceManagementPage() {
         }
 
         if (newTags.length === 0) {
-          setImportError("Tidak ada data valid yang ditemukan untuk diimport.");
+          setImportError(d.import.noValidData);
           return;
         }
 
@@ -421,12 +421,14 @@ export default function AttendanceManagementPage() {
   };
 
   const downloadTemplate = () => {
-    const csvContent = "Nama Siswa, Kelas, Mapel, No WhatsApp (Gunakan 62...)\nBudi Santoso, 10A, Matematika, 628123456789\nSiti Aminah, 10A, Bahasa Indonesia, 628987654321";
+    const csvContent = locale === "id"
+      ? "Nama Siswa, Kelas, Mapel, No WhatsApp (Gunakan 62...)\nBudi Santoso, 10A, Matematika, 628123456789\nSiti Aminah, 10A, Bahasa Indonesia, 628987654321"
+      : "Student Name, Class, Subject, WhatsApp Number (Use 62...)\nBudi Santoso, 10A, Mathematics, 628123456789\nSiti Aminah, 10A, Indonesian Language, 628987654321";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "template_import_siswa.csv");
+    link.setAttribute("download", locale === "id" ? "template_import_siswa.csv" : "student_import_template.csv");
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -1702,36 +1704,51 @@ export default function AttendanceManagementPage() {
                   </div>
                 )}
 
-                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                  <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    Format File CSV:
-                  </h4>
-                  <p className="text-sm text-blue-800 leading-relaxed">
-                    Gunakan koma (,) sebagai pemisah. Urutan kolom:<br/>
-                    <code className="bg-white/50 px-1 rounded font-bold">Nama, Kelas, Mapel, WhatsApp</code>
-                  </p>
+                <div className="p-5 bg-blue-50 rounded-[1.5rem] border border-blue-100 flex items-start gap-3.5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-blue-200/20 rounded-full -mr-10 -mt-10 blur-xl pointer-events-none" />
+                  <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                  <div className="relative z-10 space-y-2">
+                    <h4 className="font-bold text-blue-950 text-sm">{d.import.csvFormat}</h4>
+                    <p className="text-xs text-blue-800 leading-relaxed font-medium">
+                      {d.import.csvFormatDesc}
+                    </p>
+                    <div className="bg-white/60 p-2 rounded-xl border border-blue-100/50 text-[10px] font-mono font-bold text-blue-900 break-all select-all">
+                      {d.import.columns}
+                    </div>
+                    <div className="pt-1.5">
+                      <button
+                        onClick={downloadTemplate}
+                        className="text-xs font-extrabold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1.5 transition-all"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        {d.import.downloadTemplate}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
-                  <button
-                    onClick={downloadTemplate}
-                    className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 font-bold hover:border-[#FF5FA2] hover:text-[#FF5FA2] transition-all flex flex-col items-center gap-1"
-                  >
-                    <Download className="w-6 h-6" />
-                    <span>Download Template CSV</span>
-                  </button>
-
-                  <label className="block">
-                    <div className={`w-full py-4 rounded-2xl bg-[#18080F] text-white font-black text-center cursor-pointer hover:bg-[#FF5FA2] transition-all flex items-center justify-center gap-2 ${importLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      {importLoading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <>
-                          <Plus className="w-5 h-5" />
-                          Pilih File & Import
-                        </>
+                  <label className="block cursor-pointer group">
+                    <div className="w-full py-8 px-4 rounded-[1.5rem] border-2 border-dashed border-gray-200 group-hover:border-[#FF5FA2] group-hover:bg-[#FF5FA2]/5 transition-all duration-300 flex flex-col items-center justify-center gap-3 text-center relative overflow-hidden">
+                      <div className="w-12 h-12 rounded-xl bg-gray-50 group-hover:bg-[#FF5FA2]/10 flex items-center justify-center text-gray-400 group-hover:text-[#FF5FA2] transition-colors">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#18080F] group-hover:text-[#FF5FA2] transition-colors">
+                          {d.import.chooseFile}
+                        </p>
+                        <p className="text-xs text-gray-400 font-medium mt-1">
+                          {d.import.dragDropDesc}
+                        </p>
+                      </div>
+                      
+                      {importLoading && (
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2 z-20">
+                          <Loader2 className="w-6 h-6 animate-spin text-[#FF5FA2]" />
+                          <span className="text-xs font-bold text-[#18080F]">{d.import.uploading}</span>
+                        </div>
                       )}
+                      
                       <input
                         type="file"
                         accept=".csv"
@@ -1744,7 +1761,7 @@ export default function AttendanceManagementPage() {
                 </div>
 
                 <p className="text-center text-xs text-gray-400 font-medium">
-                  Token absensi akan digenerate secara otomatis untuk setiap siswa.
+                  {d.import.autoGenerateNotice}
                 </p>
               </div>
             </motion.div>

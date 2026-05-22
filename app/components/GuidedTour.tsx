@@ -193,6 +193,7 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
 
   return (
     <JoyrideComp
+      key={`${pageKey}-${run}`}
       steps={stepsWithDisabledBeacons}
       run={run}
       continuous
