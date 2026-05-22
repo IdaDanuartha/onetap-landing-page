@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -125,7 +126,7 @@ export async function POST(req: Request) {
 
     // --- ACTION: UPDATE ---
     if (action === 'update') {
-      const { id, label, active_mode, payload_data } = body;
+      const { id, label, active_mode, payload_data, link_password, tag_password } = body;
 
       if (!id) {
         return NextResponse.json({ error: 'ID keychain wajib diisi' }, { status: 400 });
@@ -134,7 +135,7 @@ export async function POST(req: Request) {
       // Verify ownership
       const { data: existing, error: fetchError } = await supabase
         .from('user_keychains')
-        .select('id, user_id')
+        .select('*')
         .eq('id', id)
         .maybeSingle();
 
@@ -146,12 +147,38 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
       }
 
+      const final_payload = { ...(payload_data || {}) };
+
+      // Handle Link Protection Password
+      if (link_password === '••••••••' || link_password === '__KEEP_EXISTING__') {
+        // Keep existing password hash if present
+        if (existing.payload_data && existing.payload_data.link_password_hash) {
+          final_payload.link_password_hash = existing.payload_data.link_password_hash;
+        } else {
+          delete final_payload.link_password_hash;
+        }
+      } else if (link_password && link_password.trim() !== '') {
+        // Hash and store new password
+        const salt = await bcrypt.genSalt(10);
+        final_payload.link_password_hash = await bcrypt.hash(link_password.trim(), salt);
+      } else {
+        // Remove protection password
+        delete final_payload.link_password_hash;
+      }
+
+      // Handle NFC Tag Protection Password
+      if (tag_password && tag_password.trim() !== '') {
+        final_payload.tag_password = tag_password.trim();
+      } else {
+        delete final_payload.tag_password;
+      }
+
       const { data: updated, error: updateError } = await supabase
         .from('user_keychains')
         .update({
           label: label?.trim() || undefined,
           active_mode: active_mode || undefined,
-          payload_data: payload_data || undefined,
+          payload_data: final_payload,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)

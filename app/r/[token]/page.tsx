@@ -82,8 +82,16 @@ export default function RedirectPage({ params }: RedirectPageProps) {
       });
 
       if (res.ok) {
-        const { url } = await res.json();
-        window.location.href = url;
+        const data = await res.json();
+        if (data.is_keychain) {
+          setKeychainData(data);
+          setLoading(false);
+          if (data.url) {
+            window.location.href = data.url;
+          }
+        } else if (data.url) {
+          window.location.href = data.url;
+        }
       } else {
         setError('Password salah. Silakan coba lagi.');
         setLoading(false);

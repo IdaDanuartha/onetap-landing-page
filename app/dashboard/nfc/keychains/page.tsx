@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import jsQR from 'jsqr';
 import { 
   ArrowLeft, Wifi, User, Phone, Mail, Building2, 
   ExternalLink, Key, Plus, Trash2, Edit2, Save, 
   Loader2, Check, AlertCircle, Copy, HelpCircle, 
   ChevronRight, Smartphone, Eye, EyeOff, Globe,
   MessageCircle, Contact2, Bluetooth, AppWindow, MapPin, 
-  Navigation, Map, Type, MessageSquare, Link2, CheckCircle2, Lock, Info
+  Navigation, Map, Type, MessageSquare, Link2, CheckCircle2, Lock, Info,
+  QrCode, Camera
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
@@ -74,6 +76,19 @@ export default function KeychainsManagerPage() {
   const [keychains, setKeychains] = useState<Keychain[]>([]);
   const [profiles, setProfiles] = useState<ProfilePage[]>([]);
   
+  // Advanced Security states
+  const [showSecurity, setShowSecurity] = useState(false);
+  const [linkPassword, setLinkPassword] = useState('');
+  const [tagPassword, setTagPassword] = useState('');
+  const [showNfcPass, setShowNfcPass] = useState(false);
+
+  // QR Scanner states & refs
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState('');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameIdRef = useRef<number | null>(null);
+
   // Modals & Action states
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [claimToken, setClaimToken] = useState('');
@@ -130,6 +145,89 @@ export default function KeychainsManagerPage() {
     loadData();
   }, []);
 
+  // QR Code camera scanning logic
+  const startScanner = async () => {
+    setScanError('');
+    setScanning(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true'); // Required for iOS
+        videoRef.current.play();
+        animationFrameIdRef.current = requestAnimationFrame(tickScan);
+      }
+    } catch (err: any) {
+      console.error('Error accessing camera:', err);
+      setScanError(t(
+        'Gagal mengakses kamera. Pastikan izin kamera telah diberikan.',
+        'Failed to access camera. Please make sure camera permissions are granted.'
+      ));
+      setScanning(false);
+    }
+  };
+
+  const stopScanner = () => {
+    setScanning(false);
+    if (animationFrameIdRef.current) {
+      cancelAnimationFrame(animationFrameIdRef.current);
+      animationFrameIdRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const tickScan = () => {
+    const video = videoRef.current;
+    if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code) {
+          // Robust token extraction
+          const match = code.data.match(/\/r\/([a-zA-Z0-9_-]+)/i);
+          const detectedToken = match ? match[1] : code.data.trim();
+          
+          if (detectedToken) {
+            setClaimToken(detectedToken);
+            stopScanner();
+            return;
+          }
+        }
+      }
+    }
+    // We only loop if still scanning
+    if (streamRef.current) {
+      animationFrameIdRef.current = requestAnimationFrame(tickScan);
+    }
+  };
+
+  // Safe camera stream release on close
+  useEffect(() => {
+    if (!showClaimModal) {
+      stopScanner();
+    }
+    return () => {
+      stopScanner();
+    };
+  }, [showClaimModal]);
+
   // 2. Claim Keychain handler
   const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,6 +277,11 @@ export default function KeychainsManagerPage() {
     setSaveSuccess(false);
     setSaveError('');
 
+    // Pre-populate Advanced Security states
+    setLinkPassword(kc.payload_data?.link_password_hash ? '••••••••' : '');
+    setTagPassword(kc.payload_data?.tag_password || '');
+    setShowSecurity(false);
+
     // Find category for kc.active_mode
     const option = MODE_OPTIONS.find(o => o.id === kc.active_mode);
     if (option) {
@@ -208,7 +311,9 @@ export default function KeychainsManagerPage() {
           id: selectedKeychain.id,
           label: editLabel.trim(),
           active_mode: editMode,
-          payload_data: editPayload
+          payload_data: editPayload,
+          link_password: linkPassword,
+          tag_password: tagPassword
         })
       });
 
@@ -221,6 +326,11 @@ export default function KeychainsManagerPage() {
           prev.map(item => item.id === selectedKeychain.id ? data.keychain : item)
         );
         setSelectedKeychain(data.keychain);
+        
+        // Sync security fields in state
+        setLinkPassword(data.keychain.payload_data?.link_password_hash ? '••••••••' : '');
+        setTagPassword(data.keychain.payload_data?.tag_password || '');
+        
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
         setSaveError(data.error || t('Gagal memperbarui konfigurasi.', 'Failed to update configuration.'));
@@ -1327,6 +1437,111 @@ export default function KeychainsManagerPage() {
                     </AnimatePresence>
                   </div>
 
+                  {/* Advanced Security Panel */}
+                  <div className="border border-slate-100 bg-slate-50/50 rounded-3xl overflow-hidden transition-all duration-300">
+                    <button
+                      type="button"
+                      onClick={() => setShowSecurity(!showSecurity)}
+                      className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-slate-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={`p-2 rounded-xl transition-colors ${showSecurity ? 'bg-[#FF5FA2]/10 text-[#FF5FA2]' : 'bg-slate-100 text-slate-500'}`}>
+                          <Lock className="w-4.5 h-4.5" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-[#18080F] uppercase tracking-wider">
+                            {t('Keamanan Tingkat Lanjut', 'Advanced Security')}
+                          </h4>
+                          <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                            {t('Proteksi password link & tag NFC', 'Link password & NFC tag lock protection')}
+                          </p>
+                        </div>
+                      </div>
+                      <motion.div
+                        animate={{ rotate: showSecurity ? 90 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-gray-400"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </motion.div>
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {showSecurity && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.25, ease: 'easeInOut' }}
+                          className="border-t border-slate-100"
+                        >
+                          <div className="p-6 space-y-5 bg-white">
+                            
+                            {/* Link Protection Password */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-slate-700">
+                                  {t('Password Proteksi Link', 'Link Protection Password')}
+                                </label>
+                                <span className="text-[9px] text-gray-400 font-semibold bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                                  {t('Prompt Pengguna', 'User Prompt')}
+                                </span>
+                              </div>
+                              <input
+                                type="password"
+                                className="w-full h-11 px-4 rounded-xl bg-gray-50 border border-slate-200 focus:border-[#FF5FA2]/20 focus:bg-white outline-none transition-all text-xs font-bold text-[#18080F]"
+                                value={linkPassword}
+                                onChange={(e) => setLinkPassword(e.target.value)}
+                                placeholder={t('Kosongkan untuk menonaktifkan...', 'Leave blank to disable...')}
+                              />
+                              <span className="text-[9px] text-gray-400 font-medium leading-relaxed block">
+                                {t(
+                                  'Jika diisi, pengunjung harus memasukkan password ini sebelum dapat mengakses konten redirection gantungan kunci Anda.',
+                                  'If set, visitors must enter this password before they can access your keychain redirection content.'
+                                )}
+                              </span>
+                            </div>
+
+                            {/* NFC Tag Protection Password */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-slate-700">
+                                  {t('Password Kunci Tag NFC', 'NFC Tag Lock Password')}
+                                </label>
+                                <span className="bg-[#FF5FA2]/10 text-[#FF5FA2] text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                                  {t('Lock Tag', 'Lock Tag')}
+                                </span>
+                              </div>
+                              <div className="relative">
+                                <input
+                                  type={showNfcPass ? 'text' : 'password'}
+                                  className="w-full h-11 pl-4 pr-10 rounded-xl bg-gray-50 border border-slate-200 focus:border-[#FF5FA2]/20 focus:bg-white outline-none transition-all text-xs font-bold text-[#18080F]"
+                                  value={tagPassword}
+                                  onChange={(e) => setTagPassword(e.target.value)}
+                                  placeholder={t('Password kunci software NFC...', 'NFC software lock password...')}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowNfcPass(!showNfcPass)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#FF5FA2] transition-colors"
+                                >
+                                  {showNfcPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                              </div>
+                              <span className="text-[9px] text-gray-400 font-medium leading-relaxed block">
+                                {t(
+                                  'Password ini akan digunakan sebagai referensi software lock untuk mencegah pihak ketiga menimpa data chip fisik NFC Anda.',
+                                  'This password acts as a software lock reference to prevent third parties from overwriting your physical NFC chip data.'
+                                )}
+                              </span>
+                            </div>
+
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
                   {/* Errors and Success indicator */}
                   {saveError && (
                     <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-xs font-bold text-red-600">
@@ -1435,20 +1650,93 @@ export default function KeychainsManagerPage() {
                     <label className="text-xs font-black text-[#18080F] uppercase tracking-wider block">
                       {t('Kode Keychain (Token)', 'Keychain Code (Token)')}
                     </label>
-                    <input
-                      type="text"
-                      required
-                      value={claimToken}
-                      onChange={(e) => setClaimToken(e.target.value)}
-                      placeholder="e.g. key-budi123"
-                      className="w-full h-12 px-4 rounded-xl bg-gray-50 border border-slate-200 focus:border-[#FF5FA2]/20 focus:bg-white outline-none transition-all text-sm font-bold text-[#18080F] font-mono uppercase tracking-widest"
-                    />
-                    <span className="text-[10px] text-gray-400 font-semibold leading-relaxed block italic">
-                      {t(
-                        'Bebas daftarkan kode apa saja! Jika token belum ada di sistem, kami akan membuatnya otomatis.',
-                        'Enter any custom code! If the token is new, we will register it for you automatically.'
-                      )}
-                    </span>
+                    
+                    {scanning ? (
+                      <div className="space-y-3">
+                        {/* Viewfinder */}
+                        <div className="relative w-full aspect-square bg-[#18080F] rounded-2xl overflow-hidden border border-[#F6B7C8]/20 shadow-2xl flex items-center justify-center">
+                          <video 
+                            ref={videoRef} 
+                            className="w-full h-full object-cover"
+                          />
+                          
+                          {/* Laser Sweep */}
+                          <motion.div
+                            className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#FF5FA2] to-transparent shadow-[0_0_12px_2px_#FF5FA2]"
+                            animate={{ top: ['4%', '96%', '4%'] }}
+                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                          />
+
+                          {/* Focus Corners Overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-48 h-48 border border-dashed border-[#FF5FA2]/30 rounded-2xl relative flex items-center justify-center">
+                              {/* Corner Borders */}
+                              <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#FF5FA2] rounded-tl-lg -mt-[1px] -ml-[1px]" />
+                              <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#FF5FA2] rounded-tr-lg -mt-[1px] -mr-[1px]" />
+                              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-[#FF5FA2] rounded-bl-lg -mb-[1px] -ml-[1px]" />
+                              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#FF5FA2] rounded-br-lg -mb-[1px] -mr-[1px]" />
+                              
+                              {/* Central indicator */}
+                              <div className="w-2 h-2 bg-[#FF5FA2] rounded-full animate-ping" />
+                            </div>
+                          </div>
+                          
+                          {/* Live indicator badge */}
+                          <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/10">
+                            <span className="w-1.5 h-1.5 bg-[#FF5FA2] rounded-full animate-ping" />
+                            <span className="text-[9px] font-black text-white tracking-widest uppercase">Live Scan</span>
+                          </div>
+                        </div>
+
+                        {/* Scanner action and status */}
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-[10px] text-gray-400 font-semibold italic">
+                            {t('Arahkan kamera ke QR code keychain', 'Aim camera at the keychain QR code')}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={stopScanner}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-500 text-[10px] font-black transition-all active:scale-95"
+                          >
+                            <EyeOff className="w-3.5 h-3.5" />
+                            {t('Matikan Kamera', 'Turn Off Camera')}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            required
+                            value={claimToken}
+                            onChange={(e) => setClaimToken(e.target.value)}
+                            placeholder="e.g. key-budi123"
+                            className="w-full h-12 pl-4 pr-12 rounded-xl bg-gray-50 border border-slate-200 focus:border-[#FF5FA2]/20 focus:bg-white outline-none transition-all text-sm font-bold text-[#18080F] font-mono uppercase tracking-widest"
+                          />
+                          <button
+                            type="button"
+                            onClick={startScanner}
+                            className="absolute right-3 p-1.5 rounded-lg bg-[#FF5FA2]/10 hover:bg-[#FF5FA2] text-[#FF5FA2] hover:text-white transition-all duration-300 active:scale-90"
+                            title={t('Scan QR Code dengan Kamera', 'Scan QR Code with Camera')}
+                          >
+                            <QrCode className="w-4.5 h-4.5" />
+                          </button>
+                        </div>
+                        {scanError && (
+                          <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-[10px] font-bold text-red-500">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>{scanError}</span>
+                          </div>
+                        )}
+                        <span className="text-[10px] text-gray-400 font-semibold leading-relaxed block italic">
+                          {t(
+                            'Bebas daftarkan kode apa saja! Jika token belum ada di sistem, kami akan membuatnya otomatis atau gunakan tombol QR untuk scan.',
+                            'Enter any custom code! If the token is new, we will register it for you automatically or use the QR button to scan.'
+                          )}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

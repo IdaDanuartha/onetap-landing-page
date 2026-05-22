@@ -25,6 +25,26 @@ export async function POST(
       const mode = keychain.active_mode;
       const payload = keychain.payload_data || {};
 
+      // Check if password protected
+      if (payload.link_password_hash) {
+        let body: { password?: string } = {};
+        try {
+          body = await req.json();
+        } catch {
+          // empty body probe — return 401 so client knows it's protected
+          return NextResponse.json({ error: 'Password diperlukan', is_protected: true }, { status: 401 });
+        }
+
+        if (!body.password) {
+          return NextResponse.json({ error: 'Password diperlukan', is_protected: true }, { status: 401 });
+        }
+
+        const isValid = await bcrypt.compare(body.password, payload.link_password_hash);
+        if (!isValid) {
+          return NextResponse.json({ error: 'Password salah' }, { status: 401 });
+        }
+      }
+
       // Direct Redirect Modes
       if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app'].includes(mode)) {
         let redirectUrl = '';
