@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Joyride, Step, STATUS, Actions, Events } from "react-joyride";
+import { Joyride, STATUS } from "react-joyride";
+import type { Step } from "react-joyride";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,

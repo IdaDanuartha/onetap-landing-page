@@ -19,7 +19,8 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { dict } from '@/lib/i18n/dict';
 import { canAccess, isExpired, getPlan } from '@/lib/plans';
 import type { PlanId } from '@/lib/plans';
-import GuidedTour from '@/app/components/GuidedTour';
+import nextDynamic from 'next/dynamic';
+const GuidedTour = nextDynamic(() => import('@/app/components/GuidedTour'), { ssr: false });
 
 export const dynamic = 'force-dynamic';
 

@@ -201,4 +201,9 @@
   scrollbar-width: none;
 }
 
+/* Hide react-joyride beacon/dots completely */
+.react-joyride__beacon {
+  display: none !important;
+}
+
 

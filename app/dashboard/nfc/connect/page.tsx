@@ -12,7 +12,8 @@ import {
   Share2, Globe, Building2, ShieldCheck, Info, Smartphone, Activity,
   Lock, Shield, Sparkles, BookOpen
 } from 'lucide-react';
-import GuidedTour from '@/app/components/GuidedTour';
+import nextDynamic from 'next/dynamic';
+const GuidedTour = nextDynamic(() => import('@/app/components/GuidedTour'), { ssr: false });
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';

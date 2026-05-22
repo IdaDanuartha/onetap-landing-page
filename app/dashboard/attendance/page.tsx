@@ -9,7 +9,8 @@ import Toast from "@/app/components/Toast";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { dict } from "@/lib/i18n/dict";
 import { canAccess, isExpired } from "@/lib/plans";
-import GuidedTour from "@/app/components/GuidedTour";
+import dynamic from 'next/dynamic';
+const GuidedTour = dynamic(() => import('@/app/components/GuidedTour'), { ssr: false });
 
 interface Tag {
   id: string;
