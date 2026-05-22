@@ -84,7 +84,7 @@ export default function OneTapBuilderPage() {
 
   const handleTourCallback = (data: any) => {
     const { action, index, status, type } = data;
-    if (type === "step:after" || type === "target:not_found") {
+    if (type === "step:after") {
       setTourStepIndex(index + (action === "prev" ? -1 : 1));
     } else if (type === "tour:status" && ["finished", "skipped"].includes(status)) {
       handleTourClose();

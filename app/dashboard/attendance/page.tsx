@@ -116,8 +116,27 @@ export default function AttendanceManagementPage() {
 
   const handleTourCallback = (data: any) => {
     const { action, index, status, type } = data;
-    if (type === "step:after" || type === "target:not_found") {
-      setTourStepIndex(index + (action === "prev" ? -1 : 1));
+    if (type === "step:after") {
+      const nextIndex = index + (action === "prev" ? -1 : 1);
+      
+      // Pre-emptively trigger transitions before advancing index to avoid Joyride target:not_found race conditions
+      if (nextIndex === 2 && !showModal) {
+        handleOpenModal();
+        setTimeout(() => setTourStepIndex(2), 300);
+        return;
+      }
+      if (nextIndex === 4 && !isWritingNFC && displayTags.length > 0) {
+        startSingleWrite(displayTags[0]);
+        setTimeout(() => setTourStepIndex(4), 300);
+        return;
+      }
+      if (nextIndex === 6 && !showScanModal) {
+        startBulkScan();
+        setTimeout(() => setTourStepIndex(6), 300);
+        return;
+      }
+      
+      setTourStepIndex(nextIndex);
     } else if (type === "tour:status" && ["finished", "skipped"].includes(status)) {
       handleTourClose();
     }
@@ -673,14 +692,14 @@ export default function AttendanceManagementPage() {
   };
 
   const startBulkWrite = () => {
-    if (filteredTags.length === 0) return;
+    if (displayTags.length === 0) return;
     if (!('NDEFReader' in window)) {
       setToastMsg("Browser Anda tidak mendukung NFC. Gunakan Chrome di Android.");
       setToastType("warning");
       setShowToast(true);
       return;
     }
-    setBulkWriteQueue(filteredTags);
+    setBulkWriteQueue(displayTags);
     setCurrentBulkIndex(0);
     setIsWritingNFC(true);
     setWriteStatus("writing");
@@ -767,6 +786,22 @@ export default function AttendanceManagementPage() {
     return matchesSearch && matchesClass && matchesSubject;
   });
 
+  const displayTags = useMemo(() => {
+    if (filteredTags.length > 0) return filteredTags;
+    if (runTour) {
+      return [{
+        id: "dummy-tour-tag",
+        student_name: locale === 'id' ? "Siswa Contoh (Panduan)" : "Example Student (Guide)",
+        class_name: "12 IPA 1",
+        teacher_phone: "628123456789",
+        token: "SAMPLE",
+        is_active: true,
+        subject: "Matematika",
+      }];
+    }
+    return [];
+  }, [filteredTags, runTour, locale]);
+
   const uniqueClasses = Array.from(new Set(tags.map(t => t.class_name).filter(Boolean)));
   const uniqueSubjects = Array.from(new Set(tags.map(t => t.subject).filter(Boolean)));
 
@@ -785,8 +820,8 @@ export default function AttendanceManagementPage() {
     }
 
     if (tourStepIndex === 4) {
-      if (!isWritingNFC && tags.length > 0) {
-        startSingleWrite(tags[0]);
+      if (!isWritingNFC && displayTags.length > 0) {
+        startSingleWrite(displayTags[0]);
       }
     } else {
       if (isWritingNFC && (tourStepIndex < 4 || tourStepIndex > 4)) {
@@ -805,7 +840,7 @@ export default function AttendanceManagementPage() {
         setIsBulkScanning(false);
       }
     }
-  }, [tourStepIndex, runTour]);
+  }, [tourStepIndex, runTour, displayTags]);
 
   if (loading) {
     return (
@@ -1137,10 +1172,10 @@ export default function AttendanceManagementPage() {
                   <th className="px-6 py-5 w-10">
                     <input 
                       type="checkbox"
-                      checked={selectedTags.length === filteredTags.length && filteredTags.length > 0}
+                      checked={selectedTags.length === displayTags.length && displayTags.length > 0}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedTags(filteredTags.map(t => t.id));
+                          setSelectedTags(displayTags.map(t => t.id));
                         } else {
                           setSelectedTags([]);
                         }
@@ -1193,7 +1228,7 @@ export default function AttendanceManagementPage() {
                       <td className="px-8 py-6"><div className="h-4 bg-gray-100 rounded w-8 ml-auto" /></td>
                     </tr>
                   ))
-                ) : filteredTags.length === 0 ? (
+                ) : displayTags.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-8 py-20 text-center">
                       <div className="flex flex-col items-center gap-3">
@@ -1215,7 +1250,7 @@ export default function AttendanceManagementPage() {
                       </div>
                     </td>
                   </tr>
-                ) : filteredTags.map((tag, index) => (
+                ) : displayTags.map((tag, index) => (
                   <tr key={tag.id} className={`hover:bg-gray-50/30 transition-colors ${selectedTags.includes(tag.id) ? 'bg-[#FF5FA2]/5' : ''}`}>
                     <td className="px-6 py-5">
                       <input 
