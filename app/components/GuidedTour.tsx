@@ -60,7 +60,7 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+
 
   // Custom Tooltip component for React Joyride to match premium styling
   const CustomTooltip = ({
@@ -188,6 +188,8 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
   }, [steps]);
 
   const JoyrideComp = Joyride as any;
+
+  if (!mounted) return null;
 
   return (
     <JoyrideComp
