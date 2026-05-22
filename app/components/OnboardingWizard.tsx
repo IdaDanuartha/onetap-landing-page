@@ -8,12 +8,13 @@ import {
   Layout,
   Wifi,
   Users,
-  Sparkles,
   ChevronRight,
   ChevronLeft,
   Rocket,
   CheckCircle2,
   BookOpen,
+  Lightbulb,
+  PartyPopper,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { PlanId } from "@/lib/plans";
@@ -264,14 +265,6 @@ export default function OnboardingWizard({ plan = "starter", forceOpen = false, 
                         className={`relative w-24 h-24 rounded-3xl bg-gradient-to-br ${currentStep.iconBg} border border-white/10 flex items-center justify-center shadow-xl`}
                       >
                         <IconComp className={`w-12 h-12 ${currentStep.iconColor}`} />
-                        {/* Sparkle accent */}
-                        <motion.div
-                          animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.2, 1] }}
-                          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                          className="absolute -top-2 -right-2"
-                        >
-                          <Sparkles className="w-5 h-5 text-yellow-400/70" />
-                        </motion.div>
                       </div>
                     </div>
                   </div>
@@ -288,7 +281,8 @@ export default function OnboardingWizard({ plan = "starter", forceOpen = false, 
 
                   {/* Hint pill (for profile/nfc/attendance steps) */}
                   {stepData?.hint && (
-                    <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-white/5 border border-white/8 mb-5">
+                    <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-white/5 border border-white/[0.08] mb-5">
+                      <Lightbulb className="w-3.5 h-3.5 text-yellow-400/80 mt-0.5 shrink-0" />
                       <span className="text-xs text-[#F6B7C8]/60 leading-relaxed font-medium">
                         {stepData.hint}
                       </span>
@@ -329,7 +323,7 @@ export default function OnboardingWizard({ plan = "starter", forceOpen = false, 
                   {isLastStep ? (
                     <>
                       {t("onboarding.finish")}
-                      <Sparkles className="w-4 h-4 text-yellow-400" />
+                      <PartyPopper className="w-4 h-4 text-yellow-400" />
                     </>
                   ) : (
                     <>
