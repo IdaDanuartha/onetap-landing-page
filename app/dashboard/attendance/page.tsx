@@ -83,9 +83,14 @@ export default function AttendanceManagementPage() {
 
   useEffect(() => {
     if (!loading && hasAccess) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isTourParam = searchParams.get('tour') === 'true';
       const completed = localStorage.getItem('onetap_tour_attendance_completed');
-      if (!completed) {
+      if (isTourParam || !completed) {
         setRunTour(true);
+        if (isTourParam) {
+          setTourStepIndex(0);
+        }
       }
     }
   }, [loading, hasAccess]);

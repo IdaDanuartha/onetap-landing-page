@@ -53,9 +53,14 @@ export default function OneTapBuilderPage() {
 
   useEffect(() => {
     if (!loading) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isTourParam = searchParams.get('tour') === 'true';
       const completed = localStorage.getItem('onetap_tour_builder_completed');
-      if (!completed) {
+      if (isTourParam || !completed) {
         setRunTour(true);
+        if (isTourParam) {
+          setTourStepIndex(0);
+        }
       }
     }
   }, [loading]);

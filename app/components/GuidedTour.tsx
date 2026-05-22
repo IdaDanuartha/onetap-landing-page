@@ -68,13 +68,17 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
     primaryProps,
     skipProps,
     isLastStep,
+    tooltipProps,
   }: any) => {
     // Extract step custom metadata or ID to find the icon
     const stepId = step.data?.id || "";
     const IconComp = ICON_MAP[stepId] || Info;
 
     return (
-      <div className="relative w-[340px] max-w-sm bg-[#2D1020]/95 backdrop-blur-2xl border border-[#FF5FA2]/20 rounded-[2rem] shadow-2xl shadow-[#FF5FA2]/10 p-6 text-white overflow-hidden pointer-events-auto">
+      <div
+        {...tooltipProps}
+        className="w-[340px] max-w-sm bg-[#2D1020]/95 backdrop-blur-2xl border border-[#FF5FA2]/20 rounded-[2rem] shadow-2xl shadow-[#FF5FA2]/10 p-6 text-white overflow-hidden pointer-events-auto"
+      >
         {/* Ambient glow */}
         <div className="absolute -left-12 -top-12 w-28 h-28 rounded-full bg-[#FF5FA2]/10 blur-2xl pointer-events-none" />
         <div className="absolute -right-12 -bottom-12 w-28 h-28 rounded-full bg-purple-600/10 blur-2xl pointer-events-none" />
@@ -170,11 +174,16 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
     }
   };
 
+  const stepsWithDisabledBeacons = steps.map((step: any) => ({
+    ...step,
+    disableBeacon: true,
+  }));
+
   const JoyrideComp = Joyride as any;
 
   return (
     <JoyrideComp
-      steps={steps}
+      steps={stepsWithDisabledBeacons}
       run={run}
       continuous
       scrollToFirstStep
