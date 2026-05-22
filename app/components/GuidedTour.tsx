@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Joyride, Step, STATUS, Actions, Events } from "react-joyride";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -174,10 +174,14 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
     }
   };
 
-  const stepsWithDisabledBeacons = steps.map((step: any) => ({
-    ...step,
-    disableBeacon: true,
-  }));
+  const stepsWithDisabledBeacons = useMemo(() => {
+    return steps.map((step: any) => ({
+      ...step,
+      disableBeacon: true,
+      disableOverlayClose: true,
+      spotlightClicks: true,
+    }));
+  }, [steps]);
 
   const JoyrideComp = Joyride as any;
 

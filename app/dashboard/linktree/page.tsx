@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -56,11 +56,17 @@ export default function OneTapBuilderPage() {
       const searchParams = new URLSearchParams(window.location.search);
       const isTourParam = searchParams.get('tour') === 'true';
       const completed = localStorage.getItem('onetap_tour_builder_completed');
-      if (isTourParam || !completed) {
+      if (isTourParam) {
+        // Clear parameter immediately
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        
+        setTourStepIndex(0);
         setRunTour(true);
-        if (isTourParam) {
-          setTourStepIndex(0);
-        }
+      } else if (!completed) {
+        localStorage.setItem('onetap_tour_builder_completed', 'true');
+        setTourStepIndex(0);
+        setRunTour(true);
       }
     }
   }, [loading]);
@@ -84,7 +90,7 @@ export default function OneTapBuilderPage() {
     }
   };
 
-  const tourSteps = [
+  const tourSteps = useMemo(() => [
     {
       target: '#tour-profile-section',
       title: t('dashboard.tour.builder.profile.title'),
@@ -100,6 +106,7 @@ export default function OneTapBuilderPage() {
       content: t('dashboard.tour.builder.addLink.desc'),
       placement: 'bottom' as const,
       data: { id: 'addLink' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -108,6 +115,7 @@ export default function OneTapBuilderPage() {
       content: t('dashboard.tour.builder.linksList.desc'),
       placement: 'top' as const,
       data: { id: 'linksList' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -116,6 +124,7 @@ export default function OneTapBuilderPage() {
       content: t('dashboard.tour.builder.themes.desc'),
       placement: 'top' as const,
       data: { id: 'themes' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -124,9 +133,10 @@ export default function OneTapBuilderPage() {
       content: t('dashboard.tour.builder.save.desc'),
       placement: 'bottom' as const,
       data: { id: 'save' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
-  ];
+  ], [t]);
   
   // Multi-page state
   const [pages, setPages] = useState<any[]>([]);
@@ -460,51 +470,51 @@ export default function OneTapBuilderPage() {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
+            <div className="flex items-center gap-2 sm:gap-4 max-w-[50%] min-w-0">
+              <Link href="/dashboard" className="p-2 sm:p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all flex-shrink-0">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-black text-[#18080F] hidden sm:block">{d.title}</h1>
-              <h1 className="text-lg font-black text-[#18080F] sm:hidden">OneTap Builder</h1>
+              <h1 className="text-xl font-black text-[#18080F] hidden sm:block truncate">{d.title}</h1>
+              <h1 className="text-base sm:text-lg font-black text-[#18080F] sm:hidden truncate whitespace-nowrap">OneTap Builder</h1>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
               <button
                 onClick={handleTourRestart}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase cursor-pointer"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase cursor-pointer whitespace-nowrap animate-pulse"
               >
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4" />
-                {t('dashboard.tour.restart')}
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('dashboard.tour.restart')}</span>
               </button>
 
-              <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
+              <div className="h-6 w-px bg-gray-100 mx-0.5 sm:mx-1 hidden sm:block" />
 
               <button
                 onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap"
               >
-                <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
-                {locale}
+                <Globe className="w-4 h-4" />
+                <span>{locale.toUpperCase()}</span>
               </button>
 
-              <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
+              <div className="h-6 w-px bg-gray-100 mx-0.5 sm:mx-1 hidden sm:block" />
 
               <button
                 id="tour-save-btn"
                 onClick={handleSave}
                 disabled={saving}
-                className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-base transition-all duration-300 whitespace-nowrap ${
                   saved 
                     ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
                     : 'bg-[#18080F] text-white hover:bg-[#FF5FA2] shadow-lg shadow-[#18080F]/10'
                 }`}
               >
                 {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 h-4 animate-spin" />
                 ) : saved ? (
-                  <><Check className="w-4 h-4" /> {d.saved}</>
+                  <><Check className="w-3.5 h-3.5 sm:w-4 h-4" /> {d.saved}</>
                 ) : (
-                  <><Save className="w-4 h-4" /> {d.save}</>
+                  <><Save className="w-3.5 h-3.5 sm:w-4 h-4" /> {d.save}</>
                 )}
               </button>
             </div>

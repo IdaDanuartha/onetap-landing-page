@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Users, Globe, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Zap, Radio, Signal, AlertCircle, Info, Lightbulb, BookOpen } from "lucide-react";
@@ -91,6 +91,14 @@ export default function AttendanceManagementPage() {
         if (isTourParam) {
           setTourStepIndex(0);
         }
+        // Save immediately to prevent auto-restart on re-render / page revisit
+        localStorage.setItem('onetap_tour_attendance_completed', 'true');
+        // Clean URL parameters immediately
+        if (window.history.replaceState) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('tour');
+          window.history.replaceState({ path: url.href }, '', url.href);
+        }
       }
     }
   }, [loading, hasAccess]);
@@ -114,7 +122,7 @@ export default function AttendanceManagementPage() {
     }
   };
 
-  const tourSteps = [
+  const tourSteps = useMemo(() => [
     {
       target: '#tour-school-name',
       title: t('dashboard.tour.attendance.schoolName.title'),
@@ -130,6 +138,7 @@ export default function AttendanceManagementPage() {
       content: t('dashboard.tour.attendance.addStudent.desc'),
       placement: 'bottom' as const,
       data: { id: 'addLink' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -138,6 +147,7 @@ export default function AttendanceManagementPage() {
       content: t('dashboard.tour.attendance.studentForm.desc'),
       placement: 'bottom' as const,
       data: { id: 'linksList' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -146,6 +156,7 @@ export default function AttendanceManagementPage() {
       content: t('dashboard.tour.attendance.writeNFC.desc'),
       placement: 'left' as const,
       data: { id: 'scan' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -154,6 +165,7 @@ export default function AttendanceManagementPage() {
       content: t('dashboard.tour.attendance.writingModal.desc'),
       placement: 'top' as const,
       data: { id: 'write' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -162,6 +174,7 @@ export default function AttendanceManagementPage() {
       content: t('dashboard.tour.attendance.bulkScan.desc'),
       placement: 'bottom' as const,
       data: { id: 'bulk' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -170,6 +183,7 @@ export default function AttendanceManagementPage() {
       content: t('dashboard.tour.attendance.scanModal.desc'),
       placement: 'top' as const,
       data: { id: 'scanner' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
     {
@@ -178,9 +192,10 @@ export default function AttendanceManagementPage() {
       content: t('dashboard.tour.attendance.historyLink.desc'),
       placement: 'bottom' as const,
       data: { id: 'export' },
+      disableBeacon: true,
       spotlightClicks: true,
     },
-  ];
+  ], [t]);
 
 
   const [formData, setFormData] = useState({
@@ -911,48 +926,59 @@ export default function AttendanceManagementPage() {
             </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto mt-4 lg:mt-0">
-            <button
-              onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
-            >
-              <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
-              {locale}
-            </button>
-            <button
-              onClick={handleTourRestart}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
-            >
-              <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4" />
-              {t('dashboard.tour.restart')}
-            </button>
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto mt-4 lg:mt-0">
+            {/* Utility buttons row */}
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-50/50 p-1 rounded-2xl border border-gray-100 flex-shrink-0">
+              <button
+                onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-white transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap shadow-sm border border-transparent hover:border-gray-100"
+              >
+                <Globe className="w-3.5 h-3.5 sm:w-4 h-4 text-gray-400" />
+                <span>{locale.toUpperCase()}</span>
+              </button>
+              
+              <div className="h-4 w-px bg-gray-200" />
+              
+              <button
+                onClick={handleTourRestart}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-white transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap shadow-sm border border-transparent hover:border-gray-100 cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4 text-gray-400" />
+                <span className="hidden sm:inline">{t('dashboard.tour.restart')}</span>
+              </button>
+            </div>
+
             <div className="h-8 w-px bg-gray-100 mx-1 hidden lg:block" />
-            <Link 
-              id="tour-history-link"
-              href="/dashboard/attendance/logs"
-              className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-sm"
-            >
-              <Calendar className="w-5 h-5 text-[#FF5FA2]" />
-              <span className="hidden sm:inline">{d.actions.history}</span>
-              <span className="sm:hidden">History</span>
-            </Link>
-            <button 
-              onClick={() => setShowImportModal(true)}
-              className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-sm"
-            >
-              <Download className="w-5 h-5 rotate-180" />
-              <span className="hidden sm:inline">{d.actions.importCsv}</span>
-              <span className="sm:hidden">Import</span>
-            </button>
-            <button 
-              id="tour-bulk-scan-btn"
-              onClick={startBulkScan}
-              className="flex-1 lg:flex-none px-4 py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 text-sm"
-            >
-              <Radio className="w-5 h-5 animate-pulse" />
-              <span className="hidden sm:inline">{d.actions.bulkScan}</span>
-              <span className="sm:hidden">Scan</span>
-            </button>
+
+            {/* Action buttons row */}
+            <div className="flex flex-wrap items-center gap-2 flex-1 lg:flex-initial">
+              <Link 
+                id="tour-history-link"
+                href="/dashboard/attendance/logs"
+                className="flex-1 lg:flex-none px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Calendar className="w-4 h-4 sm:w-5 h-5 text-[#FF5FA2]" />
+                <span className="hidden sm:inline">{d.actions.history}</span>
+                <span className="sm:hidden">History</span>
+              </Link>
+              <button 
+                onClick={() => setShowImportModal(true)}
+                className="flex-1 lg:flex-none px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-white border border-gray-100 text-[#18080F] font-bold hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2 shadow-sm text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Download className="w-4 h-4 sm:w-5 h-5 rotate-180 text-gray-400" />
+                <span className="hidden sm:inline">{d.actions.importCsv}</span>
+                <span className="sm:hidden">Import</span>
+              </button>
+              <button 
+                id="tour-bulk-scan-btn"
+                onClick={startBulkScan}
+                className="flex-1 lg:flex-none px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-orange-500 text-white font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Radio className="w-4 h-4 sm:w-5 h-5 animate-pulse text-white/95" />
+                <span className="hidden sm:inline">{d.actions.bulkScan}</span>
+                <span className="sm:hidden">Scan</span>
+              </button>
+            </div>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -146,7 +146,7 @@ export default function ConnectNfcPage() {
   const { locale, setLocale, t } = useLanguage();
   const d = dict[locale].dashboard.nfc || { title: 'NFC Activator' };
 
-  const tourSteps = [
+  const tourSteps = useMemo(() => [
     {
       target: '#tour-nfc-scan',
       title: t('dashboard.tour.nfc.scan.title'),
@@ -159,6 +159,7 @@ export default function ConnectNfcPage() {
       target: '#tour-nfc-link-input',
       title: t('dashboard.tour.nfc.linkInput.title'),
       content: t('dashboard.tour.nfc.linkInput.desc'),
+      disableBeacon: true,
       data: { id: 'linkInput' },
       spotlightClicks: true,
     },
@@ -166,10 +167,11 @@ export default function ConnectNfcPage() {
       target: '#tour-nfc-write',
       title: t('dashboard.tour.nfc.write.title'),
       content: t('dashboard.tour.nfc.write.desc'),
+      disableBeacon: true,
       data: { id: 'write' },
       spotlightClicks: true,
     }
-  ];
+  ], [t]);
 
   const handleTourClose = () => {
     setRunTour(false);
@@ -242,6 +244,14 @@ export default function ConnectNfcPage() {
         setRunTour(true);
         if (isTourParam) {
           setTourStepIndex(0);
+        }
+        // Save immediately to prevent auto-restart on re-render / page revisit
+        localStorage.setItem('onetap_tour_nfc_completed', 'true');
+        // Clean URL parameters immediately
+        if (window.history.replaceState) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('tour');
+          window.history.replaceState({ path: url.href }, '', url.href);
         }
       }
     }
@@ -534,30 +544,30 @@ export default function ConnectNfcPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all">
+          <div className="flex items-center gap-2 sm:gap-4 max-w-[50%] min-w-0">
+            <Link href="/dashboard" className="p-2 sm:p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all flex-shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <h1 className="text-xl font-black text-[#18080F]">NFC Activator</h1>
+            <h1 className="text-lg sm:text-xl font-black text-[#18080F] truncate whitespace-nowrap">NFC Activator</h1>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
             <button
               onClick={handleTourRestart}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase cursor-pointer"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase cursor-pointer whitespace-nowrap"
             >
               <BookOpen className="w-3.5 h-3.5 sm:w-4 h-4" />
-              {t('dashboard.tour.restart')}
+              <span className="hidden sm:inline">{t('dashboard.tour.restart')}</span>
             </button>
 
-            <div className="h-6 w-px bg-gray-100 mx-1" />
+            <div className="h-6 w-px bg-gray-100 mx-0.5 sm:mx-1" />
 
             <button
               onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap"
             >
               <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
-              {locale}
+              <span>{locale.toUpperCase()}</span>
             </button>
           </div>
         </div>
