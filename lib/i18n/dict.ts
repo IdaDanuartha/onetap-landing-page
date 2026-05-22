@@ -874,7 +874,47 @@ export const translations = {
       desc: "Apakah Anda yakin ingin keluar dari akun OneTap Anda?",
       confirm: "Ya, Keluar",
       cancel: "Batal"
-    }
+    },
+    onboarding: {
+      title: "Selamat Datang di OneTap! 👋",
+      skip: "Lewati Panduan",
+      next: "Selanjutnya",
+      back: "Kembali",
+      finish: "Mulai Jelajahi!",
+      viewGuide: "Lihat Panduan",
+      step: "Langkah",
+      of: "dari",
+      steps: {
+        welcome: {
+          title: "Selamat Datang di OneTap!",
+          desc: "OneTap adalah platform identitas digital NFC all-in-one. Kamu bisa buat profil digital, hubungkan ke keychain NFC, dan bahkan kelola absensi — semua dari satu tempat.",
+          cta: "Yuk, Mulai!",
+        },
+        profile: {
+          title: "Buat Profil Digital Kamu",
+          desc: "Buat halaman profil digital yang bisa kamu share ke siapapun. Tambahkan link media sosial, portofolio, WhatsApp, dan banyak lagi — semua di satu halaman yang keren.",
+          cta: "Buat Profil Sekarang",
+          hint: "💡 Profil digitalmu bisa diakses via link, QR code, atau tap NFC.",
+        },
+        nfc: {
+          title: "Hubungkan ke NFC Keychain",
+          desc: "Setelah profil siap, hubungkan ke gantungan kunci NFC OneTap-mu. Cukup buka halaman Connect NFC, tempelkan keychain ke belakang HP, dan data tersimpan secara instan!",
+          cta: "Connect NFC Sekarang",
+          hint: "💡 Butuh Chrome di Android + NFC aktif untuk proses ini.",
+        },
+        attendance: {
+          title: "Setup Absensi Otomatis",
+          desc: "Daftarkan siswa, buat tag NFC individual, dan biarkan sistem mencatat kehadiran secara otomatis — lengkap dengan notifikasi WhatsApp ke orang tua/pendamping!",
+          cta: "Kelola Absensi",
+          hint: "💡 Fitur eksklusif untuk paket Education. Setiap tap = absensi tercatat.",
+        },
+        done: {
+          title: "Semua Siap! 🎉",
+          desc: "Kamu sudah tahu cara menggunakan fitur utama OneTap. Eksplorasi dashboard dan mulai manfaatkan semua fitur yang tersedia untukmu.",
+          cta: "Buka Dashboard",
+        },
+      },
+    },
   },
   en: {
     nav: {
@@ -1749,7 +1789,47 @@ export const translations = {
       desc: "Are you sure you want to log out of your OneTap account?",
       confirm: "Yes, Logout",
       cancel: "Cancel"
-    }
+    },
+    onboarding: {
+      title: "Welcome to OneTap! 👋",
+      skip: "Skip Guide",
+      next: "Next",
+      back: "Back",
+      finish: "Start Exploring!",
+      viewGuide: "View Guide",
+      step: "Step",
+      of: "of",
+      steps: {
+        welcome: {
+          title: "Welcome to OneTap!",
+          desc: "OneTap is an all-in-one NFC digital identity platform. Create a digital profile, connect to an NFC keychain, and manage attendance — all from one place.",
+          cta: "Let's Get Started!",
+        },
+        profile: {
+          title: "Create Your Digital Profile",
+          desc: "Build a stunning digital profile page to share with anyone. Add social media links, portfolio, WhatsApp, and more — all on one beautiful page.",
+          cta: "Create Profile Now",
+          hint: "💡 Your profile is accessible via link, QR code, or NFC tap.",
+        },
+        nfc: {
+          title: "Connect Your NFC Keychain",
+          desc: "Once your profile is ready, link it to your OneTap NFC keychain. Open the Connect NFC page, tap the keychain to the back of your phone, and data is written instantly!",
+          cta: "Connect NFC Now",
+          hint: "💡 Requires Chrome on Android + active NFC for this process.",
+        },
+        attendance: {
+          title: "Set Up Automated Attendance",
+          desc: "Register students, create individual NFC tags, and let the system automatically record attendance — complete with WhatsApp notifications to parents/guardians!",
+          cta: "Manage Attendance",
+          hint: "💡 Exclusive to the Education plan. Every tap = attendance logged.",
+        },
+        done: {
+          title: "All Set! 🎉",
+          desc: "You now know how to use OneTap's core features. Explore the dashboard and start making the most of everything available to you.",
+          cta: "Open Dashboard",
+        },
+      },
+    },
   },
 };
 export const dict = translations;

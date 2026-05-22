@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { BarChart2, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Lock, Calendar, ShieldCheck, Clock, Globe } from 'lucide-react';
+import { BarChart2, Layout, LogOut, Settings, Wifi, Zap, User, ChevronRight, Lock, Calendar, ShieldCheck, Clock, Globe, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { canAccess, PLANS, PLAN_BADGE_COLORS, isExpired, getPlan } from '@/lib/plans';
 import type { PlanId } from '@/lib/plans';
 import Toast from '@/app/components/Toast';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import LogoutConfirmModal from '@/app/components/LogoutConfirmModal';
+import OnboardingWizard from '@/app/components/OnboardingWizard';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function DashboardPage() {
   const [usernameError, setUsernameError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const planExpired = isExpired(expiresAt);
 
@@ -415,6 +417,14 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4 mb-8">
           <h2 className="text-xl sm:text-2xl font-black text-[#18080F] tracking-tight uppercase tracking-widest text-xs font-bold text-[#FF5FA2]">{t('dashboard.menu.title')}</h2>
           <div className="h-px flex-1 bg-gradient-to-r from-[#FF5FA2]/20 to-transparent" />
+          {/* Lihat Panduan button */}
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 border border-transparent hover:border-[#FF5FA2]/10 transition-all duration-200"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            {t('onboarding.viewGuide')}
+          </button>
         </div>
 
         {/* Action Cards */}
@@ -574,6 +584,11 @@ export default function DashboardPage() {
           await supabase.auth.signOut();
           router.push('/');
         }}
+      />
+      <OnboardingWizard
+        plan={plan}
+        forceOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
       />
     </div>
   );
