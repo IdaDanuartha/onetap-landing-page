@@ -12,10 +12,10 @@ import {
   ChevronRight, Smartphone, Eye, EyeOff, Globe,
   MessageCircle, Contact2, Bluetooth, AppWindow, MapPin, 
   Navigation, Map, Type, MessageSquare, Link2, CheckCircle2, Lock, Info,
-  QrCode, Camera
+  QrCode, Camera, Github
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon } from '@/app/components/BrandIcons';
+import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon } from '@/app/components/BrandIcons';
 
 interface Keychain {
   id: string;
@@ -50,6 +50,9 @@ const MODE_OPTIONS = [
   // Sosial (formerly Communication + new brand socials)
   { id: 'whatsapp', category: 'social_media', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
   { id: 'instagram', category: 'social_media', label: 'Instagram', icon: InstagramIcon, placeholder: 'username' },
+  { id: 'tiktok', category: 'social_media', label: 'TikTok', icon: TiktokIcon, placeholder: 'username' },
+  { id: 'telegram', category: 'social_media', label: 'Telegram', icon: TelegramIcon, placeholder: 'username' },
+  { id: 'github', category: 'social_media', label: 'GitHub', icon: Github, placeholder: 'username' },
   { id: 'facebook', category: 'social_media', label: 'Facebook', icon: FacebookIcon, placeholder: 'username' },
   { id: 'linkedin', category: 'social_media', label: 'LinkedIn', icon: LinkedinIcon, placeholder: 'username' },
   { id: 'twitter', category: 'social_media', label: 'Twitter / X', icon: XIcon, placeholder: 'username' },

@@ -46,10 +46,28 @@ export async function POST(
       }
 
       // Direct Redirect Modes
-      if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube'].includes(mode)) {
+      if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github'].includes(mode)) {
         let redirectUrl = '';
 
         switch (mode) {
+          case 'github':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              redirectUrl = `https://github.com/${redirectUrl}`;
+            }
+            break;
+          case 'tiktok':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              redirectUrl = `https://tiktok.com/@${redirectUrl.replace('@', '')}`;
+            }
+            break;
+          case 'telegram':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              redirectUrl = `https://t.me/${redirectUrl.replace('@', '')}`;
+            }
+            break;
           case 'instagram':
             redirectUrl = payload.username || '';
             if (redirectUrl && !redirectUrl.startsWith('http')) {

@@ -86,6 +86,28 @@ export const Youtube = ({ className = "w-5 h-5", ...props }: BrandIconProps) => 
   </svg>
 );
 
+export const Tiktok = ({ className = "w-5 h-5", ...props }: BrandIconProps) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.52-4.06-1.39-.28-.2-.55-.42-.79-.66-.08 2.39.02 4.79-.01 7.18-.11 2.22-1.07 4.39-2.82 5.73-2.12 1.69-5.11 2.05-7.55 1.05C4.7 20.89 3.01 18.06 3.3 15.08c.2-2.92 2.31-5.58 5.23-6.19 1.13-.26 2.33-.21 3.47.11V13.3c-1.12-.49-2.44-.45-3.5.17-1.19.67-1.89 2.04-1.74 3.4.12 1.44 1.25 2.67 2.68 2.87 1.48.27 3.07-.48 3.63-1.89.26-.59.29-1.25.29-1.89.02-5.91-.01-11.83.02-17.74z"/>
+  </svg>
+);
+
+export const Telegram = ({ className = "w-5 h-5", ...props }: BrandIconProps) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M11.94 0C5.34 0 0 5.34 0 11.94C0 18.54 5.34 23.88 11.94 23.88C18.54 23.88 23.88 18.54 23.88 11.94C23.88 5.34 18.54 0 11.94 0ZM18.08 7.9c-.18 1.9-1.08 7.37-1.63 10.3c-.23 1.24-.69 1.66-1.13 1.7c-.96.09-1.69-.63-2.62-1.24c-1.46-1-2.28-1.63-3.69-2.56c-1.63-1.07-.57-1.67.36-2.63c.24-.25 4.47-4.1 4.55-4.45c.01-.04.02-.2-.07-.28c-.09-.08-.23-.05-.33-.03c-.14.03-2.39 1.52-6.75 4.46c-.64.44-1.22.65-1.74.64c-.57-.01-1.68-.32-2.5-.59c-1-.33-1.8-.5-1.73-1.06c.04-.29.44-.59 1.19-.9c4.64-2.02 7.73-3.36 9.27-4c4.41-1.84 5.33-2.16 5.93-2.17c.13 0 .42.03.61.19c.16.13.2.32.22.45c.02.09.03.27.01.37Z" />
+  </svg>
+);
+
 // Aliases for compatibility
 export const InstagramIcon = Instagram;
 export const FacebookIcon = Facebook;
@@ -93,3 +115,5 @@ export const LinkedinIcon = Linkedin;
 export const XIcon = Twitter;
 export const YoutubeIcon = Youtube;
 export const TwitterIcon = Twitter;
+export const TiktokIcon = Tiktok;
+export const TelegramIcon = Telegram;
