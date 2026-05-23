@@ -891,6 +891,7 @@ export const translations = {
         verified: "Terverifikasi",
         title: "Kustomisasi Keychain",
         desc: "Tentukan aksi apa yang akan terjadi saat orang lain menyentuh keychain Anda.",
+        type: "Tipe Aksi",
         mode: "Pilih Mode",
         content: "Konten Data",
         erase: {
@@ -1892,6 +1893,7 @@ export const translations = {
         verified: "Verified",
         title: "Customize Keychain",
         desc: "Determine what action happens when someone taps your keychain.",
+        type: "Action Type",
         mode: "Select Mode",
         content: "Data Content",
         erase: {

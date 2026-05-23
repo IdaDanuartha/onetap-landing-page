@@ -142,6 +142,7 @@ function NFCWriter() {
   const [lastResult, setLastResult] = useState<"success" | "error" | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [isDirectForceFormat, setIsDirectForceFormat] = useState(false);
 
   // Custom Tag Unlock Prompt State
   const [tagPrompt, setTagPrompt] = useState<{
@@ -186,6 +187,52 @@ function NFCWriter() {
 
     if (tagPrompt.resolve) {
       tagPrompt.resolve('force_format_bypass');
+    }
+  };
+
+  const handleForceFormatDirect = async () => {
+    const confirmMsg = locale === 'id'
+      ? "Apakah Anda yakin ingin memformat paksa tag ini? Seluruh data dan password di dalam tag akan dihapus permanen. Tindakan ini tidak memerlukan password lama tag."
+      : "Are you sure you want to force format this tag? All data and password inside the tag will be permanently erased. This action does not require the old tag password.";
+    if (!confirm(confirmMsg)) return;
+
+    setIsDirectForceFormat(true);
+    setWriteStatus("waiting");
+    setLastResult(null);
+
+    try {
+      if (!('NDEFReader' in window)) {
+        setLastResult("error");
+        setErrorMsg(locale === 'id' ? "Web NFC tidak didukung di browser ini. Gunakan Chrome di Android dengan fitur NFC aktif." : "Web NFC is not supported in this browser. Use Chrome on Android with NFC active.");
+        setIsDirectForceFormat(false);
+        return;
+      }
+
+      const ndef = new (window as any).NDEFReader();
+      await ndef.scan();
+      
+      ndef.onreading = async (event: any) => {
+        try {
+          await ndef.write({ records: [{ recordType: 'empty' }] });
+          setLastResult("success");
+          setWriteStatus("idle");
+          setIsDirectForceFormat(false);
+        } catch (err) {
+          setLastResult("error");
+          setErrorMsg(locale === 'id' ? "Gagal memformat paksa tag. Pastikan tag tetap menempel." : "Failed to force format tag. Keep tag close.");
+          setIsDirectForceFormat(false);
+        }
+      };
+    } catch (err: any) {
+      setLastResult("error");
+      if (err.name === 'NotAllowedError') {
+        setErrorMsg(locale === 'id' ? 'Izin NFC ditolak. Silakan berikan izin akses NFC pada browser Anda.' : 'NFC permission denied. Please allow NFC access.');
+      } else if (err.name === 'NotSupportedError') {
+        setErrorMsg(locale === 'id' ? 'Perangkat Anda tidak mendukung fitur NFC.' : 'Your device does not support NFC.');
+      } else {
+        setErrorMsg(locale === 'id' ? 'Gagal menginisialisasi NFC. Coba lagi.' : 'Failed to initialize NFC. Try again.');
+      }
+      setIsDirectForceFormat(false);
     }
   };
 
@@ -553,11 +600,21 @@ function NFCWriter() {
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
                       <Eraser className="w-8 h-8 text-red-500" />
                     </div>
-                    <div>
+                    <div className="space-y-3">
                       <h4 className="font-bold text-slate-800">{t('write.writer.erase.title')}</h4>
                       <p className="text-sm text-slate-500 mt-2 max-w-[200px] mx-auto">
                         {t('write.writer.erase.desc')}
                       </p>
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={handleForceFormatDirect}
+                          className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs transition-all active:scale-95 flex items-center gap-1.5 mx-auto border border-red-200"
+                        >
+                          <Eraser className="w-3.5 h-3.5" />
+                          {locale === 'id' ? "Format Paksa / Reset Tag Terkunci" : "Force Format / Reset Locked Tag"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : recordType === "vcard" ? (
