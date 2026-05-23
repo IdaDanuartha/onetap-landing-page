@@ -914,7 +914,7 @@ export const translations = {
       },
       upsell: {
         title: "Buka Fitur Lebih Lengkap",
-        desc: "Aktifkan perlindungan password, profil digital premium, integrasi pembayaran (GoPay/OVO/QRIS), dan analytics canggih.",
+        desc: "Aktifkan perlindungan password, profil digital premium, dan analytics canggih.",
         login: "Masuk",
         register: "Daftar"
       },
@@ -1915,7 +1915,7 @@ export const translations = {
       },
       upsell: {
         title: "Unlock More Features",
-        desc: "Unlock password protection, premium digital profiles, payment integration (GoPay/OVO/QRIS), and advanced analytics.",
+        desc: "Unlock password protection, premium digital profiles, and advanced analytics.",
         login: "Login",
         register: "Register"
       },
