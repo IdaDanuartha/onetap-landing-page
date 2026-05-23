@@ -73,6 +73,24 @@ const MODE_OPTIONS: { id: Mode; category: string; label: string; icon: any; plac
   { id: 'erase', category: 'utility', label: 'Format NFC', icon: Eraser, placeholder: 'Hapus data' },
 ];
 
+const POPULAR_APPS = [
+  { name: 'WhatsApp', package: 'com.whatsapp' },
+  { name: 'Instagram', package: 'com.instagram.android' },
+  { name: 'TikTok', package: 'com.zhiliaoapp.musically' },
+  { name: 'YouTube', package: 'com.google.android.youtube' },
+  { name: 'Facebook', package: 'com.facebook.katana' },
+  { name: 'Spotify', package: 'com.spotify.music' },
+  { name: 'Telegram', package: 'org.telegram.messenger' },
+  { name: 'Twitter / X', package: 'com.twitter.android' },
+  { name: 'DANA', package: 'id.dana' },
+  { name: 'GoPay / Gojek', package: 'com.gojek.app' },
+  { name: 'OVO', package: 'id.ovo.android' },
+  { name: 'Shopee', package: 'com.shopee.id' },
+  { name: 'Mobile Legends', package: 'com.mobile.legends' },
+  { name: 'Netflix', package: 'com.netflix.mediaclient' },
+  { name: 'Google Maps', package: 'com.google.android.apps.maps' }
+];
+
 export default function ConnectNfcPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
@@ -98,7 +116,8 @@ export default function ConnectNfcPage() {
   const [vcardData, setVcardData] = useState({ firstName: '', lastName: '', phone: '', email: '', org: '' });
   const [wifiData, setWifiData] = useState({ ssid: '', password: '', encryption: 'WPA' });
   const [btAddress, setBtAddress] = useState('');
-  const [appPackage, setAppPackage] = useState('');
+  const [appPackage, setAppPackage] = useState('com.whatsapp');
+  const [selectedApp, setSelectedApp] = useState('com.whatsapp');
   const [geoData, setGeoData] = useState({ lat: '', lng: '' });
   const [navAddress, setNavAddress] = useState('');
   const [svData, setSvData] = useState({ lat: '', lng: '' });
@@ -616,7 +635,7 @@ export default function ConnectNfcPage() {
             } else if (mode === 'wifi') {
               record = { recordType: 'text', data: finalPayload };
             } else if (mode === 'app') {
-              record = { recordType: 'android.com:pkg', data: finalPayload };
+              record = { recordType: 'android.com:pkg', data: new TextEncoder().encode(finalPayload) };
             } else {
               record = { recordType: 'url', data: finalPayload };
             }
@@ -1144,13 +1163,48 @@ export default function ConnectNfcPage() {
                       </div>
                     ) : mode === 'app' ? (
                       <div className="space-y-3 mt-2">
-                        <input 
-                          type="text"
-                          value={appPackage}
-                          onChange={(e) => setAppPackage(e.target.value)}
-                          placeholder="Contoh: com.whatsapp atau id.dana"
-                          className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
-                        />
+                        <div className="relative">
+                          <select 
+                            value={selectedApp}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSelectedApp(val);
+                              if (val !== 'custom') {
+                                setAppPackage(val);
+                              } else {
+                                setAppPackage('');
+                              }
+                            }}
+                            className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 pr-10 outline-none focus:border-[#FF5FA2]/30 transition-all appearance-none cursor-pointer"
+                          >
+                            {POPULAR_APPS.map(app => (
+                              <option key={app.package} value={app.package}>{app.name}</option>
+                            ))}
+                            <option value="custom">Kustom (Ketik Sendiri)</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                            <ChevronDown className="w-4 h-4" />
+                          </div>
+                        </div>
+
+                        <AnimatePresence>
+                          {selectedApp === 'custom' && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0, y: -5 }}
+                              animate={{ opacity: 1, height: 'auto', y: 0 }}
+                              exit={{ opacity: 0, height: 0, y: -5 }}
+                              className="overflow-hidden"
+                            >
+                              <input 
+                                type="text"
+                                value={appPackage}
+                                onChange={(e) => setAppPackage(e.target.value)}
+                                placeholder="Contoh: com.whatsapp atau id.dana"
+                                className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                         <p className="text-[10px] text-gray-400 px-1 italic">Membuka aplikasi otomatis di Android jika sudah terinstal.</p>
                       </div>
                     ) : mode === 'bluetooth' ? (
