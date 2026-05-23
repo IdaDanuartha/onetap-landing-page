@@ -244,6 +244,17 @@ export default function ConnectNfcPage() {
     setTagPrompt({ isOpen: false, resolve: null, error: '' });
   };
 
+  const handleForceFormat = async () => {
+    const confirmMsg = locale === 'id'
+      ? "Apakah Anda yakin ingin memformat paksa tag ini? Seluruh data dan password di dalam tag akan dihapus permanen."
+      : "Are you sure you want to force format this tag? All data and password inside the tag will be permanently erased.";
+    if (!confirm(confirmMsg)) return;
+
+    if (tagPrompt.resolve) {
+      tagPrompt.resolve('force_format_bypass');
+    }
+  };
+
   useEffect(() => {
     async function load() {
       const supabase = createClient();
@@ -507,6 +518,21 @@ export default function ConnectNfcPage() {
               setError(locale === 'id' ? "Penulisan dibatalkan." : "Writing cancelled.");
               setIsConnecting(false);
               return;
+            }
+
+            if (promptValue === 'force_format_bypass') {
+              try {
+                await ndef.write({ records: [{ recordType: 'empty' }] });
+                setConnected(true);
+                setIsConnecting(false);
+                setTagPrompt({ isOpen: false, resolve: null, error: '' });
+                return;
+              } catch (err) {
+                setError(locale === 'id' ? "Gagal memformat paksa tag." : "Failed to force format tag.");
+                setIsConnecting(false);
+                setTagPrompt({ isOpen: false, resolve: null, error: '' });
+                return;
+              }
             }
 
             if (isLegacyProtection) {
@@ -1349,6 +1375,16 @@ export default function ConnectNfcPage() {
                     className="flex-1 h-12 rounded-xl bg-[#FF5FA2] hover:bg-[#E8457E] text-white font-black text-xs transition-all active:scale-95 shadow-md shadow-[#FF5FA2]/10"
                   >
                     {locale === 'id' ? "Unlock & Tulis" : "Unlock & Write"}
+                  </button>
+                </div>
+
+                <div className="text-center pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleForceFormat}
+                    className="text-xs text-red-500 hover:text-red-600 font-bold underline transition-colors"
+                  >
+                    {locale === 'id' ? "Lupa Password? Format Paksa Tag" : "Forgot Password? Force Format Tag"}
                   </button>
                 </div>
               </form>
