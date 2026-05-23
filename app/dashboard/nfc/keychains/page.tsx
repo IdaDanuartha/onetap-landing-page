@@ -1052,8 +1052,19 @@ export default function KeychainsManagerPage() {
                             type="button"
                             onClick={() => {
                               setEditMode(m.id as any);
-                              // Keep existing payload if matching mode, otherwise reset empty
-                              if (!editPayload || typeof editPayload !== 'object') {
+                              if (m.id === 'app') {
+                                // Initialize Open App defaults when switching to app mode
+                                const defaultPkg = 'com.whatsapp';
+                                const defaultIos = 'https://wa.me';
+                                const defaultPlatform = 'both';
+                                setSelectedApp(defaultPkg);
+                                setTargetPlatform(defaultPlatform);
+                                setEditPayload({
+                                  package: defaultPkg,
+                                  iosUrl: defaultIos,
+                                  targetPlatform: defaultPlatform,
+                                });
+                              } else if (!editPayload || typeof editPayload !== 'object') {
                                 setEditPayload({});
                               }
                             }}
