@@ -19,14 +19,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { dict } from '@/lib/i18n/dict';
 import jsQR from 'jsqr';
-import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon } from "@/app/components/BrandIcons";
+import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon, SpotifyIcon } from "@/app/components/BrandIcons";
 
 type Mode = 
   | 'profile' | 'vcard' | 'bridge' 
   | 'whatsapp' | 'phone' | 'sms' | 'email' 
   | 'wifi' | 'bluetooth' | 'app' 
   | 'location' | 'navigation' | 'streetview' 
-  | 'url' | 'text' | 'instagram' | 'tiktok' | 'telegram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'payment' | 'erase';
+  | 'url' | 'text' | 'instagram' | 'spotify' | 'tiktok' | 'telegram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'payment' | 'erase';
 
 const MODE_CATEGORIES = [
   { id: 'social', label: 'Sosial', icon: Globe },
@@ -45,7 +45,6 @@ const MODE_OPTIONS: { id: Mode; category: string; label: string; icon: any; plac
   // Communication
   { id: 'whatsapp', category: 'communication', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
   { id: 'phone', category: 'communication', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
-  { id: 'sms', category: 'communication', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
   { id: 'email', category: 'communication', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
 
   // Connectivity
@@ -61,6 +60,7 @@ const MODE_OPTIONS: { id: Mode; category: string; label: string; icon: any; plac
   // Social
   { id: 'url', category: 'social', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
   { id: 'instagram', category: 'social', label: 'Instagram', icon: InstagramIcon, placeholder: 'username' },
+  { id: 'spotify', category: 'social', label: 'Spotify', icon: SpotifyIcon, placeholder: 'link/ID' },
   { id: 'tiktok', category: 'social', label: 'TikTok', icon: TiktokIcon, placeholder: 'username' },
   { id: 'telegram', category: 'social', label: 'Telegram', icon: TelegramIcon, placeholder: 'username' },
   { id: 'facebook', category: 'social', label: 'Facebook', icon: FacebookIcon, placeholder: 'username' },
@@ -349,6 +349,16 @@ export default function ConnectNfcPage() {
       else if (mode === 'instagram') {
         finalPayload = finalPayload.replace('@', '');
         finalPayload = `https://instagram.com/${finalPayload}`;
+      } else if (mode === 'spotify') {
+        if (!finalPayload.startsWith('http')) {
+          if (finalPayload.startsWith('spotify:')) {
+            // Keep as is
+          } else if (finalPayload.includes('spotify.com')) {
+            finalPayload = `https://${finalPayload}`;
+          } else {
+            finalPayload = `https://open.spotify.com/${finalPayload}`;
+          }
+        }
       } else if (mode === 'tiktok') {
         finalPayload = finalPayload.replace('@', '');
         finalPayload = `https://tiktok.com/@${finalPayload}`;

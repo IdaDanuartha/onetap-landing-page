@@ -108,6 +108,17 @@ export const Telegram = ({ className = "w-5 h-5", ...props }: BrandIconProps) =>
   </svg>
 );
 
+export const Spotify = ({ className = "w-5 h-5", ...props }: BrandIconProps) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.49 17.3c-.22.36-.68.48-1.04.26-2.88-1.76-6.5-2.16-10.77-1.18-.41.09-.82-.16-.91-.57-.09-.41.16-.82.57-.91 4.67-1.07 8.67-.62 11.9 1.36.36.22.48.68.26 1.04zm1.46-3.26c-.28.45-.87.6-1.32.32-3.3-2.03-8.33-2.62-12.23-1.44-.5.15-1.03-.13-1.18-.63-.15-.5.13-1.03.63-1.18 4.47-1.36 10.02-.7 13.82 1.63.45.28.6.87.32 1.32zm.12-3.38C15.3 8.32 8.79 8.1 5 9.25c-.58.18-1.2-.16-1.37-.74-.18-.58.16-1.2.74-1.37 4.34-1.32 11.53-1.07 16.14 1.66.52.31.7.98.39 1.5-.31.52-.98.7-1.5.39z"/>
+  </svg>
+);
+
 // Aliases for compatibility
 export const InstagramIcon = Instagram;
 export const FacebookIcon = Facebook;
@@ -117,3 +128,4 @@ export const YoutubeIcon = Youtube;
 export const TwitterIcon = Twitter;
 export const TiktokIcon = Tiktok;
 export const TelegramIcon = Telegram;
+export const SpotifyIcon = Spotify;

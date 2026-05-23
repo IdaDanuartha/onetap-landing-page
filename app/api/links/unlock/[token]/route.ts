@@ -46,7 +46,7 @@ export async function POST(
       }
 
       // Direct Redirect Modes
-      if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github'].includes(mode)) {
+      if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'].includes(mode)) {
         let redirectUrl = '';
 
         switch (mode) {
@@ -72,6 +72,18 @@ export async function POST(
             redirectUrl = payload.username || '';
             if (redirectUrl && !redirectUrl.startsWith('http')) {
               redirectUrl = `https://instagram.com/${redirectUrl.replace('@', '')}`;
+            }
+            break;
+          case 'spotify':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              if (redirectUrl.startsWith('spotify:')) {
+                // Keep as is
+              } else if (redirectUrl.includes('spotify.com')) {
+                redirectUrl = `https://${redirectUrl}`;
+              } else {
+                redirectUrl = `https://open.spotify.com/${redirectUrl}`;
+              }
             }
             break;
           case 'facebook':

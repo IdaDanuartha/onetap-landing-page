@@ -37,7 +37,7 @@ import {
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
-import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon } from "@/app/components/BrandIcons";
+import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon, SpotifyIcon } from "@/app/components/BrandIcons";
 
 
 // ─── NFC helper ─────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ type RecordType =
   | 'vcard' | 'whatsapp' | 'phone' | 'sms' | 'email' 
   | 'wifi' | 'bluetooth' | 'app' 
   | 'location' | 'navigation' | 'streetview' 
-  | 'url' | 'text' | 'instagram' | 'tiktok' | 'telegram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'erase';
+  | 'url' | 'text' | 'instagram' | 'spotify' | 'tiktok' | 'telegram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'erase';
 
 const MODE_CATEGORIES = [
   { id: 'social', label: 'Sosial', icon: Globe },
@@ -85,7 +85,6 @@ const TYPE_OPTIONS: { id: RecordType; category: string; label: string; icon: any
   { id: 'vcard', category: 'networking', label: 'Kontak (vCard)', icon: Contact2, placeholder: 'Nama & No HP' },
   { id: 'whatsapp', category: 'networking', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
   { id: 'phone', category: 'networking', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
-  { id: 'sms', category: 'networking', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
   { id: 'email', category: 'networking', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
   
   // Connectivity
@@ -101,6 +100,7 @@ const TYPE_OPTIONS: { id: RecordType; category: string; label: string; icon: any
   // Social
   { id: 'url', category: 'social', label: 'Link Kustom', icon: LinkIcon, placeholder: 'https://...' },
   { id: 'instagram', category: 'social', label: 'Instagram', icon: InstagramIcon, placeholder: 'username' },
+  { id: 'spotify', category: 'social', label: 'Spotify', icon: SpotifyIcon, placeholder: 'link/ID' },
   { id: 'tiktok', category: 'social', label: 'TikTok', icon: TiktokIcon, placeholder: 'username' },
   { id: 'telegram', category: 'social', label: 'Telegram', icon: TelegramIcon, placeholder: 'username' },
   { id: 'facebook', category: 'social', label: 'Facebook', icon: FacebookIcon, placeholder: 'username' },
@@ -180,6 +180,16 @@ function NFCWriter() {
     } else if (recordType === "instagram") {
       payload = payload.replace('@', '');
       payload = `https://instagram.com/${payload}`;
+    } else if (recordType === "spotify") {
+      if (!payload.startsWith("http")) {
+        if (payload.startsWith("spotify:")) {
+          // Keep as is
+        } else if (payload.includes("spotify.com")) {
+          payload = `https://${payload}`;
+        } else {
+          payload = `https://open.spotify.com/${payload}`;
+        }
+      }
     } else if (recordType === "tiktok") {
       payload = payload.replace('@', '');
       payload = `https://tiktok.com/@${payload}`;

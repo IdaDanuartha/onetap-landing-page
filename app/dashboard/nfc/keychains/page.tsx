@@ -15,7 +15,7 @@ import {
   QrCode, Camera, Github
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon } from '@/app/components/BrandIcons';
+import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon, SpotifyIcon } from '@/app/components/BrandIcons';
 
 interface Keychain {
   id: string;
@@ -50,6 +50,7 @@ const MODE_OPTIONS = [
   // Sosial (formerly Communication + new brand socials)
   { id: 'whatsapp', category: 'social_media', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
   { id: 'instagram', category: 'social_media', label: 'Instagram', icon: InstagramIcon, placeholder: 'username' },
+  { id: 'spotify', category: 'social_media', label: 'Spotify', icon: SpotifyIcon, placeholder: 'link/ID' },
   { id: 'tiktok', category: 'social_media', label: 'TikTok', icon: TiktokIcon, placeholder: 'username' },
   { id: 'telegram', category: 'social_media', label: 'Telegram', icon: TelegramIcon, placeholder: 'username' },
   { id: 'github', category: 'social_media', label: 'GitHub', icon: Github, placeholder: 'username' },
@@ -58,7 +59,6 @@ const MODE_OPTIONS = [
   { id: 'twitter', category: 'social_media', label: 'Twitter / X', icon: XIcon, placeholder: 'username' },
   { id: 'youtube', category: 'social_media', label: 'YouTube', icon: YoutubeIcon, placeholder: 'username' },
   { id: 'phone', category: 'social_media', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
-  { id: 'sms', category: 'social_media', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
   { id: 'email', category: 'social_media', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
 
   // Connectivity
@@ -542,6 +542,11 @@ export default function KeychainsManagerPage() {
         return {
           bg: 'bg-[#fff5f5]', border: 'border-[#e1306c]/15', text: 'text-[#e1306c]', label: 'Instagram',
           icon: <InstagramIcon className="w-3.5 h-3.5" />
+        };
+      case 'spotify':
+        return {
+          bg: 'bg-[#f0fdf4]', border: 'border-[#1ed760]/15', text: 'text-[#1db954]', label: 'Spotify',
+          icon: <SpotifyIcon className="w-3.5 h-3.5" />
         };
       case 'facebook':
         return {
@@ -1103,6 +1108,143 @@ export default function KeychainsManagerPage() {
                             />
                             <span className="text-[10px] text-gray-400 font-semibold italic block">
                               {t('Tulis username atau link profil penuh.', 'Enter username or full profile link.')}
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* TIKTOK MODE */}
+                      {editMode === 'tiktok' && (
+                        <motion.div
+                          key="form-tiktok"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#010101]">
+                            <TiktokIcon className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">TikTok</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka profil TikTok Anda.',
+                              'Tap the keychain to automatically open your TikTok profile.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Username TikTok', 'TikTok Username')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="username"
+                            />
+                            <span className="text-[10px] text-gray-400 font-semibold italic block">
+                              {t('Tulis username tanpa @.', 'Enter username without @.')}
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* TELEGRAM MODE */}
+                      {editMode === 'telegram' && (
+                        <motion.div
+                          key="form-telegram"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#0088cc]">
+                            <TelegramIcon className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">Telegram</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka profil/chat Telegram Anda.',
+                              'Tap the keychain to automatically open your Telegram profile or chat.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Username Telegram', 'Telegram Username')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="username"
+                            />
+                            <span className="text-[10px] text-gray-400 font-semibold italic block">
+                              {t('Tulis username tanpa @.', 'Enter username without @.')}
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* GITHUB MODE */}
+                      {editMode === 'github' && (
+                        <motion.div
+                          key="form-github"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#24292e]">
+                            <Github className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">GitHub</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka profil GitHub Anda.',
+                              'Tap the keychain to automatically open your GitHub profile.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Username GitHub', 'GitHub Username')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="username"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* SPOTIFY MODE */}
+                      {editMode === 'spotify' && (
+                        <motion.div
+                          key="form-spotify"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#1db954]">
+                            <SpotifyIcon className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">Spotify</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka lagu, playlist, atau profil Spotify Anda.',
+                              'Tap the keychain to automatically open your Spotify track, playlist, or profile.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Tautan Spotify / ID', 'Spotify Link / ID')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="playlist/37i9dQZF1DXcBWIGx254er atau link lengkap"
+                            />
+                            <span className="text-[10px] text-gray-400 font-semibold italic block">
+                              {t('Tulis link lengkap atau ID (misal: playlist/ID, track/ID, dll.)', 'Enter full link or ID (e.g. playlist/ID, track/ID, etc.)')}
                             </span>
                           </div>
                         </motion.div>
