@@ -368,9 +368,18 @@ export default function KeychainsManagerPage() {
     setShowSecurity(false);
 
     if (kc.active_mode === 'app') {
-      const isPopular = POPULAR_APPS.some(app => app.package === payload.package);
-      setSelectedApp(isPopular ? payload.package : (payload.package ? 'custom' : 'com.whatsapp'));
+      const pkg = payload.package || '';
+      const isPopular = pkg ? POPULAR_APPS.some(app => app.package === pkg) : false;
+      setSelectedApp(isPopular ? pkg : (pkg ? 'custom' : 'com.whatsapp'));
       setTargetPlatform(payload.targetPlatform || 'both');
+      // If no package set yet, initialize with defaults
+      if (!pkg) {
+        setEditPayload({
+          package: 'com.whatsapp',
+          iosUrl: 'https://wa.me',
+          targetPlatform: 'both',
+        });
+      }
     }
 
     // Find category for kc.active_mode
