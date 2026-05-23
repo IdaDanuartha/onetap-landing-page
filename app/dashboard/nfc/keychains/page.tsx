@@ -2325,7 +2325,7 @@ export default function KeychainsManagerPage() {
                                   {t('Lupa Password Tag? Format Paksa / Reset Tag', 'Forgot Password? Force Format / Reset Tag')}
                                 </button>
                               </div>
-                            </div>
+                            </div> 
 
                           </div>
                         </motion.div>
