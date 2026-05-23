@@ -19,13 +19,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { dict } from '@/lib/i18n/dict';
 import jsQR from 'jsqr';
+import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon } from "@/app/components/BrandIcons";
 
 type Mode = 
   | 'profile' | 'vcard' | 'bridge' 
   | 'whatsapp' | 'phone' | 'sms' | 'email' 
   | 'wifi' | 'bluetooth' | 'app' 
   | 'location' | 'navigation' | 'streetview' 
-  | 'url' | 'text' | 'payment' | 'erase';
+  | 'url' | 'text' | 'instagram' | 'tiktok' | 'telegram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'payment' | 'erase';
 
 const MODE_CATEGORIES = [
   { id: 'networking', label: 'Networking', icon: User },
@@ -59,6 +60,13 @@ const MODE_OPTIONS: { id: Mode; category: string; label: string; icon: any; plac
 
   // Social
   { id: 'url', category: 'social', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
+  { id: 'instagram', category: 'social', label: 'Instagram', icon: InstagramIcon, placeholder: 'username' },
+  { id: 'tiktok', category: 'social', label: 'TikTok', icon: TiktokIcon, placeholder: 'username' },
+  { id: 'telegram', category: 'social', label: 'Telegram', icon: TelegramIcon, placeholder: 'username' },
+  { id: 'facebook', category: 'social', label: 'Facebook', icon: FacebookIcon, placeholder: 'username' },
+  { id: 'linkedin', category: 'social', label: 'LinkedIn', icon: LinkedinIcon, placeholder: 'username' },
+  { id: 'twitter', category: 'social', label: 'Twitter / X', icon: XIcon, placeholder: 'username' },
+  { id: 'youtube', category: 'social', label: 'YouTube', icon: YoutubeIcon, placeholder: 'username' },
   { id: 'text', category: 'social', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
   
   // Utility
@@ -338,6 +346,26 @@ export default function ConnectNfcPage() {
       else if (mode === 'url') {
         if (!finalPayload.startsWith('http')) finalPayload = `https://${finalPayload}`;
       } 
+      else if (mode === 'instagram') {
+        finalPayload = finalPayload.replace('@', '');
+        finalPayload = `https://instagram.com/${finalPayload}`;
+      } else if (mode === 'tiktok') {
+        finalPayload = finalPayload.replace('@', '');
+        finalPayload = `https://tiktok.com/@${finalPayload}`;
+      } else if (mode === 'telegram') {
+        finalPayload = finalPayload.replace('@', '');
+        finalPayload = `https://t.me/${finalPayload}`;
+      } else if (mode === 'facebook') {
+        finalPayload = `https://facebook.com/${finalPayload}`;
+      } else if (mode === 'linkedin') {
+        finalPayload = `https://linkedin.com/in/${finalPayload}`;
+      } else if (mode === 'twitter') {
+        finalPayload = finalPayload.replace('@', '');
+        finalPayload = `https://x.com/${finalPayload}`;
+      } else if (mode === 'youtube') {
+        const cleaned = finalPayload.startsWith('@') ? finalPayload : `@${finalPayload}`;
+        finalPayload = `https://youtube.com/${cleaned}`;
+      }
       // Handle Other Modes
       else if (mode === 'whatsapp') {
         const cleanNum = waNumber.replace(/[^0-9]/g, "");

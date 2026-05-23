@@ -37,6 +37,7 @@ import {
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
+import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon } from "@/app/components/BrandIcons";
 
 
 // ─── NFC helper ─────────────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ type RecordType =
   | 'vcard' | 'whatsapp' | 'phone' | 'sms' | 'email' 
   | 'wifi' | 'bluetooth' | 'app' 
   | 'location' | 'navigation' | 'streetview' 
-  | 'url' | 'text' | 'erase';
+  | 'url' | 'text' | 'instagram' | 'tiktok' | 'telegram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'erase';
 
 const MODE_CATEGORIES = [
   { id: 'networking', label: 'Networking', icon: User },
@@ -99,6 +100,13 @@ const TYPE_OPTIONS: { id: RecordType; category: string; label: string; icon: any
 
   // Social
   { id: 'url', category: 'social', label: 'Link Kustom', icon: LinkIcon, placeholder: 'https://...' },
+  { id: 'instagram', category: 'social', label: 'Instagram', icon: InstagramIcon, placeholder: 'username' },
+  { id: 'tiktok', category: 'social', label: 'TikTok', icon: TiktokIcon, placeholder: 'username' },
+  { id: 'telegram', category: 'social', label: 'Telegram', icon: TelegramIcon, placeholder: 'username' },
+  { id: 'facebook', category: 'social', label: 'Facebook', icon: FacebookIcon, placeholder: 'username' },
+  { id: 'linkedin', category: 'social', label: 'LinkedIn', icon: LinkedinIcon, placeholder: 'username' },
+  { id: 'twitter', category: 'social', label: 'Twitter / X', icon: XIcon, placeholder: 'username' },
+  { id: 'youtube', category: 'social', label: 'YouTube', icon: YoutubeIcon, placeholder: 'username' },
   { id: 'text', category: 'social', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
   
   // Utility
@@ -169,6 +177,25 @@ function NFCWriter() {
       if (!payload.startsWith("http://") && !payload.startsWith("https://")) {
         payload = `https://${payload}`;
       }
+    } else if (recordType === "instagram") {
+      payload = payload.replace('@', '');
+      payload = `https://instagram.com/${payload}`;
+    } else if (recordType === "tiktok") {
+      payload = payload.replace('@', '');
+      payload = `https://tiktok.com/@${payload}`;
+    } else if (recordType === "telegram") {
+      payload = payload.replace('@', '');
+      payload = `https://t.me/${payload}`;
+    } else if (recordType === "facebook") {
+      payload = `https://facebook.com/${payload}`;
+    } else if (recordType === "linkedin") {
+      payload = `https://linkedin.com/in/${payload}`;
+    } else if (recordType === "twitter") {
+      payload = payload.replace('@', '');
+      payload = `https://x.com/${payload}`;
+    } else if (recordType === "youtube") {
+      const cleaned = payload.startsWith('@') ? payload : `@${payload}`;
+      payload = `https://youtube.com/${cleaned}`;
     } else if (recordType === "whatsapp") {
       const cleanNum = waNumber.replace(/[^0-9]/g, "");
       payload = `https://wa.me/${cleanNum}${waMessage ? `?text=${encodeURIComponent(waMessage)}` : ""}`;
