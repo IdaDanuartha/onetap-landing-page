@@ -421,9 +421,8 @@ function NFCWriter() {
             record.recordType = 'mime';
             record.mediaType = 'text/vcard';
           } else if (recordType === 'wifi') {
-            record.recordType = 'mime';
-            record.mediaType = 'application/vnd.wfa.wsc';
-            record.data = new TextEncoder().encode(payload);
+            record.recordType = 'text';
+            record.data = payload;
           } else if (recordType === 'app') {
             record.recordType = 'android.com:pkg';
           } else if (recordType === 'erase') {

@@ -614,9 +614,8 @@ export default function ConnectNfcPage() {
               record.recordType = 'mime';
               record.mediaType = 'text/vcard';
             } else if (mode === 'wifi') {
-              record.recordType = 'mime';
-              record.mediaType = 'application/vnd.wfa.wsc';
-              record.data = new TextEncoder().encode(finalPayload);
+              record.recordType = 'text';
+              record.data = finalPayload;
             } else if (mode === 'app') {
               record.recordType = 'android.com:pkg';
             }
