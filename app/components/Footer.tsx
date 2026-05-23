@@ -62,7 +62,7 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-center gap-2.5 text-[#F6B7C8]/50 text-sm">
                 <Mail className="w-4 h-4 text-[#FF5FA2]" />
-                danuart14.dev@gmail.com
+                onetap.charm@gmail.com
               </div>
               <div className="flex items-center gap-2.5 text-[#F6B7C8]/50 text-sm">
                 <Phone className="w-4 h-4 text-[#FF5FA2]" />
