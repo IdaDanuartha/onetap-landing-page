@@ -13,7 +13,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { PLANS, PlanId, BillingCycle, getChargeAmount } from '@/lib/plans';
 
 export default function CheckoutPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
   const planId = searchParams.get('plan') as PlanId;
@@ -76,24 +76,28 @@ export default function CheckoutPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/payment/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          planId,
-          billingCycle,
-          name: form.name,
-          email: form.email,
-          mobile: form.mobile,
-          promoCode: appliedPromo || undefined,
-        }),
-      });
+      const plan = PLANS[planId] || PLANS.starter;
+      const amount = getChargeAmount(planId, billingCycle);
+      const finalAmount = discountPercent > 0 ? amount * (1 - discountPercent / 100) : amount;
+      const cycleText = billingCycle === 'yearly' ? 'Tahunan' : 'Bulanan';
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create invoice');
+      const message = `Halo Admin OneTap, saya ingin membeli paket subscription:
 
-      // Redirect to Mayar
-      window.location.href = data.paymentUrl;
+📋 *RINGKASAN PESANAN*
+*Paket*: ${plan.nameId} (${cycleText})
+*Harga*: Rp ${finalAmount.toLocaleString('id-ID')}
+${appliedPromo ? `*Kode Promo*: ${appliedPromo} (Diskon ${discountPercent}%)\n` : ''}
+👤 *DATA DIRI*
+*Nama Lengkap*: ${form.name}
+*Email*: ${form.email}
+*No. WhatsApp*: ${form.mobile}
+
+Mohon bantuannya untuk mengaktifkan paket saya secara manual. Terima kasih!`;
+
+      const waNumber = '6283114227745';
+      const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
+      
+      window.location.href = waUrl;
     } catch (err: any) {
       setError(err.message);
       setIsSubmitting(false);
@@ -345,7 +349,7 @@ export default function CheckoutPage() {
                   </button>
                   <p className="text-center text-xs text-gray-400 mt-6 flex items-center justify-center gap-2 font-medium">
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    {t('checkout.redirecting')}
+                    {locale === 'id' ? 'Mengarahkan ke WhatsApp untuk penyelesaian pembayaran...' : 'Redirecting to WhatsApp for payment completion...'}
                   </p>
                 </div>
               </form>
