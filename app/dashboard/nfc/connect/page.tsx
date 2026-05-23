@@ -1362,6 +1362,15 @@ export default function ConnectNfcPage() {
                         </div>
                         <p className="text-[10px] text-gray-400">{dict[locale].protection.tagPassInfo}</p>
                         
+                        <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5 mt-2">
+                          <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                          <p className="text-[10px] font-bold text-red-600 leading-normal text-left">
+                            {locale === 'id'
+                              ? 'PENTING: Jangan sampai lupa password tag Anda! Jika lupa, tag Anda tidak akan bisa ditulis ulang kecuali dengan memformat paksa tag (yang akan menghapus seluruh data di dalamnya secara permanen).'
+                              : 'WARNING: Do not forget your tag password! If forgotten, your tag cannot be rewritten unless you perform a force format (which will permanently erase all data inside it).'}
+                          </p>
+                        </div>
+                        
                         <div className="pt-2 text-right">
                           <button
                             type="button"
@@ -1548,11 +1557,19 @@ export default function ConnectNfcPage() {
                   </button>
                 </div>
 
-                <div className="text-center pt-2 border-t border-slate-100">
+                <div className="text-center pt-2 border-t border-slate-100 space-y-2">
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-[10px] font-bold text-red-600 leading-normal text-left">
+                      {locale === 'id'
+                        ? 'PENTING: Memformat paksa tag akan menghapus seluruh data dan password di dalamnya secara permanen.'
+                        : 'IMPORTANT: Force formatting the tag will permanently erase all data and password inside it.'}
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={handleForceFormat}
-                    className="text-xs text-red-500 hover:text-red-600 font-bold underline transition-colors"
+                    className="text-xs text-red-500 hover:text-red-600 font-bold underline transition-colors block mx-auto"
                   >
                     {locale === 'id' ? "Lupa Password? Format Paksa Tag" : "Forgot Password? Force Format Tag"}
                   </button>

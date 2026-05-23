@@ -646,6 +646,11 @@ function NFCWriter() {
                           <Eraser className="w-3.5 h-3.5" />
                           {locale === 'id' ? "Format Paksa / Reset Tag Terkunci" : "Force Format / Reset Locked Tag"}
                         </button>
+                        <p className="text-[10px] text-red-500 font-bold mt-2.5 max-w-[280px] mx-auto leading-normal">
+                          {locale === 'id'
+                            ? "PENTING: Memformat paksa tag akan menghapus seluruh data dan password di dalamnya secara permanen."
+                            : "IMPORTANT: Force formatting the tag will permanently erase all data and password inside it."}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1079,11 +1084,19 @@ function NFCWriter() {
                   </button>
                 </div>
 
-                <div className="text-center pt-2 border-t border-slate-100">
+                <div className="text-center pt-2 border-t border-slate-100 space-y-2">
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-[10px] font-bold text-red-600 leading-normal text-left">
+                      {locale === 'id'
+                        ? 'PENTING: Memformat paksa tag akan menghapus seluruh data dan password di dalamnya secara permanen.'
+                        : 'IMPORTANT: Force formatting the tag will permanently erase all data and password inside it.'}
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={handleForceFormat}
-                    className="text-xs text-red-500 hover:text-red-600 font-bold underline transition-colors"
+                    className="text-xs text-red-500 hover:text-red-600 font-bold underline transition-colors block mx-auto"
                   >
                     {locale === 'id' ? "Lupa Password? Format Paksa Tag" : "Forgot Password? Force Format Tag"}
                   </button>

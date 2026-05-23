@@ -12,7 +12,7 @@ import {
   ChevronRight, Smartphone, Eye, EyeOff, Globe,
   MessageCircle, Contact2, Bluetooth, AppWindow, MapPin, 
   Navigation, Map, Type, MessageSquare, Link2, CheckCircle2, Lock, Info,
-  QrCode, Camera, Github
+  QrCode, Camera, Github, Eraser
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon, SpotifyIcon } from '@/app/components/BrandIcons';
@@ -635,6 +635,60 @@ export default function KeychainsManagerPage() {
     setShowUnlockInput(false);
     nfcWriteReaderRef.current = null;
   };
+
+  const handleForceFormatDirect = async () => {
+    const confirmMsg = locale === 'id'
+      ? "Apakah Anda yakin ingin memformat paksa tag ini? Seluruh data dan password di dalam tag akan dihapus permanen. Tindakan ini tidak memerlukan password lama tag."
+      : "Are you sure you want to force format this tag? All data and password inside the tag will be permanently erased. This action does not require the old tag password.";
+    if (!confirm(confirmMsg)) return;
+
+    if (!('NDEFReader' in window)) {
+      alert(locale === 'id' 
+        ? "Web NFC tidak didukung di browser ini. Gunakan Chrome di Android dengan NFC aktif." 
+        : "Web NFC is not supported in this browser. Use Chrome on Android with NFC enabled.");
+      return;
+    }
+
+    setWritingKeychain(selectedKeychain);
+    setNfcWriteStatus('scanning');
+    setNfcWriteError('');
+    setShowWriteModal(true);
+
+    try {
+      const ndef = new (window as any).NDEFReader();
+      nfcWriteReaderRef.current = ndef;
+      await ndef.scan();
+
+      ndef.onreading = async (event: any) => {
+        setNfcWriteStatus('writing');
+        try {
+          await ndef.write({ records: [{ recordType: 'empty' }] });
+          setNfcWriteStatus('success');
+        } catch {
+          setNfcWriteStatus('error');
+          setNfcWriteError(t(
+            'Gagal menulis ke tag. Tahan tag tetap menempel.',
+            'Failed to write to tag. Keep tag close to the device.'
+          ));
+        }
+      };
+
+      ndef.onerror = () => {
+        setNfcWriteStatus('error');
+        setNfcWriteError(t('Kesalahan NFC. Coba lagi.', 'NFC error. Please try again.'));
+      };
+    } catch (err: any) {
+      setNfcWriteStatus('error');
+      if (err.name === 'NotAllowedError') {
+        setNfcWriteError(t('Izin NFC ditolak.', 'NFC permission denied.'));
+      } else if (err.name === 'NotSupportedError') {
+        setNfcWriteError(t('NFC tidak didukung perangkat ini.', 'NFC not supported on this device.'));
+      } else {
+        setNfcWriteError(t('Gagal menginisialisasi NFC.', 'Failed to initialize NFC.'));
+      }
+    }
+  };
+
 
   // Helper: Render active mode icon
   // Helper: Render active mode icon
@@ -2252,6 +2306,25 @@ export default function KeychainsManagerPage() {
                                   'This password acts as a software lock reference to prevent third parties from overwriting your physical NFC chip data.'
                                 )}
                               </span>
+                              <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5 mt-2">
+                                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                                <p className="text-[10px] font-bold text-red-600 leading-normal">
+                                  {t(
+                                    'PENTING: Jangan sampai lupa password tag Anda! Jika lupa, tag Anda tidak akan bisa ditulis ulang kecuali dengan memformat paksa tag (yang akan menghapus seluruh data di dalamnya secara permanen).',
+                                    'WARNING: Do not forget your tag password! If forgotten, your tag cannot be rewritten unless you perform a force format (which will permanently erase all data inside it).'
+                                  )}
+                                </p>
+                              </div>
+                              <div className="pt-2 text-right">
+                                <button
+                                  type="button"
+                                  onClick={handleForceFormatDirect}
+                                  className="text-[10px] text-red-500 hover:text-red-600 font-bold hover:underline transition-all flex items-center gap-1.5 ml-auto"
+                                >
+                                  <Eraser className="w-3.5 h-3.5" />
+                                  {t('Lupa Password Tag? Format Paksa / Reset Tag', 'Forgot Password? Force Format / Reset Tag')}
+                                </button>
+                              </div>
                             </div>
 
                           </div>
@@ -2920,11 +2993,20 @@ export default function KeychainsManagerPage() {
                   </button>
                 </div>
 
-                <div className="text-center pt-2 border-t border-slate-100">
+                <div className="text-center pt-2 border-t border-slate-100 space-y-2">
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-[10px] font-bold text-red-600 leading-normal text-left">
+                      {t(
+                        'PENTING: Memformat paksa tag akan menghapus seluruh data dan password di dalamnya secara permanen.',
+                        'IMPORTANT: Force formatting the tag will permanently erase all data and password inside it.'
+                      )}
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={handleForceFormat}
-                    className="text-xs text-red-500 hover:text-red-600 font-bold underline transition-colors"
+                    className="text-xs text-red-500 hover:text-red-600 font-bold underline transition-colors block mx-auto"
                   >
                     {t('Lupa Password? Format Paksa Tag', 'Forgot Password? Force Format Tag')}
                   </button>
