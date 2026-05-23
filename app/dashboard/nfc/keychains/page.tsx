@@ -161,6 +161,37 @@ export default function KeychainsManagerPage() {
   const [tagPromptInput, setTagPromptInput] = useState('');
   const [showTagPromptPass, setShowTagPromptPass] = useState(false);
 
+  // Custom Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    resolve: ((val: boolean) => void) | null;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    resolve: null
+  });
+
+  const requestConfirmation = (title: string, message: string) => {
+    return new Promise<boolean>((resolve) => {
+      setConfirmModal({
+        isOpen: true,
+        title,
+        message,
+        resolve
+      });
+    });
+  };
+
+  const handleConfirmModalAction = (val: boolean) => {
+    if (confirmModal.resolve) {
+      confirmModal.resolve(val);
+    }
+    setConfirmModal({ isOpen: false, title: '', message: '', resolve: null });
+  };
+
   const requestTagPassword = () => {
     setTagPromptInput('');
     setShowTagPromptPass(false);
@@ -191,7 +222,11 @@ export default function KeychainsManagerPage() {
     const confirmMsg = locale === 'id'
       ? "Apakah Anda yakin ingin memformat paksa tag ini? Seluruh data dan password di dalam tag akan dihapus permanen."
       : "Are you sure you want to force format this tag? All data and password inside the tag will be permanently erased.";
-    if (!confirm(confirmMsg)) return;
+    const confirmed = await requestConfirmation(
+      locale === 'id' ? "Konfirmasi Format Paksa" : "Confirm Force Format",
+      confirmMsg
+    );
+    if (!confirmed) return;
 
     if (tagPrompt.resolve) {
       tagPrompt.resolve('force_format_bypass');
@@ -640,7 +675,11 @@ export default function KeychainsManagerPage() {
     const confirmMsg = locale === 'id'
       ? "Apakah Anda yakin ingin memformat paksa tag ini? Seluruh data dan password di dalam tag akan dihapus permanen. Tindakan ini tidak memerlukan password lama tag."
       : "Are you sure you want to force format this tag? All data and password inside the tag will be permanently erased. This action does not require the old tag password.";
-    if (!confirm(confirmMsg)) return;
+    const confirmed = await requestConfirmation(
+      locale === 'id' ? "Konfirmasi Format Paksa" : "Confirm Force Format",
+      confirmMsg
+    );
+    if (!confirmed) return;
 
     if (!('NDEFReader' in window)) {
       alert(locale === 'id' 
@@ -3012,6 +3051,64 @@ export default function KeychainsManagerPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom styled Confirmation Modal */}
+      <AnimatePresence>
+        {confirmModal.isOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#18080F]/60 backdrop-blur-md"
+              onClick={() => handleConfirmModalAction(false)}
+            />
+
+            {/* Modal Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative z-10 bg-white rounded-[2rem] w-full max-w-md border border-red-100 p-6 sm:p-8 shadow-2xl overflow-hidden"
+            >
+              {/* Decorative Accent */}
+              <div className="absolute -right-20 -top-20 w-44 h-44 rounded-full bg-red-500/10 blur-3xl" />
+
+              <div className="space-y-6">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto">
+                    <AlertCircle className="w-6 h-6 animate-bounce" />
+                  </div>
+                  <h3 className="text-xl font-black text-[#18080F]">
+                    {confirmModal.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 font-bold leading-relaxed max-w-[320px] mx-auto">
+                    {confirmModal.message}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmModalAction(false)}
+                    className="flex-1 h-12 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all active:scale-95"
+                  >
+                    {t('Batal', 'Cancel')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmModalAction(true)}
+                    className="flex-1 h-12 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black text-xs transition-all active:scale-95 shadow-md shadow-red-500/20"
+                  >
+                    {t('Ya, Format Paksa', 'Yes, Force Format')}
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
