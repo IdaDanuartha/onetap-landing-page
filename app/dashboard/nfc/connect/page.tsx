@@ -29,11 +29,11 @@ type Mode =
   | 'url' | 'text' | 'instagram' | 'tiktok' | 'telegram' | 'facebook' | 'linkedin' | 'twitter' | 'youtube' | 'payment' | 'erase';
 
 const MODE_CATEGORIES = [
+  { id: 'social', label: 'Sosial', icon: Globe },
   { id: 'networking', label: 'Networking', icon: User },
   { id: 'communication', label: 'Komunikasi', icon: MessageCircle },
   { id: 'connectivity', label: 'Konektivitas', icon: Wifi },
   { id: 'maps', label: 'Maps', icon: MapPin },
-  { id: 'social', label: 'Sosial', icon: Globe },
   { id: 'utility', label: 'Utilitas', icon: Activity },
 ];
 
