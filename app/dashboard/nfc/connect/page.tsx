@@ -442,9 +442,10 @@ export default function ConnectNfcPage() {
             const rawData = decoder.decode(record.data);
             
             // 1. Check for New Protection (Separate Record)
-            if (rawData.startsWith('ot_p:')) {
+            const otIndex = rawData.indexOf('ot_p:');
+            if (otIndex !== -1) {
               isProtected = true;
-              existingPassHash = rawData.substring(5);
+              existingPassHash = rawData.substring(otIndex + 5).replace(/[^a-fA-F0-9]/g, '');
               break;
             }
 
@@ -461,29 +462,31 @@ export default function ConnectNfcPage() {
           }
         }
 
-        // SECURITY CHECK: If the tag is protected, the user MUST provide the correct password
+        // SECURITY CHECK: If the tag is protected, prompt immediately!
+        let promptValue: string | null = null;
         if (isProtected) {
-          if (!nfcPassword) {
-            setError("Tag ini dilindungi password. Masukkan password di menu 'Keamanan Lanjutan' sebelum menghapus atau menulis ulang.");
+          const promptMsg = locale === 'id'
+            ? "Tag ini dilindungi password. Masukkan password tag NFC untuk membuka dan menulis ulang:"
+            : "This tag is password-protected. Enter the NFC tag password to unlock and rewrite:";
+          promptValue = prompt(promptMsg);
+          if (promptValue === null) {
+            setError(locale === 'id' ? "Penulisan dibatalkan." : "Writing cancelled.");
             setIsConnecting(false);
             return;
           }
-          
+
+          let isValid = false;
           if (isLegacyProtection) {
-            // Compare plain text (old way)
-            if (legacyPass !== nfcPassword) {
-              setError("Password Tag salah! Akses ditolak.");
-              setIsConnecting(false);
-              return;
-            }
+            isValid = (legacyPass === promptValue);
           } else {
-            // Compare Hash (new way)
-            const inputHash = await hashTagPassword(nfcPassword);
-            if (existingPassHash !== inputHash) {
-              setError("Password Tag salah! Akses ditolak.");
-              setIsConnecting(false);
-              return;
-            }
+            const inputHash = await hashTagPassword(promptValue);
+            isValid = (existingPassHash === inputHash);
+          }
+
+          if (!isValid) {
+            setError(locale === 'id' ? "Password Tag salah! Akses ditolak." : "Wrong tag password! Access denied.");
+            setIsConnecting(false);
+            return;
           }
         }
 
@@ -510,8 +513,9 @@ export default function ConnectNfcPage() {
             records.push(record);
 
             // Secondary Protection Record (Hidden from OS notifications)
-            if (nfcPassword) {
-              const passHash = await hashTagPassword(nfcPassword);
+            const activeWritePassword = nfcPassword || (isProtected ? promptValue : '');
+            if (activeWritePassword) {
+              const passHash = await hashTagPassword(activeWritePassword);
               records.push({
                 recordType: 'text',
                 data: `ot_p:${passHash}`

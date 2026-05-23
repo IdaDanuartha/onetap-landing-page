@@ -123,11 +123,19 @@ const fadeUp: Variants = {
 };
 
 function NFCWriter() {
-  const { t } = useLanguage();
+  const { locale, t } = useLanguage();
   const [supported, setSupported] = useState(true);
   const [recordType, setRecordType] = useState<RecordType>("vcard");
   const [activeCategory, setActiveCategory] = useState("networking");
   const [data, setData] = useState("");
+
+  // Helper to hash password for tag storage
+  const hashTagPassword = async (pass: string) => {
+    const msgUint8 = new TextEncoder().encode(pass + "onetap_salt");
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
   const [waNumber, setWaNumber] = useState("");
   const [waMessage, setWaMessage] = useState("");
   const [writeStatus, setWriteStatus] = useState<WriteStatus>("idle");
@@ -236,29 +244,100 @@ function NFCWriter() {
 
     try {
       const ndef = new (window as any).NDEFReader();
-      let record: any = { recordType: 'url', data: payload };
+      await ndef.scan();
 
-      if (['text', 'phone', 'sms', 'email', 'bluetooth'].includes(recordType)) {
-        record.recordType = 'text';
-      } else if (recordType === 'vcard') {
-        record.recordType = 'mime';
-        record.mediaType = 'text/vcard';
-      } else if (recordType === 'wifi') {
-        record.recordType = 'mime';
-        record.mediaType = 'application/vnd.wfa.wsc';
-        record.data = new TextEncoder().encode(payload);
-      } else if (recordType === 'app') {
-        record.recordType = 'android.com:pkg';
-      } else if (recordType === 'erase') {
-        record.recordType = 'empty';
-      }
+      ndef.onreading = async (event: any) => {
+        const message = event.message;
+        let isProtected = false;
+        let existingPassHash = '';
+        let isLegacyProtection = false;
+        let legacyPass = '';
 
-      await ndef.write({ records: [record] });
-      setLastResult("success");
+        for (const record of message.records) {
+          try {
+            const decoder = new TextDecoder();
+            const rawData = decoder.decode(record.data);
+            const otIndex = rawData.indexOf('ot_p:');
+            if (otIndex !== -1) {
+              isProtected = true;
+              existingPassHash = rawData.substring(otIndex + 5).replace(/[^a-fA-F0-9]/g, '');
+              break;
+            }
+            const pMatch = rawData.match(/[?&]p=([^& \n\r\t]+)/);
+            if (pMatch) {
+              isProtected = true;
+              isLegacyProtection = true;
+              legacyPass = decodeURIComponent(pMatch[1]);
+            }
+          } catch { /* ignore */ }
+        }
+
+        // SECURITY CHECK: If the tag is protected, prompt immediately!
+        let promptValue: string | null = null;
+        if (isProtected) {
+          const promptMsg = locale === 'id'
+            ? "Tag ini dilindungi password. Masukkan password tag NFC untuk membuka dan menulis ulang:"
+            : "This tag is password-protected. Enter the NFC tag password to unlock and rewrite:";
+          promptValue = prompt(promptMsg);
+          if (promptValue === null) {
+            setLastResult("error");
+            setErrorMsg(locale === 'id' ? "Penulisan dibatalkan." : "Writing cancelled.");
+            setWriteStatus("idle");
+            return;
+          }
+
+          let isValid = false;
+          if (isLegacyProtection) {
+            isValid = (legacyPass === promptValue);
+          } else {
+            const inputHash = await hashTagPassword(promptValue);
+            isValid = (existingPassHash === inputHash);
+          }
+
+          if (!isValid) {
+            setLastResult("error");
+            setErrorMsg(locale === 'id' ? "Password Tag salah! Akses ditolak." : "Wrong tag password! Access denied.");
+            setWriteStatus("idle");
+            return;
+          }
+        }
+
+        try {
+          let record: any = { recordType: 'url', data: payload };
+
+          if (['text', 'phone', 'sms', 'email', 'bluetooth'].includes(recordType)) {
+            record.recordType = 'text';
+          } else if (recordType === 'vcard') {
+            record.recordType = 'mime';
+            record.mediaType = 'text/vcard';
+          } else if (recordType === 'wifi') {
+            record.recordType = 'mime';
+            record.mediaType = 'application/vnd.wfa.wsc';
+            record.data = new TextEncoder().encode(payload);
+          } else if (recordType === 'app') {
+            record.recordType = 'android.com:pkg';
+          } else if (recordType === 'erase') {
+            record.recordType = 'empty';
+          }
+
+          const records = [record];
+          if (isProtected && promptValue) {
+            const passHash = await hashTagPassword(promptValue);
+            records.push({ recordType: 'text', data: `ot_p:${passHash}` });
+          }
+
+          await ndef.write({ records });
+          setLastResult("success");
+        } catch (err) {
+          setLastResult("error");
+          setErrorMsg(err instanceof Error ? err.message : "Gagal menulis ke tag.");
+        } finally {
+          setWriteStatus("idle");
+        }
+      };
     } catch (err) {
       setLastResult("error");
       setErrorMsg(err instanceof Error ? err.message : "Gagal terhubung ke NFC.");
-    } finally {
       setWriteStatus("idle");
     }
   }

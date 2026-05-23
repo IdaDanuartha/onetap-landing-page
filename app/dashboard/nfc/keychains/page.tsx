@@ -442,9 +442,10 @@ export default function KeychainsManagerPage() {
           try {
             const decoder = new TextDecoder();
             const rawData = decoder.decode(record.data);
-            if (rawData.startsWith('ot_p:')) {
+            const otIndex = rawData.indexOf('ot_p:');
+            if (otIndex !== -1) {
               isProtected = true;
-              existingPassHash = rawData.substring(5);
+              existingPassHash = rawData.substring(otIndex + 5).replace(/[^a-fA-F0-9]/g, '');
               break;
             }
             const pMatch = rawData.match(/[?&]p=([^& \n\r\t]+)/);
@@ -456,29 +457,32 @@ export default function KeychainsManagerPage() {
           } catch { /* ignore */ }
         }
 
+        // SECURITY CHECK: If the tag is protected, prompt immediately!
+        let promptValue: string | null = null;
         if (isProtected) {
-          if (!unlockPass) {
-            setNfcWriteStatus('idle');
-            setShowUnlockInput(true);
-            setNfcWriteError(t(
-              'Tag ini dilindungi password. Masukkan password untuk melanjutkan.',
-              'This tag is password-protected. Enter the password to continue.'
-            ));
+          const promptMsg = t(
+            'Tag ini dilindungi password. Masukkan password tag NFC untuk membuka dan menulis ulang:',
+            'This tag is password-protected. Enter the NFC tag password to unlock and rewrite:'
+          );
+          promptValue = prompt(promptMsg);
+          if (promptValue === null) {
+            setNfcWriteStatus('error');
+            setNfcWriteError(t('Penulisan dibatalkan.', 'Writing cancelled.'));
             return;
           }
+
+          let isValid = false;
           if (isLegacyProtection) {
-            if (legacyPass !== unlockPass) {
-              setNfcWriteStatus('error');
-              setNfcWriteError(t('Password Tag salah! Akses ditolak.', 'Wrong tag password! Access denied.'));
-              return;
-            }
+            isValid = (legacyPass === promptValue);
           } else {
-            const inputHash = await hashTagPassword(unlockPass);
-            if (existingPassHash !== inputHash) {
-              setNfcWriteStatus('error');
-              setNfcWriteError(t('Password Tag salah! Akses ditolak.', 'Wrong tag password! Access denied.'));
-              return;
-            }
+            const inputHash = await hashTagPassword(promptValue);
+            isValid = (existingPassHash === inputHash);
+          }
+
+          if (!isValid) {
+            setNfcWriteStatus('error');
+            setNfcWriteError(t('Password Tag salah! Akses ditolak.', 'Wrong tag password! Access denied.'));
+            return;
           }
         }
 
@@ -491,9 +495,9 @@ export default function KeychainsManagerPage() {
           if (savedTagPass) {
             const passHash = await hashTagPassword(savedTagPass);
             records.push({ recordType: 'text', data: `ot_p:${passHash}` });
-          } else if (unlockPass) {
+          } else if (isProtected && promptValue) {
             // Preserve the existing password lock
-            const passHash = await hashTagPassword(unlockPass);
+            const passHash = await hashTagPassword(promptValue);
             records.push({ recordType: 'text', data: `ot_p:${passHash}` });
           }
 
