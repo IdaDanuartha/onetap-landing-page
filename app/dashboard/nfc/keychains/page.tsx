@@ -15,6 +15,7 @@ import {
   QrCode, Camera
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon } from '@/app/components/BrandIcons';
 
 interface Keychain {
   id: string;
@@ -35,10 +36,10 @@ interface ProfilePage {
 
 const MODE_CATEGORIES = [
   { id: 'networking', label: 'Networking', icon: User },
-  { id: 'communication', label: 'Komunikasi', icon: MessageCircle },
+  { id: 'social_media', label: 'Sosial', icon: Globe },
   { id: 'connectivity', label: 'Konektivitas', icon: Wifi },
   { id: 'maps', label: 'Maps', icon: MapPin },
-  { id: 'social', label: 'Sosial', icon: Globe },
+  { id: 'other', label: 'Lainnya', icon: Plus },
 ];
 
 const MODE_OPTIONS = [
@@ -46,11 +47,16 @@ const MODE_OPTIONS = [
   { id: 'profile', category: 'networking', label: 'Profil Digital', icon: User, placeholder: 'onetap-charm.com/l/...' },
   { id: 'vcard', category: 'networking', label: 'Kontak (vCard)', icon: Contact2, placeholder: 'Nama & No HP' },
   
-  // Communication
-  { id: 'whatsapp', category: 'communication', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
-  { id: 'phone', category: 'communication', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
-  { id: 'sms', category: 'communication', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
-  { id: 'email', category: 'communication', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
+  // Sosial (formerly Communication + new brand socials)
+  { id: 'whatsapp', category: 'social_media', label: 'WhatsApp', icon: MessageCircle, placeholder: '62812... (Pesan)' },
+  { id: 'instagram', category: 'social_media', label: 'Instagram', icon: InstagramIcon, placeholder: 'username' },
+  { id: 'facebook', category: 'social_media', label: 'Facebook', icon: FacebookIcon, placeholder: 'username' },
+  { id: 'linkedin', category: 'social_media', label: 'LinkedIn', icon: LinkedinIcon, placeholder: 'username' },
+  { id: 'twitter', category: 'social_media', label: 'Twitter / X', icon: XIcon, placeholder: 'username' },
+  { id: 'youtube', category: 'social_media', label: 'YouTube', icon: YoutubeIcon, placeholder: 'username' },
+  { id: 'phone', category: 'social_media', label: 'Telepon', icon: Phone, placeholder: '+62812...' },
+  { id: 'sms', category: 'social_media', label: 'Kirim SMS', icon: MessageSquare, placeholder: '+62812...' },
+  { id: 'email', category: 'social_media', label: 'Kirim Email', icon: Mail, placeholder: 'nama@email.com' },
 
   // Connectivity
   { id: 'wifi', category: 'connectivity', label: 'Wi-Fi Network', icon: Wifi, placeholder: 'SSID & Password' },
@@ -62,9 +68,9 @@ const MODE_OPTIONS = [
   { id: 'navigation', category: 'maps', label: 'Navigasi', icon: Navigation, placeholder: 'Alamat Tujuan' },
   { id: 'streetview', category: 'maps', label: 'Street View', icon: Map, placeholder: 'Lat, Lng' },
 
-  // Social
-  { id: 'url', category: 'social', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
-  { id: 'text', category: 'social', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
+  // Lainnya (formerly Sosial)
+  { id: 'url', category: 'other', label: 'Link Kustom', icon: Link2, placeholder: 'https://...' },
+  { id: 'text', category: 'other', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
 ];
 
 export default function KeychainsManagerPage() {
@@ -526,8 +532,34 @@ export default function KeychainsManagerPage() {
   };
 
   // Helper: Render active mode icon
+  // Helper: Render active mode icon
   const getModeBadge = (mode: Keychain['active_mode']) => {
     switch (mode) {
+      case 'instagram':
+        return {
+          bg: 'bg-[#fff5f5]', border: 'border-[#e1306c]/15', text: 'text-[#e1306c]', label: 'Instagram',
+          icon: <InstagramIcon className="w-3.5 h-3.5" />
+        };
+      case 'facebook':
+        return {
+          bg: 'bg-[#eff6ff]', border: 'border-[#1877f2]/15', text: 'text-[#1877f2]', label: 'Facebook',
+          icon: <FacebookIcon className="w-3.5 h-3.5" />
+        };
+      case 'linkedin':
+        return {
+          bg: 'bg-[#f0f9ff]', border: 'border-[#0077b5]/15', text: 'text-[#0077b5]', label: 'LinkedIn',
+          icon: <LinkedinIcon className="w-3.5 h-3.5" />
+        };
+      case 'twitter':
+        return {
+          bg: 'bg-[#f8fafc]', border: 'border-[#0f1419]/15', text: 'text-[#0f1419]', label: 'Twitter / X',
+          icon: <XIcon className="w-3.5 h-3.5" fill="currentColor" />
+        };
+      case 'youtube':
+        return {
+          bg: 'bg-[#fff5f5]', border: 'border-[#ff0000]/15', text: 'text-[#ff0000]', label: 'YouTube',
+          icon: <YoutubeIcon className="w-3.5 h-3.5" />
+        };
       case 'url':
         return {
           bg: 'bg-[#FFF1F7]', border: 'border-[#FF5FA2]/15', text: 'text-[#FF5FA2]', label: t('Link Kustom', 'Custom Link'),
@@ -631,9 +663,8 @@ export default function KeychainsManagerPage() {
             className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-[#FF5FA2] hover:bg-[#E8457E] text-white rounded-xl text-xs sm:text-sm font-black transition-all shadow-md active:scale-95 shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden xs:inline sm:hidden">{t('Daftar', 'Register')}</span>
+            <span className="inline sm:hidden">{t('Daftar', 'Register')}</span>
             <span className="hidden sm:inline">{t('Daftarkan Keychain', 'Register Keychain')}</span>
-            <span className="xs:hidden">{t('Daftar', 'Register')}</span>
           </button>
         </div>
       </nav>
@@ -1035,6 +1066,169 @@ export default function KeychainsManagerPage() {
                                 placeholder="https://portofolio-anda.com"
                               />
                             </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* INSTAGRAM MODE */}
+                      {editMode === 'instagram' && (
+                        <motion.div
+                          key="form-instagram"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#e1306c]">
+                            <InstagramIcon className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">Instagram</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka profil Instagram Anda.',
+                              'Tap the keychain to automatically open your Instagram profile.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Username Instagram', 'Instagram Username')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="username"
+                            />
+                            <span className="text-[10px] text-gray-400 font-semibold italic block">
+                              {t('Tulis username atau link profil penuh.', 'Enter username or full profile link.')}
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* FACEBOOK MODE */}
+                      {editMode === 'facebook' && (
+                        <motion.div
+                          key="form-facebook"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#1877f2]">
+                            <FacebookIcon className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">Facebook</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka profil Facebook Anda.',
+                              'Tap the keychain to automatically open your Facebook profile.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Username / Link Profil Facebook', 'Facebook Profile / Username')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="username"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* LINKEDIN MODE */}
+                      {editMode === 'linkedin' && (
+                        <motion.div
+                          key="form-linkedin"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#0077b5]">
+                            <LinkedinIcon className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">LinkedIn</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka profil LinkedIn Anda.',
+                              'Tap the keychain to automatically open your LinkedIn profile.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Username / Link Profil LinkedIn', 'LinkedIn Profile / Username')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="username"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* TWITTER / X MODE */}
+                      {editMode === 'twitter' && (
+                        <motion.div
+                          key="form-twitter"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#0f1419]">
+                            <XIcon className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">Twitter / X</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka profil Twitter / X Anda.',
+                              'Tap the keychain to automatically open your Twitter / X profile.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Username Twitter / X', 'Twitter / X Username')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="username"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* YOUTUBE MODE */}
+                      {editMode === 'youtube' && (
+                        <motion.div
+                          key="form-youtube"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-4 w-full text-left"
+                        >
+                          <div className="flex items-center gap-2 mb-2 text-[#ff0000]">
+                            <YoutubeIcon className="w-5 h-5" />
+                            <h4 className="font-black text-sm uppercase tracking-wider">YouTube</h4>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
+                            {t(
+                              'Tempelkan gantungan kunci untuk langsung membuka channel YouTube Anda.',
+                              'Tap the keychain to automatically open your YouTube channel.'
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Username / Link Channel YouTube', 'YouTube Channel / Username')}</label>
+                            <input
+                              type="text"
+                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
+                              value={editPayload.username || ''}
+                              onChange={(e) => setEditPayload({ username: e.target.value })}
+                              placeholder="@channelname"
+                            />
                           </div>
                         </motion.div>
                       )}

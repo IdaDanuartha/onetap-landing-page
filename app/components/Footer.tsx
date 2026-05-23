@@ -1,6 +1,7 @@
 "use client";
 
-import { Zap, Twitter, Instagram, Linkedin, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { Zap, Mail, Phone, MapPin } from "lucide-react";
+import { Instagram, Twitter, Linkedin, Youtube } from "@/app/components/BrandIcons";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import Image from "next/image";
 import Link from "next/link";

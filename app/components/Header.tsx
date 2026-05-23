@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Zap, Menu, X, ChevronRight, Globe, Play, User, Users, LogOut, LayoutDashboard, Instagram, Twitter, Linkedin, MessageCircle, Link2, QrCode } from "lucide-react";
+import { Zap, Menu, X, ChevronRight, Globe, Play, User, Users, LogOut, LayoutDashboard, MessageCircle, Link2, QrCode } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { usePathname } from "next/navigation";

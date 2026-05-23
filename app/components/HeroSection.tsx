@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, Play, Users, Link2, CheckCircle, Instagram, Twitter, Linkedin, MessageCircle } from "lucide-react";
+import { ArrowRight, Play, Users, Link2, CheckCircle, MessageCircle } from "lucide-react";
+import { Instagram, Twitter, Linkedin } from "@/app/components/BrandIcons";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { motion } from "framer-motion";
 

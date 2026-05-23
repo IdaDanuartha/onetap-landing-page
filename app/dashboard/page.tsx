@@ -431,15 +431,6 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             {
-              href: '/dashboard/linktree',
-              icon: Layout,
-              title: t('dashboard.menu.editCard'),
-              desc: t('dashboard.menu.editCardDesc'),
-              color: '#FF5FA2',
-              bg: 'bg-[#FFF1F7]',
-              iconColor: 'text-[#FF5FA2]'
-            },
-            {
               href: '/dashboard/nfc',
               icon: Wifi,
               title: t('dashboard.menu.nfc'),
@@ -447,6 +438,15 @@ export default function DashboardPage() {
               color: '#0ea5e9',
               bg: 'bg-[#f0f9ff]',
               iconColor: 'text-[#0ea5e9]'
+            },
+            {
+              href: '/dashboard/linktree',
+              icon: Layout,
+              title: t('dashboard.menu.editCard'),
+              desc: t('dashboard.menu.editCardDesc'),
+              color: '#FF5FA2',
+              bg: 'bg-[#FFF1F7]',
+              iconColor: 'text-[#FF5FA2]'
             },
             {
               href: '/dashboard/analytics',

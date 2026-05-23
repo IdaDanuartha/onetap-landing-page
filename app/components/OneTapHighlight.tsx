@@ -2,7 +2,8 @@
 
 import { useRef } from 'react';
 import { motion, useInView, type Variants } from 'framer-motion';
-import { ArrowRight, Link2, Palette, BarChart2, Wifi, Instagram, Briefcase, Mail, Music, User, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { ArrowRight, Link2, Palette, BarChart2, Wifi, Briefcase, Mail, Music, User, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { Instagram } from '@/app/components/BrandIcons';
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const fadeIn: Variants = {

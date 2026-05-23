@@ -44,15 +44,13 @@ export default function RedirectPage({ params }: RedirectPageProps) {
 
         if (res.ok) {
           const data = await res.json();
-          if (data.is_keychain) {
-            setKeychainData(data);
-            setChecking(false);
-            // If it's a direct redirect mode, perform the redirect immediately
-            if (data.url) {
-              window.location.href = data.url;
-            }
-          } else if (data.url) {
+          if (data.url) {
             window.location.href = data.url;
+          } else {
+            if (data.is_keychain) {
+              setKeychainData(data);
+            }
+            setChecking(false);
           }
         } else if (res.status === 404) {
           setError('Link atau Keychain tidak valid.');
@@ -83,14 +81,13 @@ export default function RedirectPage({ params }: RedirectPageProps) {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.is_keychain) {
-          setKeychainData(data);
-          setLoading(false);
-          if (data.url) {
-            window.location.href = data.url;
-          }
-        } else if (data.url) {
+        if (data.url) {
           window.location.href = data.url;
+        } else {
+          if (data.is_keychain) {
+            setKeychainData(data);
+          }
+          setLoading(false);
         }
       } else {
         setError('Password salah. Silakan coba lagi.');

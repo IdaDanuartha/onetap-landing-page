@@ -46,10 +46,41 @@ export async function POST(
       }
 
       // Direct Redirect Modes
-      if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app'].includes(mode)) {
+      if (['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube'].includes(mode)) {
         let redirectUrl = '';
 
         switch (mode) {
+          case 'instagram':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              redirectUrl = `https://instagram.com/${redirectUrl.replace('@', '')}`;
+            }
+            break;
+          case 'facebook':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              redirectUrl = `https://facebook.com/${redirectUrl}`;
+            }
+            break;
+          case 'linkedin':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              redirectUrl = `https://linkedin.com/in/${redirectUrl}`;
+            }
+            break;
+          case 'twitter':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              redirectUrl = `https://x.com/${redirectUrl.replace('@', '')}`;
+            }
+            break;
+          case 'youtube':
+            redirectUrl = payload.username || '';
+            if (redirectUrl && !redirectUrl.startsWith('http')) {
+              const cleaned = redirectUrl.startsWith('@') ? redirectUrl : `@${redirectUrl}`;
+              redirectUrl = `https://youtube.com/${cleaned}`;
+            }
+            break;
           case 'url':
             redirectUrl = payload.url || '';
             if (redirectUrl && !redirectUrl.startsWith('http')) {
