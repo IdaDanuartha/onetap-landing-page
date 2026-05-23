@@ -43,6 +43,7 @@ export default function AttendanceManagementPage() {
   const [bulkWAPhone, setBulkWAPhone] = useState("");
   const [isSubmittingBulkWA, setIsSubmittingBulkWA] = useState(false);
   const [isBulkScanning, setIsBulkScanning] = useState(false);
+  const [bulkScanError, setBulkScanError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
@@ -545,6 +546,7 @@ export default function AttendanceManagementPage() {
     try {
       setIsBulkScanning(true);
       setShowScanModal(true);
+      setBulkScanError(null);
       
       // Advance tour if active
       if (runTour && tourStepIndex === 5) {
@@ -582,13 +584,40 @@ export default function AttendanceManagementPage() {
       ndef.onreadingerror = () => {
         console.error("NFC Reading Error");
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Bulk scan error:", error);
       setIsBulkScanning(false);
-      setShowScanModal(false);
-      setToastMsg("Gagal memulai scan massal. Pastikan NFC aktif.");
-      setToastType("error");
-      setShowToast(true);
+      
+      let errorMessage = locale === 'id' 
+        ? "Pastikan NFC aktif pada perangkat Anda dan izin telah diberikan."
+        : "Make sure NFC is enabled on your device and permissions are granted.";
+      
+      if (error && error.name === 'NotAllowedError') {
+        errorMessage = locale === 'id'
+          ? "Izin NFC ditolak oleh browser atau sistem."
+          : "NFC permission was denied by browser or system.";
+      } else if (error && error.name === 'NotSupportedError') {
+        errorMessage = locale === 'id'
+          ? "NFC tidak didukung atau dinonaktifkan pada perangkat ini."
+          : "NFC is not supported or disabled on this device.";
+      } else if (error && error.name === 'SecurityError') {
+        if (runTour) {
+          errorMessage = ""; // Suppress error in tour mode
+        } else {
+          errorMessage = locale === 'id'
+            ? "Aksi ini memerlukan interaksi pengguna langsung."
+            : "This action requires direct user interaction.";
+        }
+      } else if (error && error.message) {
+        errorMessage = error.message;
+      }
+      
+      if (errorMessage) {
+        setBulkScanError(errorMessage);
+        setToastMsg(errorMessage);
+        setToastType("error");
+        setShowToast(true);
+      }
     }
   };
 
@@ -840,6 +869,7 @@ export default function AttendanceManagementPage() {
       if (showScanModal && (tourStepIndex < 6 || tourStepIndex > 6)) {
         setShowScanModal(false);
         setIsBulkScanning(false);
+        setBulkScanError(null);
       }
     }
   }, [tourStepIndex, runTour, displayTags]);
@@ -1838,6 +1868,7 @@ export default function AttendanceManagementPage() {
                   onClick={() => {
                     setIsBulkScanning(false);
                     setShowScanModal(false);
+                    setBulkScanError(null);
                     if (runTour && tourStepIndex === 6) {
                       setTourStepIndex(7);
                     }
@@ -1849,23 +1880,46 @@ export default function AttendanceManagementPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-                {/* Visual Radar */}
-                <div className="aspect-square bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden border border-gray-100 min-h-[220px]">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <motion.div 
-                      className="w-32 h-32 md:w-48 md:h-48 border-2 border-orange-200 rounded-full"
-                      animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                    <motion.div 
-                      className="w-32 h-32 md:w-48 md:h-48 border-2 border-orange-200 rounded-full"
-                      animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-                    />
+                {/* Visual Radar / Error State */}
+                {bulkScanError ? (
+                  <div className="aspect-square bg-red-50/50 rounded-[1.5rem] md:rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden border border-red-100 p-6 min-h-[220px]">
+                    <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                      <AlertTriangle className="w-8 h-8 text-red-500 animate-bounce" />
+                    </div>
+                    <p className="text-sm font-black text-red-600 mb-2">
+                      {locale === 'id' ? "Gagal Memulai Pemindaian" : "Failed to Start Scan"}
+                    </p>
+                    <p className="text-[11px] md:text-xs font-semibold text-red-500/80 mb-5 max-w-[200px] leading-relaxed mx-auto text-center">
+                      {bulkScanError}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setBulkScanError(null);
+                        startBulkScan();
+                      }}
+                      className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-black rounded-xl transition-all shadow-md active:scale-95 z-20 cursor-pointer"
+                    >
+                      {locale === 'id' ? "Coba Lagi" : "Try Again"}
+                    </button>
                   </div>
-                  <Radio className="w-12 h-12 md:w-16 md:h-16 text-orange-500 relative z-10 mb-3 md:mb-4" />
-                  <p className="text-xs md:text-sm font-bold text-gray-400 animate-pulse uppercase tracking-widest">{d.bulkScan.waiting}</p>
-                </div>
+                ) : (
+                  <div className="aspect-square bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden border border-gray-100 min-h-[220px]">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <motion.div 
+                        className="w-32 h-32 md:w-48 md:h-48 border-2 border-orange-200 rounded-full"
+                        animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <motion.div 
+                        className="w-32 h-32 md:w-48 md:h-48 border-2 border-orange-200 rounded-full"
+                        animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                      />
+                    </div>
+                    <Radio className="w-12 h-12 md:w-16 md:h-16 text-orange-500 relative z-10 mb-3 md:mb-4 animate-pulse" />
+                    <p className="text-xs md:text-sm font-bold text-gray-400 animate-pulse uppercase tracking-widest">{d.bulkScan.waiting}</p>
+                  </div>
+                )}
 
                 {/* Scan Logs */}
                 <div className="flex flex-col h-[250px] md:h-[300px]">
