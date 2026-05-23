@@ -606,18 +606,19 @@ export default function ConnectNfcPage() {
           if (mode === 'erase') {
             records.push({ recordType: 'empty' });
           } else {
-            let record: any = { recordType: 'url', data: finalPayload };
-
-            if (['text', 'bluetooth'].includes(mode)) {
-              record.recordType = 'text';
+            let record: any;
+            if (mode === 'url') {
+              record = { recordType: 'url', data: finalPayload };
+            } else if (['text', 'bluetooth'].includes(mode)) {
+              record = { recordType: 'text', data: finalPayload };
             } else if (mode === 'vcard') {
-              record.recordType = 'mime';
-              record.mediaType = 'text/vcard';
+              record = { recordType: 'mime', mediaType: 'text/vcard', data: finalPayload };
             } else if (mode === 'wifi') {
-              record.recordType = 'text';
-              record.data = finalPayload;
+              record = { recordType: 'text', data: finalPayload };
             } else if (mode === 'app') {
-              record.recordType = 'android.com:pkg';
+              record = { recordType: 'android.com:pkg', data: finalPayload };
+            } else {
+              record = { recordType: 'url', data: finalPayload };
             }
 
             records.push(record);
@@ -662,6 +663,7 @@ export default function ConnectNfcPage() {
     if (mode === 'bridge') return !!qrisData;
     if (mode === 'vcard') return !!vcardData.firstName && !!vcardData.phone;
     if (mode === 'wifi') return !!wifiData.ssid;
+    if (mode === 'bluetooth') return !!btAddress;
     if (mode === 'location') return !!geoData.lat && !!geoData.lng;
     if (mode === 'navigation') return !!navAddress;
     if (mode === 'streetview') return !!svData.lat && !!svData.lng;

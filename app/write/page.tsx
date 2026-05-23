@@ -413,20 +413,21 @@ function NFCWriter() {
         }
 
         try {
-          let record: any = { recordType: 'url', data: payload };
-
-          if (['text', 'phone', 'sms', 'email', 'bluetooth'].includes(recordType)) {
-            record.recordType = 'text';
+          let record: any;
+          if (recordType === 'erase') {
+            record = { recordType: 'empty' };
+          } else if (recordType === 'url') {
+            record = { recordType: 'url', data: payload };
+          } else if (['text', 'phone', 'sms', 'email', 'bluetooth'].includes(recordType)) {
+            record = { recordType: 'text', data: payload };
           } else if (recordType === 'vcard') {
-            record.recordType = 'mime';
-            record.mediaType = 'text/vcard';
+            record = { recordType: 'mime', mediaType: 'text/vcard', data: payload };
           } else if (recordType === 'wifi') {
-            record.recordType = 'text';
-            record.data = payload;
+            record = { recordType: 'text', data: payload };
           } else if (recordType === 'app') {
-            record.recordType = 'android.com:pkg';
-          } else if (recordType === 'erase') {
-            record.recordType = 'empty';
+            record = { recordType: 'android.com:pkg', data: payload };
+          } else {
+            record = { recordType: 'url', data: payload };
           }
 
           const records = [record];
