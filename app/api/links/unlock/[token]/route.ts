@@ -149,9 +149,16 @@ export async function POST(
           case 'streetview':
             redirectUrl = `google.streetview:cbll=${payload.lat || ''},${payload.lng || ''}`;
             break;
-          case 'app':
-            redirectUrl = `intent://#Intent;package=${payload.package || ''};end`;
+          case 'app': {
+            const ua = req.headers.get('user-agent') || '';
+            const isIos = /iPhone|iPad|iPod/i.test(ua);
+            if (isIos && payload.iosUrl) {
+              redirectUrl = payload.iosUrl;
+            } else {
+              redirectUrl = `intent://#Intent;package=${payload.package || ''};end`;
+            }
             break;
+          }
         }
 
         return NextResponse.json({

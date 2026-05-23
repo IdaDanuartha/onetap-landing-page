@@ -76,6 +76,24 @@ const MODE_OPTIONS = [
   { id: 'text', category: 'other', label: 'Pesan Teks', icon: Type, placeholder: 'Halo, ini keychain saya!' },
 ];
 
+const POPULAR_APPS = [
+  { name: 'WhatsApp', package: 'com.whatsapp', iosUrl: 'https://wa.me' },
+  { name: 'Instagram', package: 'com.instagram.android', iosUrl: 'https://instagram.com' },
+  { name: 'TikTok', package: 'com.zhiliaoapp.musically', iosUrl: 'https://tiktok.com' },
+  { name: 'YouTube', package: 'com.google.android.youtube', iosUrl: 'https://youtube.com' },
+  { name: 'Facebook', package: 'com.facebook.katana', iosUrl: 'https://facebook.com' },
+  { name: 'Spotify', package: 'com.spotify.music', iosUrl: 'https://open.spotify.com' },
+  { name: 'Telegram', package: 'org.telegram.messenger', iosUrl: 'https://t.me' },
+  { name: 'Twitter / X', package: 'com.twitter.android', iosUrl: 'https://x.com' },
+  { name: 'DANA', package: 'id.dana', iosUrl: 'https://dana.id' },
+  { name: 'GoPay / Gojek', package: 'com.gojek.app', iosUrl: 'https://gojek.com' },
+  { name: 'OVO', package: 'id.ovo.android', iosUrl: 'https://ovo.id' },
+  { name: 'Shopee', package: 'com.shopee.id', iosUrl: 'https://shopee.co.id' },
+  { name: 'Mobile Legends', package: 'com.mobile.legends', iosUrl: 'https://www.mobilelegends.com' },
+  { name: 'Netflix', package: 'com.netflix.mediaclient', iosUrl: 'https://netflix.com' },
+  { name: 'Google Maps', package: 'com.google.android.apps.maps', iosUrl: 'https://maps.google.com' }
+];
+
 export default function KeychainsManagerPage() {
   const { locale } = useLanguage();
   const router = useRouter();
@@ -113,6 +131,8 @@ export default function KeychainsManagerPage() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [selectedApp, setSelectedApp] = useState('com.whatsapp');
+  const [targetPlatform, setTargetPlatform] = useState<'both' | 'android' | 'ios'>('both');
   const [activeCategory, setActiveCategory] = useState('networking');
 
   // Delete/Unclaim state
@@ -337,14 +357,21 @@ export default function KeychainsManagerPage() {
     setSelectedKeychain(kc);
     setEditLabel(kc.label);
     setEditMode(kc.active_mode);
-    setEditPayload(kc.payload_data || {});
+    const payload = kc.payload_data || {};
+    setEditPayload(payload);
     setSaveSuccess(false);
     setSaveError('');
 
     // Pre-populate Advanced Security states
-    setLinkPassword(kc.payload_data?.link_password_hash ? '••••••••' : '');
-    setTagPassword(kc.payload_data?.tag_password || '');
+    setLinkPassword(payload.link_password_hash ? '••••••••' : '');
+    setTagPassword(payload.tag_password || '');
     setShowSecurity(false);
+
+    if (kc.active_mode === 'app') {
+      const isPopular = POPULAR_APPS.some(app => app.package === payload.package);
+      setSelectedApp(isPopular ? payload.package : (payload.package ? 'custom' : 'com.whatsapp'));
+      setTargetPlatform(payload.targetPlatform || 'both');
+    }
 
     // Find category for kc.active_mode
     const option = MODE_OPTIONS.find(o => o.id === kc.active_mode);
@@ -1815,29 +1842,133 @@ export default function KeychainsManagerPage() {
                         >
                           <div className="flex items-center gap-2 mb-2 text-[#8b5cf6]">
                             <AppWindow className="w-5 h-5" />
-                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Buka Aplikasi (Android)', 'Open App (Android)')}</h4>
+                            <h4 className="font-black text-sm uppercase tracking-wider">{t('Buka Aplikasi (Multi-Platform)', 'Open App (Multi-Platform)')}</h4>
                           </div>
 
                           <p className="text-xs text-gray-500 font-medium leading-relaxed mb-4">
                             {t(
-                              'Memicu Android Intent untuk langsung membuka aplikasi tertentu jika terinstal. Contoh: WhatsApp atau DANA.',
-                              'Triggers an Android Intent to launch a specific application on tap if it is installed.'
+                              'Buka otomatis aplikasi native baik di Android maupun iOS (iPhone) secara instan saat keychain di-tap!',
+                              'Instantly launch native applications on tap across both Android and iOS devices!'
                             )}
                           </p>
 
+                          {/* Platform Selector */}
                           <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 block">{t('Nama Paket Aplikasi (Android)', 'Application Package Name (Android)')}</label>
-                            <input
-                              type="text"
-                              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 outline-none text-sm font-bold text-[#18080F]"
-                              value={editPayload.package || ''}
-                              onChange={(e) => setEditPayload({ package: e.target.value })}
-                              placeholder="com.whatsapp"
-                            />
-                            <span className="text-[10px] text-gray-400 font-semibold italic block">
-                              {t('Contoh: com.whatsapp untuk WhatsApp, atau id.dana untuk DANA.', 'Example: com.whatsapp for WhatsApp, id.dana for DANA.')}
-                            </span>
+                            <label className="text-xs font-bold text-gray-500 block">{t('Platform Target', 'Target Platform')}</label>
+                            <div className="flex bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl p-1 w-full">
+                              {[
+                                { id: 'both', label: t('Semua (Android & iOS)', 'Both (Android & iOS)') },
+                                { id: 'android', label: 'Android' },
+                                { id: 'ios', label: 'iOS (Apple)' }
+                              ].map((platform) => (
+                                <button
+                                  key={platform.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setTargetPlatform(platform.id as any);
+                                    setEditPayload({
+                                      ...editPayload,
+                                      targetPlatform: platform.id
+                                    });
+                                  }}
+                                  className={`flex-1 py-2 text-[10px] sm:text-xs font-black rounded-lg transition-all uppercase tracking-wider ${
+                                    targetPlatform === platform.id
+                                      ? 'bg-white text-[#FF5FA2] shadow-sm border border-gray-100'
+                                      : 'text-gray-400 hover:text-gray-600'
+                                  }`}
+                                >
+                                  {platform.label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
+
+                          {/* App Dropdown Select */}
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 block">{t('Pilih Aplikasi', 'Select Application')}</label>
+                            <div className="relative">
+                              <select 
+                                value={selectedApp}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setSelectedApp(val);
+                                  if (val !== 'custom') {
+                                    const app = POPULAR_APPS.find(a => a.package === val);
+                                    setEditPayload({
+                                      ...editPayload,
+                                      package: val,
+                                      iosUrl: app ? app.iosUrl : '',
+                                      targetPlatform: targetPlatform
+                                    });
+                                  } else {
+                                    setEditPayload({
+                                      ...editPayload,
+                                      package: '',
+                                      iosUrl: '',
+                                      targetPlatform: targetPlatform
+                                    });
+                                  }
+                                }}
+                                className="text-sm font-bold text-[#18080F] bg-white border border-slate-200 rounded-xl w-full h-12 px-4 pr-10 outline-none focus:border-[#FF5FA2]/20 transition-all appearance-none cursor-pointer"
+                              >
+                                {POPULAR_APPS.map(app => (
+                                  <option key={app.package} value={app.package}>{app.name}</option>
+                                ))}
+                                <option value="custom">Kustom (Ketik Sendiri)</option>
+                              </select>
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                <ChevronRight className="w-4 h-4 rotate-90" />
+                              </div>
+                            </div>
+                          </div>
+
+                          <AnimatePresence>
+                            {selectedApp === 'custom' && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0, y: -5 }}
+                                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                                exit={{ opacity: 0, height: 0, y: -5 }}
+                                className="overflow-hidden space-y-4"
+                              >
+                                {(targetPlatform === 'both' || targetPlatform === 'android') && (
+                                  <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">{t('Nama Paket Aplikasi (Android)', 'Application Package Name (Android)')}</label>
+                                    <input 
+                                      type="text"
+                                      value={editPayload.package || ''}
+                                      onChange={(e) => setEditPayload({
+                                        ...editPayload,
+                                        package: e.target.value
+                                      })}
+                                      placeholder="Contoh: com.whatsapp"
+                                      className="text-sm font-bold text-[#18080F] bg-white border border-slate-200 rounded-xl w-full h-12 px-4 outline-none focus:border-[#FF5FA2]/20 transition-all"
+                                    />
+                                  </div>
+                                )}
+                                {(targetPlatform === 'both' || targetPlatform === 'ios') && (
+                                  <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">{t('Link / Universal URL (iOS)', 'Link / Universal URL (iOS)')}</label>
+                                    <input 
+                                      type="text"
+                                      value={editPayload.iosUrl || ''}
+                                      onChange={(e) => setEditPayload({
+                                        ...editPayload,
+                                        iosUrl: e.target.value
+                                      })}
+                                      placeholder="Contoh: https://wa.me"
+                                      className="text-sm font-bold text-[#18080F] bg-white border border-slate-200 rounded-xl w-full h-12 px-4 outline-none focus:border-[#FF5FA2]/20 transition-all"
+                                    />
+                                  </div>
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          <p className="text-[10px] text-gray-400 px-1 italic leading-relaxed">
+                            {targetPlatform === 'android' ? t('Membuka aplikasi otomatis di Android jika terinstal.', 'Automatically opens the application on Android if installed.') :
+                             targetPlatform === 'ios' ? t('Membuka otomatis di iOS (iPhone) menggunakan Universal Links.', 'Automatically opens on iOS (iPhone) using Universal Links.') :
+                             t('Kompatibel penuh: membuka otomatis baik di Android (AAR) maupun iOS (Universal Link).', 'Fully compatible: automatically opens on both Android (AAR) and iOS (Universal Link).')}
+                          </p>
                         </motion.div>
                       )}
 
