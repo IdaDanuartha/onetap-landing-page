@@ -114,21 +114,21 @@ const TYPE_OPTIONS: { id: RecordType; category: string; label: string; icon: any
 ];
 
 const POPULAR_APPS = [
-  { name: 'WhatsApp', package: 'com.whatsapp' },
-  { name: 'Instagram', package: 'com.instagram.android' },
-  { name: 'TikTok', package: 'com.zhiliaoapp.musically' },
-  { name: 'YouTube', package: 'com.google.android.youtube' },
-  { name: 'Facebook', package: 'com.facebook.katana' },
-  { name: 'Spotify', package: 'com.spotify.music' },
-  { name: 'Telegram', package: 'org.telegram.messenger' },
-  { name: 'Twitter / X', package: 'com.twitter.android' },
-  { name: 'DANA', package: 'id.dana' },
-  { name: 'GoPay / Gojek', package: 'com.gojek.app' },
-  { name: 'OVO', package: 'id.ovo.android' },
-  { name: 'Shopee', package: 'com.shopee.id' },
-  { name: 'Mobile Legends', package: 'com.mobile.legends' },
-  { name: 'Netflix', package: 'com.netflix.mediaclient' },
-  { name: 'Google Maps', package: 'com.google.android.apps.maps' }
+  { name: 'WhatsApp', package: 'com.whatsapp', iosUrl: 'https://wa.me' },
+  { name: 'Instagram', package: 'com.instagram.android', iosUrl: 'https://instagram.com' },
+  { name: 'TikTok', package: 'com.zhiliaoapp.musically', iosUrl: 'https://tiktok.com' },
+  { name: 'YouTube', package: 'com.google.android.youtube', iosUrl: 'https://youtube.com' },
+  { name: 'Facebook', package: 'com.facebook.katana', iosUrl: 'https://facebook.com' },
+  { name: 'Spotify', package: 'com.spotify.music', iosUrl: 'https://open.spotify.com' },
+  { name: 'Telegram', package: 'org.telegram.messenger', iosUrl: 'https://t.me' },
+  { name: 'Twitter / X', package: 'com.twitter.android', iosUrl: 'https://x.com' },
+  { name: 'DANA', package: 'id.dana', iosUrl: 'https://dana.id' },
+  { name: 'GoPay / Gojek', package: 'com.gojek.app', iosUrl: 'https://gojek.com' },
+  { name: 'OVO', package: 'id.ovo.android', iosUrl: 'https://ovo.id' },
+  { name: 'Shopee', package: 'com.shopee.id', iosUrl: 'https://shopee.co.id' },
+  { name: 'Mobile Legends', package: 'com.mobile.legends', iosUrl: 'https://www.mobilelegends.com' },
+  { name: 'Netflix', package: 'com.netflix.mediaclient', iosUrl: 'https://netflix.com' },
+  { name: 'Google Maps', package: 'com.google.android.apps.maps', iosUrl: 'https://maps.google.com' }
 ];
 
 type WriteStatus = "idle" | "waiting";
@@ -260,6 +260,8 @@ function NFCWriter() {
   const [btAddress, setBtAddress] = useState('');
   const [appPackage, setAppPackage] = useState('com.whatsapp');
   const [selectedApp, setSelectedApp] = useState('com.whatsapp');
+  const [iosUrl, setIosUrl] = useState('https://wa.me');
+  const [targetPlatform, setTargetPlatform] = useState<'both' | 'android' | 'ios'>('both');
   const [geoData, setGeoData] = useState({ lat: '', lng: '' });
   const [navAddress, setNavAddress] = useState('');
   const [svData, setSvData] = useState({ lat: '', lng: '' });
@@ -432,24 +434,35 @@ function NFCWriter() {
         }
 
         try {
-          let record: any;
+          const records: any[] = [];
           if (recordType === 'erase') {
-            record = { recordType: 'empty' };
-          } else if (recordType === 'url') {
-            record = { recordType: 'url', data: payload };
-          } else if (['text', 'phone', 'sms', 'email', 'bluetooth'].includes(recordType)) {
-            record = { recordType: 'text', data: payload };
-          } else if (recordType === 'vcard') {
-            record = { recordType: 'mime', mediaType: 'text/vcard', data: payload };
-          } else if (recordType === 'wifi') {
-            record = { recordType: 'text', data: payload };
+            records.push({ recordType: 'empty' });
           } else if (recordType === 'app') {
-            record = { recordType: 'android.com:pkg', data: new TextEncoder().encode(payload) };
+            if (targetPlatform === 'android') {
+              records.push({ recordType: 'android.com:pkg', data: new TextEncoder().encode(appPackage) });
+            } else if (targetPlatform === 'ios') {
+              records.push({ recordType: 'url', data: iosUrl });
+            } else {
+              // Dual records configuration: URL record (first) allows iOS background tag reading.
+              // AAR record (second) allows Android system redirection.
+              records.push({ recordType: 'url', data: iosUrl });
+              records.push({ recordType: 'android.com:pkg', data: new TextEncoder().encode(appPackage) });
+            }
           } else {
-            record = { recordType: 'url', data: payload };
+            let record: any;
+            if (recordType === 'url') {
+              record = { recordType: 'url', data: payload };
+            } else if (['text', 'phone', 'sms', 'email', 'bluetooth'].includes(recordType)) {
+              record = { recordType: 'text', data: payload };
+            } else if (recordType === 'vcard') {
+              record = { recordType: 'mime', mediaType: 'text/vcard', data: payload };
+            } else if (recordType === 'wifi') {
+              record = { recordType: 'text', data: payload };
+            } else {
+              record = { recordType: 'url', data: payload };
+            }
+            records.push(record);
           }
-
-          const records = [record];
           if (isProtected && promptValue) {
             const passHash = await hashTagPassword(promptValue);
             records.push({ recordType: 'text', data: `ot_p:${passHash}` });
@@ -757,6 +770,28 @@ function NFCWriter() {
                   </div>
                 ) : recordType === "app" ? (
                   <div className="space-y-3 mt-2">
+                    {/* Platform Selector */}
+                    <div className="flex bg-slate-50 border border-slate-200/60 rounded-xl p-1 w-full">
+                      {[
+                        { id: 'both', label: 'Semua (Android & iOS)' },
+                        { id: 'android', label: 'Android' },
+                        { id: 'ios', label: 'iOS (Apple)' }
+                      ].map((platform) => (
+                        <button
+                          key={platform.id}
+                          type="button"
+                          onClick={() => setTargetPlatform(platform.id as any)}
+                          className={`flex-1 py-2 text-[10px] sm:text-xs font-black rounded-lg transition-all uppercase tracking-wider ${
+                            targetPlatform === platform.id
+                              ? 'bg-white text-primary-500 shadow-sm border border-slate-100'
+                              : 'text-slate-400 hover:text-slate-600'
+                          }`}
+                        >
+                          {platform.label}
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="relative">
                       <select 
                         value={selectedApp}
@@ -765,8 +800,11 @@ function NFCWriter() {
                           setSelectedApp(val);
                           if (val !== 'custom') {
                             setAppPackage(val);
+                            const app = POPULAR_APPS.find(a => a.package === val);
+                            if (app) setIosUrl(app.iosUrl);
                           } else {
                             setAppPackage('');
+                            setIosUrl('');
                           }
                         }}
                         className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 pr-10 outline-none focus:border-primary-500 transition-all appearance-none cursor-pointer"
@@ -787,19 +825,34 @@ function NFCWriter() {
                           initial={{ opacity: 0, height: 0, y: -5 }}
                           animate={{ opacity: 1, height: 'auto', y: 0 }}
                           exit={{ opacity: 0, height: 0, y: -5 }}
-                          className="overflow-hidden"
+                          className="overflow-hidden space-y-2"
                         >
-                          <input 
-                            type="text"
-                            value={appPackage}
-                            onChange={(e) => setAppPackage(e.target.value)}
-                            placeholder="Contoh: com.whatsapp atau id.dana"
-                            className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
-                          />
+                          {(targetPlatform === 'both' || targetPlatform === 'android') && (
+                            <input 
+                              type="text"
+                              value={appPackage}
+                              onChange={(e) => setAppPackage(e.target.value)}
+                              placeholder="Android Package (Contoh: com.whatsapp)"
+                              className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                            />
+                          )}
+                          {(targetPlatform === 'both' || targetPlatform === 'ios') && (
+                            <input 
+                              type="text"
+                              value={iosUrl}
+                              onChange={(e) => setIosUrl(e.target.value)}
+                              placeholder="iOS Link / Universal URL (Contoh: https://wa.me)"
+                              className="text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-xl w-full px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                            />
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
-                    <p className="text-[10px] text-gray-400 px-1 italic">Membuka aplikasi otomatis di Android jika sudah terinstal.</p>
+                    <p className="text-[10px] text-gray-400 px-1 italic">
+                      {targetPlatform === 'android' ? 'Membuka aplikasi otomatis di Android jika terinstal.' :
+                       targetPlatform === 'ios' ? 'Membuka otomatis di iOS (iPhone) menggunakan Universal Links.' :
+                       'Kompatibel penuh: membuka otomatis baik di Android (AAR) maupun iOS (Universal Link).'}
+                    </p>
                   </div>
                 ) : recordType === "bluetooth" ? (
                   <div className="space-y-3 mt-2">
@@ -887,7 +940,11 @@ function NFCWriter() {
                 recordType === "location" ? !geoData.lat || !geoData.lng :
                 recordType === "navigation" ? !navAddress :
                 recordType === "streetview" ? !svData.lat || !svData.lng :
-                recordType === "app" ? !appPackage :
+                recordType === "app" ? (
+                  targetPlatform === 'android' ? !appPackage :
+                  targetPlatform === 'ios' ? !iosUrl :
+                  (!appPackage || !iosUrl)
+                ) :
                 recordType === "bluetooth" ? !btAddress :
                 !data.trim())
               }

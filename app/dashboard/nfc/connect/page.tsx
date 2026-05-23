@@ -74,21 +74,21 @@ const MODE_OPTIONS: { id: Mode; category: string; label: string; icon: any; plac
 ];
 
 const POPULAR_APPS = [
-  { name: 'WhatsApp', package: 'com.whatsapp' },
-  { name: 'Instagram', package: 'com.instagram.android' },
-  { name: 'TikTok', package: 'com.zhiliaoapp.musically' },
-  { name: 'YouTube', package: 'com.google.android.youtube' },
-  { name: 'Facebook', package: 'com.facebook.katana' },
-  { name: 'Spotify', package: 'com.spotify.music' },
-  { name: 'Telegram', package: 'org.telegram.messenger' },
-  { name: 'Twitter / X', package: 'com.twitter.android' },
-  { name: 'DANA', package: 'id.dana' },
-  { name: 'GoPay / Gojek', package: 'com.gojek.app' },
-  { name: 'OVO', package: 'id.ovo.android' },
-  { name: 'Shopee', package: 'com.shopee.id' },
-  { name: 'Mobile Legends', package: 'com.mobile.legends' },
-  { name: 'Netflix', package: 'com.netflix.mediaclient' },
-  { name: 'Google Maps', package: 'com.google.android.apps.maps' }
+  { name: 'WhatsApp', package: 'com.whatsapp', iosUrl: 'https://wa.me' },
+  { name: 'Instagram', package: 'com.instagram.android', iosUrl: 'https://instagram.com' },
+  { name: 'TikTok', package: 'com.zhiliaoapp.musically', iosUrl: 'https://tiktok.com' },
+  { name: 'YouTube', package: 'com.google.android.youtube', iosUrl: 'https://youtube.com' },
+  { name: 'Facebook', package: 'com.facebook.katana', iosUrl: 'https://facebook.com' },
+  { name: 'Spotify', package: 'com.spotify.music', iosUrl: 'https://open.spotify.com' },
+  { name: 'Telegram', package: 'org.telegram.messenger', iosUrl: 'https://t.me' },
+  { name: 'Twitter / X', package: 'com.twitter.android', iosUrl: 'https://x.com' },
+  { name: 'DANA', package: 'id.dana', iosUrl: 'https://dana.id' },
+  { name: 'GoPay / Gojek', package: 'com.gojek.app', iosUrl: 'https://gojek.com' },
+  { name: 'OVO', package: 'id.ovo.android', iosUrl: 'https://ovo.id' },
+  { name: 'Shopee', package: 'com.shopee.id', iosUrl: 'https://shopee.co.id' },
+  { name: 'Mobile Legends', package: 'com.mobile.legends', iosUrl: 'https://www.mobilelegends.com' },
+  { name: 'Netflix', package: 'com.netflix.mediaclient', iosUrl: 'https://netflix.com' },
+  { name: 'Google Maps', package: 'com.google.android.apps.maps', iosUrl: 'https://maps.google.com' }
 ];
 
 export default function ConnectNfcPage() {
@@ -118,6 +118,8 @@ export default function ConnectNfcPage() {
   const [btAddress, setBtAddress] = useState('');
   const [appPackage, setAppPackage] = useState('com.whatsapp');
   const [selectedApp, setSelectedApp] = useState('com.whatsapp');
+  const [iosUrl, setIosUrl] = useState('https://wa.me');
+  const [targetPlatform, setTargetPlatform] = useState<'both' | 'android' | 'ios'>('both');
   const [geoData, setGeoData] = useState({ lat: '', lng: '' });
   const [navAddress, setNavAddress] = useState('');
   const [svData, setSvData] = useState({ lat: '', lng: '' });
@@ -625,22 +627,32 @@ export default function ConnectNfcPage() {
           if (mode === 'erase') {
             records.push({ recordType: 'empty' });
           } else {
-            let record: any;
-            if (mode === 'url') {
-              record = { recordType: 'url', data: finalPayload };
-            } else if (['text', 'bluetooth'].includes(mode)) {
-              record = { recordType: 'text', data: finalPayload };
-            } else if (mode === 'vcard') {
-              record = { recordType: 'mime', mediaType: 'text/vcard', data: finalPayload };
-            } else if (mode === 'wifi') {
-              record = { recordType: 'text', data: finalPayload };
-            } else if (mode === 'app') {
-              record = { recordType: 'android.com:pkg', data: new TextEncoder().encode(finalPayload) };
+            if (mode === 'app') {
+              if (targetPlatform === 'android') {
+                records.push({ recordType: 'android.com:pkg', data: new TextEncoder().encode(appPackage) });
+              } else if (targetPlatform === 'ios') {
+                records.push({ recordType: 'url', data: iosUrl });
+              } else {
+                // Dual records configuration: URL record (first) allows iOS background tag reading.
+                // AAR record (second) allows Android system redirection.
+                records.push({ recordType: 'url', data: iosUrl });
+                records.push({ recordType: 'android.com:pkg', data: new TextEncoder().encode(appPackage) });
+              }
             } else {
-              record = { recordType: 'url', data: finalPayload };
+              let record: any;
+              if (mode === 'url') {
+                record = { recordType: 'url', data: finalPayload };
+              } else if (['text', 'bluetooth'].includes(mode)) {
+                record = { recordType: 'text', data: finalPayload };
+              } else if (mode === 'vcard') {
+                record = { recordType: 'mime', mediaType: 'text/vcard', data: finalPayload };
+              } else if (mode === 'wifi') {
+                record = { recordType: 'text', data: finalPayload };
+              } else {
+                record = { recordType: 'url', data: finalPayload };
+              }
+              records.push(record);
             }
-
-            records.push(record);
 
             // Secondary Protection Record (Hidden from OS notifications)
             const activeWritePassword = nfcPassword || (isProtected ? promptValue : '');
@@ -686,7 +698,11 @@ export default function ConnectNfcPage() {
     if (mode === 'location') return !!geoData.lat && !!geoData.lng;
     if (mode === 'navigation') return !!navAddress;
     if (mode === 'streetview') return !!svData.lat && !!svData.lng;
-    if (mode === 'app') return !!appPackage;
+    if (mode === 'app') {
+      if (targetPlatform === 'android') return !!appPackage;
+      if (targetPlatform === 'ios') return !!iosUrl;
+      return !!appPackage && !!iosUrl;
+    }
     if (mode === 'whatsapp') return !!waNumber;
     if (mode === 'payment') return paymentType === 'qris' ? !!qrisUrl : !!merchantId;
     return !!data.trim();
@@ -1163,6 +1179,28 @@ export default function ConnectNfcPage() {
                       </div>
                     ) : mode === 'app' ? (
                       <div className="space-y-3 mt-2">
+                        {/* Custom Platform Selector */}
+                        <div className="flex bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl p-1 w-full">
+                          {[
+                            { id: 'both', label: 'Semua (Android & iOS)' },
+                            { id: 'android', label: 'Android' },
+                            { id: 'ios', label: 'iOS (Apple)' }
+                          ].map((platform) => (
+                            <button
+                              key={platform.id}
+                              type="button"
+                              onClick={() => setTargetPlatform(platform.id as any)}
+                              className={`flex-1 py-2 text-[10px] sm:text-xs font-black rounded-lg transition-all uppercase tracking-wider ${
+                                targetPlatform === platform.id
+                                  ? 'bg-white text-[#FF5FA2] shadow-sm border border-gray-100'
+                                  : 'text-gray-400 hover:text-gray-600'
+                              }`}
+                            >
+                              {platform.label}
+                            </button>
+                          ))}
+                        </div>
+
                         <div className="relative">
                           <select 
                             value={selectedApp}
@@ -1171,8 +1209,11 @@ export default function ConnectNfcPage() {
                               setSelectedApp(val);
                               if (val !== 'custom') {
                                 setAppPackage(val);
+                                const app = POPULAR_APPS.find(a => a.package === val);
+                                if (app) setIosUrl(app.iosUrl);
                               } else {
                                 setAppPackage('');
+                                setIosUrl('');
                               }
                             }}
                             className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 pr-10 outline-none focus:border-[#FF5FA2]/30 transition-all appearance-none cursor-pointer"
@@ -1193,19 +1234,34 @@ export default function ConnectNfcPage() {
                               initial={{ opacity: 0, height: 0, y: -5 }}
                               animate={{ opacity: 1, height: 'auto', y: 0 }}
                               exit={{ opacity: 0, height: 0, y: -5 }}
-                              className="overflow-hidden"
+                              className="overflow-hidden space-y-2"
                             >
-                              <input 
-                                type="text"
-                                value={appPackage}
-                                onChange={(e) => setAppPackage(e.target.value)}
-                                placeholder="Contoh: com.whatsapp atau id.dana"
-                                className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
-                              />
+                              {(targetPlatform === 'both' || targetPlatform === 'android') && (
+                                <input 
+                                  type="text"
+                                  value={appPackage}
+                                  onChange={(e) => setAppPackage(e.target.value)}
+                                  placeholder="Android Package (Contoh: com.whatsapp)"
+                                  className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                                />
+                              )}
+                              {(targetPlatform === 'both' || targetPlatform === 'ios') && (
+                                <input 
+                                  type="text"
+                                  value={iosUrl}
+                                  onChange={(e) => setIosUrl(e.target.value)}
+                                  placeholder="iOS Link / Universal URL (Contoh: https://wa.me)"
+                                  className="text-sm font-bold text-[#18080F] bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl w-full px-4 py-3 outline-none focus:border-[#FF5FA2]/30 transition-all"
+                                />
+                              )}
                             </motion.div>
                           )}
                         </AnimatePresence>
-                        <p className="text-[10px] text-gray-400 px-1 italic">Membuka aplikasi otomatis di Android jika sudah terinstal.</p>
+                        <p className="text-[10px] text-gray-400 px-1 italic">
+                          {targetPlatform === 'android' ? 'Membuka aplikasi otomatis di Android jika terinstal.' :
+                           targetPlatform === 'ios' ? 'Membuka otomatis di iOS (iPhone) menggunakan Universal Links.' :
+                           'Kompatibel penuh: membuka otomatis baik di Android (AAR) maupun iOS (Universal Link).'}
+                        </p>
                       </div>
                     ) : mode === 'bluetooth' ? (
                       <div className="space-y-3 mt-2">
