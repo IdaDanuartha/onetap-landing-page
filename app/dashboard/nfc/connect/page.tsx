@@ -209,6 +209,41 @@ export default function ConnectNfcPage() {
   const [nfcPassword, setNfcPassword] = useState('');
   const [showNfcPass, setShowNfcPass] = useState(false);
 
+  // Custom Tag Unlock Prompt State
+  const [tagPrompt, setTagPrompt] = useState<{
+    isOpen: boolean;
+    resolve: ((val: string | null) => void) | null;
+    error: string;
+  }>({ isOpen: false, resolve: null, error: '' });
+  const [tagPromptInput, setTagPromptInput] = useState('');
+  const [showTagPromptPass, setShowTagPromptPass] = useState(false);
+
+  const requestTagPassword = () => {
+    setTagPromptInput('');
+    setShowTagPromptPass(false);
+    return new Promise<string | null>((resolve) => {
+      setTagPrompt({
+        isOpen: true,
+        resolve,
+        error: ''
+      });
+    });
+  };
+
+  const handleTagPromptSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (tagPrompt.resolve) {
+      tagPrompt.resolve(tagPromptInput);
+    }
+  };
+
+  const handleTagPromptCancel = () => {
+    if (tagPrompt.resolve) {
+      tagPrompt.resolve(null);
+    }
+    setTagPrompt({ isOpen: false, resolve: null, error: '' });
+  };
+
   useEffect(() => {
     async function load() {
       const supabase = createClient();
@@ -445,7 +480,7 @@ export default function ConnectNfcPage() {
             const otIndex = rawData.indexOf('ot_p:');
             if (otIndex !== -1) {
               isProtected = true;
-              existingPassHash = rawData.substring(otIndex + 5).replace(/[^a-fA-F0-9]/g, '');
+              existingPassHash = rawData.substring(otIndex + 5).replace(/[^a-fA-F0-9]/g, '').toLowerCase().substring(0, 64);
               break;
             }
 
@@ -462,31 +497,33 @@ export default function ConnectNfcPage() {
           }
         }
 
-        // SECURITY CHECK: If the tag is protected, prompt immediately!
+        // SECURITY CHECK: If the tag is protected, prompt immediately using our premium custom modal!
         let promptValue: string | null = null;
         if (isProtected) {
-          const promptMsg = locale === 'id'
-            ? "Tag ini dilindungi password. Masukkan password tag NFC untuk membuka dan menulis ulang:"
-            : "This tag is password-protected. Enter the NFC tag password to unlock and rewrite:";
-          promptValue = prompt(promptMsg);
-          if (promptValue === null) {
-            setError(locale === 'id' ? "Penulisan dibatalkan." : "Writing cancelled.");
-            setIsConnecting(false);
-            return;
-          }
-
           let isValid = false;
-          if (isLegacyProtection) {
-            isValid = (legacyPass === promptValue);
-          } else {
-            const inputHash = await hashTagPassword(promptValue);
-            isValid = (existingPassHash === inputHash);
-          }
+          while (!isValid) {
+            promptValue = await requestTagPassword();
+            if (promptValue === null) {
+              setError(locale === 'id' ? "Penulisan dibatalkan." : "Writing cancelled.");
+              setIsConnecting(false);
+              return;
+            }
 
-          if (!isValid) {
-            setError(locale === 'id' ? "Password Tag salah! Akses ditolak." : "Wrong tag password! Access denied.");
-            setIsConnecting(false);
-            return;
+            if (isLegacyProtection) {
+              isValid = (legacyPass === promptValue);
+            } else {
+              const inputHash = await hashTagPassword(promptValue);
+              isValid = (existingPassHash === inputHash);
+            }
+
+            if (!isValid) {
+              setTagPrompt(prev => ({
+                ...prev,
+                error: locale === 'id' ? "Password Tag salah! Coba lagi." : "Wrong tag password! Try again."
+              }));
+            } else {
+              setTagPrompt({ isOpen: false, resolve: null, error: '' });
+            }
           }
         }
 
@@ -1230,7 +1267,96 @@ export default function ConnectNfcPage() {
 
       {/* Decorative background element */}
       <div className="fixed bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-white to-transparent -z-10 opacity-50" />
-      
+
+      {/* Custom styled Tag Unlock Prompt Modal */}
+      <AnimatePresence>
+        {tagPrompt.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#18080F]/60 backdrop-blur-md"
+              onClick={handleTagPromptCancel}
+            />
+
+            {/* Modal Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative z-10 bg-white rounded-[2rem] w-full max-w-md border border-[#F6B7C8]/10 p-6 sm:p-8 shadow-2xl overflow-hidden"
+            >
+              {/* Decorative Accent */}
+              <div className="absolute -right-20 -top-20 w-44 h-44 rounded-full bg-[#FF5FA2]/10 blur-3xl" />
+
+              <form onSubmit={handleTagPromptSubmit} className="space-y-6">
+                <div className="text-center space-y-2">
+                  <div className="w-12 h-12 rounded-2xl bg-[#FF5FA2]/10 text-[#FF5FA2] flex items-center justify-center mx-auto">
+                    <Lock className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <h3 className="text-xl font-black text-[#18080F]">
+                    {locale === 'id' ? "Tag Terkunci Password" : "Password-Protected Tag"}
+                  </h3>
+                  <p className="text-xs text-gray-400 font-medium leading-relaxed max-w-[280px] mx-auto">
+                    {locale === 'id'
+                      ? "Tag ini dilindungi password. Masukkan password tag NFC untuk membuka dan menulis ulang."
+                      : "This tag is protected. Please enter the NFC tag password to unlock and write."}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-[#18080F] uppercase tracking-wider block">
+                    {locale === 'id' ? "Password Tag NFC" : "NFC Tag Password"}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showTagPromptPass ? "text" : "password"}
+                      required
+                      autoFocus
+                      value={tagPromptInput}
+                      onChange={(e) => setTagPromptInput(e.target.value)}
+                      placeholder={locale === 'id' ? "Masukkan password..." : "Enter password..."}
+                      className="w-full h-12 px-4 pr-12 rounded-xl bg-gray-50 border border-slate-200 focus:border-[#FF5FA2]/40 outline-none text-sm font-bold text-[#18080F]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowTagPromptPass(!showTagPromptPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showTagPromptPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {tagPrompt.error && (
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-xs font-bold text-red-500">
+                      <AlertCircle className="w-4.5 h-4.5 shrink-0" />
+                      <span>{tagPrompt.error}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleTagPromptCancel}
+                    className="flex-1 h-12 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all active:scale-95"
+                  >
+                    {locale === 'id' ? "Batal" : "Cancel"}
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 h-12 rounded-xl bg-[#FF5FA2] hover:bg-[#E8457E] text-white font-black text-xs transition-all active:scale-95 shadow-md shadow-[#FF5FA2]/10"
+                  >
+                    {locale === 'id' ? "Unlock & Tulis" : "Unlock & Write"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <GuidedTour 
         key={`nfc-${tourKey}`}
         pageKey="nfc"
