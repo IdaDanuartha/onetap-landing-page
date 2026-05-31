@@ -138,6 +138,27 @@ function buildWifiPayload(ssid: string, password?: string, encryption: string = 
   return payload;
 }
 
+function buildBluetoothPayload(macAddress: string): Uint8Array {
+  const cleanMac = macAddress.replace(/[^0-9a-fA-F]/g, '');
+  if (cleanMac.length !== 12) {
+    throw new Error('MAC Address harus 12 karakter hex (Contoh: 00:11:22:33:FF:EE)');
+  }
+  
+  const macBytes = new Uint8Array(6);
+  for (let i = 0; i < 6; i++) {
+    macBytes[i] = parseInt(cleanMac.substring(i * 2, i * 2 + 2), 16);
+  }
+  
+  macBytes.reverse();
+
+  const payload = new Uint8Array(8);
+  payload[0] = 0x08;
+  payload[1] = 0x00;
+  payload.set(macBytes, 2);
+
+  return payload;
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 type RecordType = 
   | 'vcard' | 'whatsapp' | 'phone' | 'sms' | 'email' 
@@ -564,13 +585,16 @@ function NFCWriter() {
             let record: any;
             if (recordType === 'url') {
               record = { recordType: 'url', data: payload };
-            } else if (['text', 'phone', 'sms', 'email', 'bluetooth'].includes(recordType)) {
+            } else if (['text', 'phone', 'sms', 'email'].includes(recordType)) {
               record = { recordType: 'text', data: payload };
             } else if (recordType === 'vcard') {
               record = { recordType: 'mime', mediaType: 'text/vcard', data: payload };
             } else if (recordType === 'wifi') {
               const wifiPayload = buildWifiPayload(wifiData.ssid, wifiData.password, wifiData.encryption);
               record = { recordType: 'mime', mediaType: 'application/vnd.wfa.wsc', data: wifiPayload };
+            } else if (recordType === 'bluetooth') {
+              const btPayload = buildBluetoothPayload(btAddress);
+              record = { recordType: 'mime', mediaType: 'application/vnd.bluetooth.ep.oob', data: btPayload };
             } else {
               record = { recordType: 'url', data: payload };
             }
