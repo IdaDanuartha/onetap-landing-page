@@ -65,6 +65,79 @@ async function writeCustomRecord(
   await ndef.write({ records: [record] });
 }
 
+function buildWifiPayload(ssid: string, password?: string, encryption: string = 'WPA'): Uint8Array {
+  const encoder = new TextEncoder();
+  const ssidBytes = encoder.encode(ssid);
+  
+  let authType = 0x0001; // OPEN
+  let encType = 0x0001;  // NONE
+  let hasPassword = false;
+
+  if (encryption === 'WEP') {
+    authType = 0x0001;
+    encType = 0x0002;
+    hasPassword = true;
+  } else if (encryption === 'WPA') {
+    authType = 0x0022; // WPA/WPA2-Personal mixed
+    encType = 0x000c;  // AES/TKIP mixed
+    hasPassword = true;
+  }
+
+  const passwordBytes = (hasPassword && password) ? encoder.encode(password) : new Uint8Array(0);
+
+  let credentialLength = 5 + (4 + ssidBytes.length) + 6 + 6;
+  if (hasPassword) {
+    credentialLength += 4 + passwordBytes.length;
+  }
+
+  const totalLength = 4 + credentialLength;
+  const payload = new Uint8Array(totalLength);
+  let offset = 0;
+
+  const writeUint16 = (val: number) => {
+    payload[offset++] = (val >> 8) & 0xff;
+    payload[offset++] = val & 0xff;
+  };
+
+  const writeBytes = (bytes: Uint8Array) => {
+    payload.set(bytes, offset);
+    offset += bytes.length;
+  };
+
+  // Outer Wrapper: Credential (0x100e)
+  writeUint16(0x100e);
+  writeUint16(credentialLength);
+
+  // Network Index (0x1026)
+  writeUint16(0x1026);
+  writeUint16(1);
+  payload[offset++] = 0x01;
+
+  // SSID (0x1045)
+  writeUint16(0x1045);
+  writeUint16(ssidBytes.length);
+  writeBytes(ssidBytes);
+
+  // Authentication Type (0x1003)
+  writeUint16(0x1003);
+  writeUint16(2);
+  writeUint16(authType);
+
+  // Encryption Type (0x100f)
+  writeUint16(0x100f);
+  writeUint16(2);
+  writeUint16(encType);
+
+  // Network Key (0x1027)
+  if (hasPassword) {
+    writeUint16(0x1027);
+    writeUint16(passwordBytes.length);
+    writeBytes(passwordBytes);
+  }
+
+  return payload;
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 type RecordType = 
   | 'vcard' | 'whatsapp' | 'phone' | 'sms' | 'email' 
@@ -496,7 +569,8 @@ function NFCWriter() {
             } else if (recordType === 'vcard') {
               record = { recordType: 'mime', mediaType: 'text/vcard', data: payload };
             } else if (recordType === 'wifi') {
-              record = { recordType: 'text', data: payload };
+              const wifiPayload = buildWifiPayload(wifiData.ssid, wifiData.password, wifiData.encryption);
+              record = { recordType: 'mime', mediaType: 'application/vnd.wfa.wsc', data: wifiPayload };
             } else {
               record = { recordType: 'url', data: payload };
             }
