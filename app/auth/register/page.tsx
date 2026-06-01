@@ -52,44 +52,30 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const supabase = createClient();
-
-      // 1. Register with Supabase Auth (passing display_name and username in options data metadata)
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: { 
-            display_name: form.name,
-            username: form.username
-          },
+      // Call the API route instead of direct client-side signUp
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          name: form.name,
+          username: form.username,
+        }),
       });
 
-      if (signUpError) {
-        if (signUpError.message.toLowerCase().includes("unique constraint") || signUpError.message.toLowerCase().includes("username")) {
-          setError('Username sudah dipakai. Pilih yang lain.');
-        } else {
-          setError(signUpError.message);
-        }
+      const result = await res.json();
+
+      if (!res.ok) {
+        setError(result.error || 'Gagal membuat akun. Coba lagi.');
         setLoading(false);
         return;
       }
 
-      if (!authData.user) {
-        setError('Gagal membuat akun. Coba lagi.');
-        setLoading(false);
-        return;
-      }
-
-      // 2. Determine redirect or check email screen based on whether session was returned
-      if (authData.session) {
-        const params = new URLSearchParams(window.location.search);
-        const next = params.get("next");
-        router.push(next || '/dashboard/linktree');
-      } else {
-        setIsSuccess(true);
-      }
+      // Since email is auto-confirmed, they are registered successfully!
+      setIsSuccess(true);
     } catch {
       setError('Terjadi kesalahan. Coba lagi.');
       setLoading(false);
@@ -130,23 +116,23 @@ export default function RegisterPage() {
           {isSuccess ? (
             <div className="flex flex-col items-center text-center py-4">
               <div className="w-16 h-16 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mb-6 text-green-500 shadow-lg shadow-green-500/10">
-                <Mail className="w-8 h-8 animate-pulse" />
+                <CheckCircle2 className="w-8 h-8 animate-bounce" />
               </div>
               <h2
                 className="text-2xl font-extrabold text-[#18080F] mb-4"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Verifikasi Email Anda
+                Registrasi Berhasil!
               </h2>
               <p className="text-gray-600 font-medium text-sm leading-relaxed mb-8">
-                Akun berhasil dibuat! Kami telah mengirimkan link verifikasi ke <strong className="text-[#FF5FA2] break-all">{form.email}</strong>.
-                Silakan periksa kotak masuk (atau folder spam) dan klik link tersebut untuk mengaktifkan akun Anda sebelum masuk.
+                Akun Anda telah **aktif secara instan**! Anda dapat langsung masuk sekarang. 
+                Kami juga telah mengirimkan email selamat datang ke <strong className="text-[#FF5FA2] break-all">{form.email}</strong> menggunakan **Resend**.
               </p>
               <Link
                 href="/auth/login"
                 className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-xl shadow-[#FF5FA2]/25 hover:shadow-[#FF5FA2]/40 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center"
               >
-                Kembali ke Halaman Masuk
+                Masuk Sekarang
               </Link>
             </div>
           ) : (
