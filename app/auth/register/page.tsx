@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, AlertCircle, ArrowLeft, Mail, Lock, User, AtSign, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, AlertCircle, ArrowLeft, Mail, Lock, User, AtSign, CheckCircle2, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -32,6 +32,41 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const [resendError, setResendError] = useState('');
+
+  const handleResendEmail = async () => {
+    setResendLoading(true);
+    setResendMessage('');
+    setResendError('');
+
+    try {
+      const res = await fetch('/api/auth/resend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: form.email,
+          name: form.name,
+          username: form.username,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        setResendError(result.error || 'Gagal mengirim ulang email.');
+      } else {
+        setResendMessage(result.message || 'Email berhasil dikirim ulang!');
+      }
+    } catch {
+      setResendError('Terjadi kesalahan koneksi.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleUsernameChange = (val: string) => {
     const sanitized = val.toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -128,12 +163,47 @@ export default function RegisterPage() {
                 Akun Anda telah <strong>aktif secara instan</strong>! Anda dapat langsung masuk sekarang. 
                 Kami juga telah mengirimkan email selamat datang ke <strong className="text-[#FF5FA2] break-all">{form.email}</strong> menggunakan <strong>Resend</strong>.
               </p>
+              
               <Link
                 href="/auth/login"
-                className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-xl shadow-[#FF5FA2]/25 hover:shadow-[#FF5FA2]/40 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center"
+                className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-xl shadow-[#FF5FA2]/25 hover:shadow-[#FF5FA2]/40 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center mb-4"
               >
                 Masuk Sekarang
               </Link>
+
+              <button
+                onClick={handleResendEmail}
+                disabled={resendLoading}
+                className="flex items-center justify-center gap-2 text-sm font-bold text-[#FF5FA2] hover:text-[#E8457E] disabled:opacity-50 transition-colors py-2 px-4 cursor-pointer"
+              >
+                {resendLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                Kirim Ulang Email Selamat Datang
+              </button>
+
+              <AnimatePresence>
+                {resendMessage && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-green-600 font-semibold mt-2"
+                  >
+                    {resendMessage}
+                  </motion.p>
+                )}
+                {resendError && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-red-500 font-semibold mt-2"
+                  >
+                    {resendError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <>
