@@ -74,11 +74,8 @@ export default function NfcHubPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl sm:text-2xl font-black text-[#18080F]">
-                        {locale === 'id' ? 'Gantungan Kunci OneTap' : 'OneTap Keychain'}
+                        {locale === 'id' ? 'Gantungan Kunci OneTap (Android & iOS)' : 'OneTap Keychain (Android & iOS)'}
                       </h3>
-                      <span className="text-[9px] font-black text-[#FF5FA2] uppercase bg-[#FF5FA2]/5 px-2 py-0.5 rounded-md border border-[#FF5FA2]/10 tracking-wider">
-                        iOS & Android
-                      </span>
                     </div>
                     
                     <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed">
@@ -127,11 +124,8 @@ export default function NfcHubPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl sm:text-2xl font-black text-[#18080F]">
-                        {locale === 'id' ? 'Tulis ke NFC Kosong' : 'Write to Blank NFC'}
+                        {locale === 'id' ? 'Tulis ke NFC Kosong (Khusus Android)' : 'Write to Blank NFC (Android Only)'}
                       </h3>
-                      <span className="text-[9px] font-black text-[#0ea5e9] uppercase bg-[#f0f9ff] px-2 py-0.5 rounded-md border border-[#e0f2fe] tracking-wider">
-                        Android Only
-                      </span>
                     </div>
 
                     <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed">
