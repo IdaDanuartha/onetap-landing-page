@@ -11,10 +11,10 @@ export default function NfcHubPage() {
   
   // Handlers for dynamic dictionary fallback
   const dNfc = dict[locale]?.dashboard?.nfc || {};
-  const hubTitle = locale === 'id' ? 'Konektivitas NFC OneTap' : 'OneTap NFC Connectivity';
+  const hubTitle = locale === 'id' ? 'Konektivitas Chip OneTap' : 'OneTap Chip Connectivity';
   const hubSubtitle = locale === 'id' 
-    ? 'Pilih metode untuk mengaktifkan dan mengelola gantungan kunci atau kartu NFC Anda.' 
-    : 'Choose a method to activate and manage your NFC keychains or cards.';
+    ? 'Pilih metode untuk mengaktifkan dan mengelola gantungan kunci atau kartu chip Anda.' 
+    : 'Choose a method to activate and manage your chip keychains or cards.';
 
   return (
     <div className="min-h-screen bg-[#FFF8F2] selection:bg-[#FF5FA2]/20 selection:text-[#FF5FA2]">
@@ -40,10 +40,10 @@ export default function NfcHubPage() {
           className="text-center space-y-4 mb-12 sm:mb-16 max-w-lg"
         >
           <span className="text-[10px] font-black text-[#FF5FA2] uppercase tracking-[0.25em] bg-[#FF5FA2]/5 border border-[#FF5FA2]/10 px-4 py-1.5 rounded-full inline-block">
-            NFC Connectivity
+            Chip Connectivity
           </span>
           <h2 className="text-3xl sm:text-4xl font-black text-[#18080F] tracking-tight leading-tight">
-            {dNfc.title || 'NFC Connections'}
+            {locale === 'id' ? 'Koneksi Chip' : 'Chip Connections'}
           </h2>
           <p className="text-gray-400 font-medium text-sm sm:text-base leading-relaxed">
             {hubSubtitle}
@@ -124,28 +124,28 @@ export default function NfcHubPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl sm:text-2xl font-black text-[#18080F]">
-                        {locale === 'id' ? 'Tulis ke NFC Kosong (Khusus Android)' : 'Write to Blank NFC (Android Only)'}
+                        {locale === 'id' ? 'Tulis ke Chip Kosong (Khusus Android)' : 'Write to Blank Chip (Android Only)'}
                       </h3>
                     </div>
 
                     <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed">
                       {locale === 'id'
-                        ? 'Punya kartu, gantungan kunci, atau stiker NFC kosong lainnya? Anda bisa merekam link profil digital Anda langsung ke dalam chip NFC fisik tersebut menggunakan sensor NFC di handphone Anda. (Hanya untuk HP Android dengan sensor NFC aktif dan browser Google Chrome).'
-                        : 'Have other blank NFC cards, keychains, or stickers? You can write your digital profile link directly onto any custom NFC chip using your phone\'s NFC sensor. (Requires an Android device with NFC enabled running Google Chrome browser).'}
+                        ? 'Punya kartu, gantungan kunci, atau stiker chip kosong lainnya? Anda bisa merekam link profil digital Anda langsung ke dalam chip fisik tersebut menggunakan fitur NFC di handphone Anda. (Hanya untuk HP Android dengan fitur NFC aktif dan browser Google Chrome).'
+                        : 'Have other blank cards, keychains, or chip stickers? You can write your digital profile link directly onto any custom chip using your phone\'s NFC feature. (Requires an Android device with NFC enabled running Google Chrome browser).'}
                     </p>
                   </div>
                 </div>
 
                 <div className="pt-8 flex items-center justify-between border-t border-[#0ea5e9]/5 mt-8 relative z-10">
                   <span className="text-xs font-black text-[#0ea5e9] group-hover:translate-x-1.5 transition-transform duration-300 flex items-center gap-2">
-                    {locale === 'id' ? 'Buka Penulis NFC' : 'Open NFC Writer'}
+                    {locale === 'id' ? 'Buka Penulis Chip' : 'Open Chip Writer'}
                     <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
                       →
                     </motion.span>
                   </span>
                   <div className="flex items-center gap-1 opacity-40">
                     <Smartphone className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Web NFC</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Web Chip</span>
                   </div>
                 </div>
 
