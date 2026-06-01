@@ -48,28 +48,28 @@ export const translations = {
         "Lebih dari sekadar kartu digital — OneTap adalah ekosistem identitas digital lengkap yang dibangun untuk profesional modern.",
       items: {
         setup: {
-          title: "Setup Instan",
-          desc: "Tayang dalam hitungan menit. Tidak perlu keahlian teknis — cukup tap, konfigurasi, dan bagikan identitas digital Anda ke dunia.",
+          title: "Setup Sangat Mudah",
+          desc: "Siap digunakan dalam hitungan menit tanpa ribet atau perlu paham coding. Cukup buat profil, lalu bagikan identitas digital Anda secara instan!",
         },
         security: {
-          title: "Keamanan Enterprise",
-          desc: "Enkripsi kelas bank dan kontrol privasi memastikan data Anda dan catatan kehadiran tim Anda tetap terlindungi.",
+          title: "Keamanan Tingkat Tinggi",
+          desc: "Perlindungan data terbaik dan enkripsi mutakhir memastikan seluruh data profil Anda serta data kehadiran tim tetap aman dan terlindungi.",
         },
         analytics: {
-          title: "Analitik Cerdas",
-          desc: "Dashboard real-time dengan wawasan mendalam tentang tayangan profil, jumlah tap, klik link, dan tren kehadiran.",
+          title: "Pantau Statistik Lengkap",
+          desc: "Pantau langsung berapa kali profil Anda dilihat, total tap gantungan kunci, klik pada tombol sosial media Anda, hingga laporan riwayat kehadiran secara real-time lewat dashboard Anda.",
         },
         everywhere: {
-          title: "Bekerja di Mana Saja",
-          desc: "NFC, kode QR, dan link langsung — profil Anda berfungsi di setiap perangkat, setiap OS, tanpa instalasi aplikasi apa pun.",
+          title: "Mudah Diakses di HP Mana Pun",
+          desc: "Lewat tap gantungan kunci, scan barcode, atau klik link — profil digital Anda bisa dibuka dengan mulus di HP Android maupun iPhone tanpa perlu download aplikasi tambahan.",
         },
         domain: {
-          title: "Domain Kustom",
-          desc: "Gunakan domain bermerek Anda sendiri atau link pintar kami. Kehadiran digital Anda, sepenuhnya disesuaikan dengan identitas brand Anda.",
+          title: "Bisa Pakai Domain Sendiri",
+          desc: "Hubungkan alamat website pribadi (domain kustom) Anda sendiri untuk memperkuat identitas brand Anda di internet. Sepenuhnya personal dan profesional!",
         },
         support: {
-          title: "Dukungan 24/7",
-          desc: "Tim dukungan khusus siap membantu Anda kapan saja. Bantuan prioritas untuk tim dan akun enterprise.",
+          title: "Bantuan Responsif 24/7",
+          desc: "Tim support kami selalu siap sedia membantu segala kebutuhan Anda kapan saja. Nikmati layanan prioritas khusus untuk akun bisnis dan instansi.",
         },
       },
     },
