@@ -184,17 +184,17 @@ export default function RegisterPage() {
           {isSuccess ? (
             <div className="flex flex-col items-center text-center py-4">
               <div className="w-16 h-16 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mb-6 text-green-500 shadow-lg shadow-green-500/10">
-                <CheckCircle2 className="w-8 h-8 animate-bounce" />
+                <Mail className="w-8 h-8 animate-pulse" />
               </div>
               <h2
                 className="text-2xl font-extrabold text-[#18080F] mb-4"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Registrasi Berhasil!
+                Verifikasi Email Anda
               </h2>
               <p className="text-gray-600 font-medium text-sm leading-relaxed mb-8">
-                Akun Anda telah <strong>aktif secara instan</strong>! Anda dapat langsung masuk sekarang. 
-                Kami juga telah mengirimkan email selamat datang ke <strong className="text-[#FF5FA2] break-all">{form.email}</strong> menggunakan <strong>Resend</strong>.
+                Akun berhasil dibuat! Kami telah mengirimkan link verifikasi ke <strong className="text-[#FF5FA2] break-all">{form.email}</strong>.
+                Silakan periksa kotak masuk (atau folder spam) dan klik link tersebut untuk mengaktifkan akun Anda sebelum masuk.
               </p>
               
               <Link
@@ -202,7 +202,7 @@ export default function RegisterPage() {
                 onClick={handleClearSuccessState}
                 className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-xl shadow-[#FF5FA2]/25 hover:shadow-[#FF5FA2]/40 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center mb-4"
               >
-                Masuk Sekarang
+                Kembali ke Halaman Masuk
               </Link>
 
               <button
@@ -215,7 +215,7 @@ export default function RegisterPage() {
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
-                Kirim Ulang Email Selamat Datang
+                Kirim Ulang Email Konfirmasi
               </button>
 
               <AnimatePresence>
