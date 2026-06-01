@@ -49,14 +49,17 @@ export async function POST(request: Request) {
       }
     });
 
-    if (linkError || !linkData?.properties?.action_link) {
+    if (linkError || !linkData?.properties?.hashed_token) {
       return NextResponse.json(
-        { error: 'Gagal membuat link konfirmasi: ' + (linkError?.message || 'Action link tidak ditemukan') },
+        { error: 'Gagal membuat link konfirmasi: ' + (linkError?.message || 'Token tidak ditemukan') },
         { status: 500 }
       );
     }
 
-    const actionLink = linkData.properties.action_link;
+    // Instead of using action_link directly (which is consumed by email pre-fetchers), 
+    // we use token_hash on a client-side confirm page to safely verify the user
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const actionLink = `${appUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=signup&next=/dashboard`;
 
     // 3. Send welcome/confirmation email using Resend
     if (process.env.RESEND_API_KEY) {

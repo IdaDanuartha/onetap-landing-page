@@ -30,16 +30,21 @@ export async function POST(request: Request) {
       }
     });
 
-    if (linkError || !data.properties?.action_link) {
+    if (linkError || !data.properties?.hashed_token) {
       console.error('[forgot-password] Error generating link:', linkError);
       return NextResponse.json({ error: 'Failed to generate reset link' }, { status: 500 });
     }
+
+    // Instead of using action_link directly (which is consumed by email pre-fetchers), 
+    // we use token_hash on a client-side confirm page to safely verify the user
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const actionLink = `${appUrl}/auth/confirm?token_hash=${data.properties.hashed_token}&type=recovery&next=/auth/reset-password`;
 
     // Send email via Resend
     await sendResetPasswordEmail({
       to: email,
       subject: 'Atur Ulang Password OneTap Kamu',
-      resetLink: data.properties.action_link
+      resetLink: actionLink
     });
 
     return NextResponse.json({ message: 'If an account exists with this email, you will receive a reset link.' });
