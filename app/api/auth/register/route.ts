@@ -43,13 +43,17 @@ export async function POST(request: Request) {
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'signup',
       email,
+      password, // Password is required for signup type link generation
       options: {
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`
       }
     });
 
-    if (linkError) {
-      return NextResponse.json({ error: 'Gagal membuat link konfirmasi: ' + linkError.message }, { status: 500 });
+    if (linkError || !linkData?.properties?.action_link) {
+      return NextResponse.json(
+        { error: 'Gagal membuat link konfirmasi: ' + (linkError?.message || 'Action link tidak ditemukan') },
+        { status: 500 }
+      );
     }
 
     const actionLink = linkData.properties.action_link;
