@@ -63,7 +63,9 @@ export default function DashboardPage() {
           slug: page?.slug || profile.username
         });
         setNewUsername(page?.slug || profile.username);
-        setPlan((profile.plan as PlanId) ?? 'starter');
+        const dbPlan = profile.plan;
+        const userPlan = dbPlan === 'free' ? 'starter' : (dbPlan as PlanId) ?? 'starter';
+        setPlan(userPlan);
         setExpiresAt(profile.plan_expires_at);
       }
 

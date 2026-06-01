@@ -173,7 +173,8 @@ export default function OneTapBuilderPage() {
 
       if (data.profile) {
         setUsername(data.profile.username ?? '');
-        const userPlan = (data.profile.plan as PlanId) ?? 'starter';
+        const dbPlan = data.profile.plan;
+        const userPlan = dbPlan === 'free' ? 'starter' : (dbPlan as PlanId) ?? 'starter';
         setPlan(userPlan);
         setExpiresAt(data.profile.plan_expires_at);
         setIsPro(userPlan === 'professional' || userPlan === 'education');

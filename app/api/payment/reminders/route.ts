@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     .select('email, plan, plan_expires_at')
     .gt('plan_expires_at', now.toISOString())
     .lt('plan_expires_at', in7Days)
-    .neq('plan', 'starter');
+    .not('plan', 'in', '("starter","free")');
 
   // Find users expiring in 1 day
   const { data: expiring1 } = await supabase
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
     .select('email, plan, plan_expires_at')
     .gt('plan_expires_at', now.toISOString())
     .lt('plan_expires_at', in1Day)
-    .neq('plan', 'starter');
+    .not('plan', 'in', '("starter","free")');
 
   const results: string[] = [];
 
