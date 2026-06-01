@@ -2,6 +2,7 @@ import Header from "./components/Header";
 import HeroSection from "./components/HeroSection";
 import FeaturesSection from "./components/FeaturesSection";
 import HowItWorksSection from "./components/HowItWorksSection";
+import FeaturedCatalogSection from "./components/FeaturedCatalogSection";
 import ProductsSection from "./components/ProductsSection";
 import UseCasesSection from "./components/UseCasesSection";
 // import NewFeaturesSection from "./components/NewFeaturesSection";
@@ -20,6 +21,7 @@ export default function Home() {
       <main>
         <HeroSection />
         <FeaturesSection />
+        <FeaturedCatalogSection />
         <HowItWorksSection />
         <ProductsSection />
         <UseCasesSection />

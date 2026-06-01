@@ -70,7 +70,7 @@ export default function Header() {
   const navLinks = [
     { label: t('nav.howItWorks'), href: "/#how-it-works" },
     { label: t('nav.scan'), href: "/write" },
-    { label: t('nav.products'), href: "https://lynk.id/onetap.charm" },
+    { label: t('nav.products'), href: "/products" },
     { label: t('nav.pricing'), href: "/pricing" },
   ];
 

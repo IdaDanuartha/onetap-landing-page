@@ -32,7 +32,7 @@ export default function HowItWorksSection() {
   ];
 
   return (
-    <AnimatedSection id="how-it-works" className="py-8 pb-20 bg-white">
+    <AnimatedSection id="how-it-works" className="py-8 pb-24 bg-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <motion.div variants={fadeInUp} className="text-center mb-16">
