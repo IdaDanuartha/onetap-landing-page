@@ -74,7 +74,7 @@ export default function NfcHubPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl sm:text-2xl font-black text-[#18080F]">
-                        {locale === 'id' ? 'Gantungan Kunci Dinamis' : 'Dynamic Keychains'}
+                        {locale === 'id' ? 'Gantungan Kunci OneTap' : 'OneTap Keychain'}
                       </h3>
                       <span className="text-[9px] font-black text-[#FF5FA2] uppercase bg-[#FF5FA2]/5 px-2 py-0.5 rounded-md border border-[#FF5FA2]/10 tracking-wider">
                         iOS & Android
@@ -83,8 +83,8 @@ export default function NfcHubPage() {
                     
                     <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed">
                       {locale === 'id'
-                        ? 'Kelola gantungan kunci pre-programmed OneTap. Daftarkan kode keychain Anda lalu ubah link redirect (IG, Porto, WA, Kontak, Wi-Fi) kapan saja secara instan, tanpa perlu menulis ulang chip.'
-                        : 'Manage your pre-programmed OneTap keychains. Claim your keychain code and instantly update redirects (IG, Porto, WA, Contacts, Wi-Fi) on the fly, without physically rewriting the tag.'}
+                        ? 'Kelola gantungan kunci resmi OneTap Anda secara online. Cukup masukkan kode unik gantungan kunci Anda, lalu atur atau ganti tujuan link (Instagram, WhatsApp, Portofolio, dll.) kapan saja secara instan dan mudah dari HP iPhone maupun Android!'
+                        : 'Manage your official OneTap keychains online. Simply claim your unique code, and instantly update where the keychain points (Instagram, WhatsApp, Portfolio, etc.) anytime — quick, easy, and fully compatible with both iPhone and Android!'}
                     </p>
                   </div>
                 </div>
@@ -127,7 +127,7 @@ export default function NfcHubPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl sm:text-2xl font-black text-[#18080F]">
-                        {locale === 'id' ? 'Penulis Tag Fisik' : 'Physical Tag Writer'}
+                        {locale === 'id' ? 'Tulis ke NFC Kosong' : 'Write to Blank NFC'}
                       </h3>
                       <span className="text-[9px] font-black text-[#0ea5e9] uppercase bg-[#f0f9ff] px-2 py-0.5 rounded-md border border-[#e0f2fe] tracking-wider">
                         Android Only
@@ -136,8 +136,8 @@ export default function NfcHubPage() {
 
                     <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed">
                       {locale === 'id'
-                        ? 'Tulis data NDEF mentah secara langsung ke chip NFC kosong Anda (NTAG213/215/216) menggunakan pemindai browser Web NFC. Membutuhkan perangkat Android dan Chrome dengan NFC aktif.'
-                        : 'Write direct NDEF records directly onto empty NFC chips (NTAG213/215/216) using browser Web NFC capabilities. Requires an Android device running Google Chrome with NFC enabled.'}
+                        ? 'Punya kartu, gantungan kunci, atau stiker NFC kosong lainnya? Anda bisa merekam link profil digital Anda langsung ke dalam chip NFC fisik tersebut menggunakan sensor NFC di handphone Anda. (Hanya untuk HP Android dengan sensor NFC aktif dan browser Google Chrome).'
+                        : 'Have other blank NFC cards, keychains, or stickers? You can write your digital profile link directly onto any custom NFC chip using your phone\'s NFC sensor. (Requires an Android device with NFC enabled running Google Chrome browser).'}
                     </p>
                   </div>
                 </div>
