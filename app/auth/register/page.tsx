@@ -125,8 +125,8 @@ export default function RegisterPage() {
                 Registrasi Berhasil!
               </h2>
               <p className="text-gray-600 font-medium text-sm leading-relaxed mb-8">
-                Akun Anda telah **aktif secara instan**! Anda dapat langsung masuk sekarang. 
-                Kami juga telah mengirimkan email selamat datang ke <strong className="text-[#FF5FA2] break-all">{form.email}</strong> menggunakan **Resend**.
+                Akun Anda telah <strong>aktif secara instan</strong>! Anda dapat langsung masuk sekarang. 
+                Kami juga telah mengirimkan email selamat datang ke <strong className="text-[#FF5FA2] break-all">{form.email}</strong> menggunakan <strong>Resend</strong>.
               </p>
               <Link
                 href="/auth/login"
