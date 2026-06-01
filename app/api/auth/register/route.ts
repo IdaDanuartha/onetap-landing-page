@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
-          from: 'OneTap <onboarding@resend.dev>', // Resend verified testing sender
+          from: 'OneTap <no-reply@onetap-charm.com>', // Resend verified testing sender
           to: email,
           subject: 'Selamat Datang di OneTap!',
           html: `
