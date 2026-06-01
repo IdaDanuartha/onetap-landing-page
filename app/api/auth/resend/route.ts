@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
+// Simple in-memory rate limiter: key is email, value is timestamp of last send
+const resendCooldowns = new Map<string, number>();
+const COOLDOWN_MS = 60000; // 60 seconds cooldown between resend requests
+
 export async function POST(request: Request) {
   try {
     const { email, name, username } = await request.json();
 
     if (!email || !name || !username) {
       return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
+    }
+
+    // Rate Limiting Check
+    const now = Date.now();
+    const lastSendTime = resendCooldowns.get(email.toLowerCase());
+    if (lastSendTime && now - lastSendTime < COOLDOWN_MS) {
+      const remainingSec = Math.ceil((COOLDOWN_MS - (now - lastSendTime)) / 1000);
+      return NextResponse.json(
+        { error: `Harap tunggu ${remainingSec} detik lagi sebelum mengirim ulang email.` },
+        { status: 429 }
+      );
     }
 
     if (!process.env.RESEND_API_KEY) {
@@ -57,6 +72,9 @@ export async function POST(request: Request) {
         </div>
       `
     });
+
+    // Update cooldown on successful send
+    resendCooldowns.set(email.toLowerCase(), now);
 
     return NextResponse.json({ success: true, message: 'Email berhasil dikirim ulang!' });
   } catch (error: any) {
