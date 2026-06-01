@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Zap, Menu, X, ChevronRight, Globe, Play, User, Users, LogOut, LayoutDashboard, MessageCircle, Link2, QrCode } from "lucide-react";
+import { Zap, Menu, X, ChevronRight, Globe, Play, User, LogOut, LayoutDashboard, QrCode, ShoppingBag, CreditCard, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { usePathname } from "next/navigation";
@@ -261,8 +261,8 @@ export default function Header() {
                       <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-[#FF5FA2]/10 transition-colors">
                         {link.label === t('nav.howItWorks') && <Play className="w-4 h-4 text-[#FF5FA2]" />}
                         {link.label === t('nav.scan') && <QrCode className="w-4 h-4 text-[#FF5FA2]" />}
-                        {link.label === t('nav.products') && <Link2 className="w-4 h-4 text-[#FF5FA2]" />}
-                        {link.label === t('nav.pricing') && <Users className="w-4 h-4 text-[#FF5FA2]" />}
+                        {link.label === t('nav.products') && <ShoppingBag className="w-4 h-4 text-[#FF5FA2]" />}
+                        {link.label === t('nav.pricing') && <CreditCard className="w-4 h-4 text-[#FF5FA2]" />}
                       </div>
                       <span className="text-[17px] font-bold text-[#18080F] tracking-tight">
                         {link.label}
@@ -297,7 +297,11 @@ export default function Header() {
                     className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-[#FF5FA2]/10 transition-colors">
-                      <LayoutDashboard className="w-4 h-4 text-gray-400 group-hover:text-[#FF5FA2]" />
+                      {user ? (
+                        <LayoutDashboard className="w-4 h-4 text-gray-400 group-hover:text-[#FF5FA2]" />
+                      ) : (
+                        <LogIn className="w-4 h-4 text-gray-400 group-hover:text-[#FF5FA2]" />
+                      )}
                     </div>
                     <span className="text-[17px] font-bold text-[#18080F] tracking-tight">
                       {user ? "Dashboard" : t('common.login')}
