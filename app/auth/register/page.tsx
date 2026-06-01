@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -35,6 +35,32 @@ export default function RegisterPage() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
   const [resendError, setResendError] = useState('');
+
+  // Restore success state on page refresh
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const success = sessionStorage.getItem('register_success');
+      if (success === 'true') {
+        setIsSuccess(true);
+        setForm({
+          name: sessionStorage.getItem('register_name') || '',
+          email: sessionStorage.getItem('register_email') || '',
+          username: sessionStorage.getItem('register_username') || '',
+          password: '',
+        });
+      }
+    }
+  }, []);
+
+  const handleClearSuccessState = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('register_success');
+      sessionStorage.removeItem('register_email');
+      sessionStorage.removeItem('register_name');
+      sessionStorage.removeItem('register_username');
+    }
+    setIsSuccess(false);
+  };
 
   const handleResendEmail = async () => {
     setResendLoading(true);
@@ -110,6 +136,12 @@ export default function RegisterPage() {
       }
 
       // Since email is auto-confirmed, they are registered successfully!
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('register_success', 'true');
+        sessionStorage.setItem('register_email', form.email);
+        sessionStorage.setItem('register_name', form.name);
+        sessionStorage.setItem('register_username', form.username);
+      }
       setIsSuccess(true);
     } catch {
       setError('Terjadi kesalahan. Coba lagi.');
@@ -136,6 +168,7 @@ export default function RegisterPage() {
       {/* Back to Home */}
       <Link
         href="/"
+        onClick={handleClearSuccessState}
         className="absolute top-8 left-8 flex items-center gap-2 text-[#18080F]/60 hover:text-[#FF5FA2] transition-colors font-medium text-sm group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -166,6 +199,7 @@ export default function RegisterPage() {
               
               <Link
                 href="/auth/login"
+                onClick={handleClearSuccessState}
                 className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-xl shadow-[#FF5FA2]/25 hover:shadow-[#FF5FA2]/40 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center mb-4"
               >
                 Masuk Sekarang
