@@ -357,7 +357,7 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-1.5 text-sm font-bold text-gray-500">
                     <Calendar className="w-3.5 h-3.5 text-[#FF5FA2]" />
                     {expiresAt 
-                      ? `${t('dashboard.planInfo.expiresAt')} ${new Date(expiresAt).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                      ? `${t('dashboard.planInfo.expiresAt')} ${new Date(expiresAt.includes(' ') && !expiresAt.includes('T') ? expiresAt.replace(' ', 'T') : expiresAt).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`
                       : t('dashboard.planInfo.neverExpires')
                     }
                   </div>

@@ -20,6 +20,10 @@ export interface CustomThemeData {
   bgImage?: string;
   buttonStyle?: 'rounded-xl' | 'rounded-full' | 'rounded-none' | 'glass';
   layout?: 'classic' | 'compact' | 'grid';
+  titleColor?: string;
+  bioColor?: string;
+  showBranding?: boolean;
+  socialLinks?: { platform: string; url: string }[];
 }
 
 export const themes: Template[] = [

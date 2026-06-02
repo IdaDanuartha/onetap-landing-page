@@ -137,8 +137,20 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
             <User className="w-12 h-12 opacity-20" />
           </div>
         )}
-        <h1 className={`text-2xl font-black mb-1 ${theme.text}`}>{profile.display_name ?? username}</h1>
-        {profile.bio && <p className={`text-sm opacity-60 ${theme.bio}`}>{profile.bio}</p>}
+        <h1 
+          className={`text-2xl font-black mb-1 ${customData?.titleColor ? '' : theme.text}`}
+          style={customData?.titleColor ? { color: customData.titleColor } : undefined}
+        >
+          {profile.display_name ?? username}
+        </h1>
+        {profile.bio && (
+          <p 
+            className={`text-sm opacity-60 ${customData?.bioColor ? '' : theme.bio}`}
+            style={customData?.bioColor ? { color: customData.bioColor } : undefined}
+          >
+            {profile.bio}
+          </p>
+        )}
       </div>
 
       {/* Links */}
@@ -171,12 +183,40 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
         })}
       </div>
 
+      {/* Social Links */}
+      {customData?.socialLinks && customData.socialLinks.length > 0 && (
+        <div className="flex items-center justify-center gap-5 mt-8 flex-wrap max-w-xl w-full">
+          {customData.socialLinks.map((social: { platform: string; url: string }, index: number) => {
+            const IconComponent = iconMap[social.platform];
+            if (!IconComponent) return null;
+            return (
+              <a
+                key={index}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`opacity-80 hover:opacity-100 transition-opacity ${customData?.titleColor ? '' : theme.text}`}
+                style={customData?.titleColor ? { color: customData.titleColor } : undefined}
+              >
+                <IconComponent className="w-6 h-6" />
+              </a>
+            );
+          })}
+        </div>
+      )}
+
       {/* Branding */}
-      <div className="mt-auto pt-12 text-center opacity-40">
-        <Link href="/" className={`text-[10px] font-black tracking-[0.2em] uppercase ${theme.text}`}>
-          Powered by OneTap
-        </Link>
-      </div>
+      {customData?.showBranding !== false && (
+        <div className="mt-auto pt-12 text-center opacity-40">
+          <Link 
+            href="/" 
+            className={`text-[10px] font-black tracking-[0.2em] uppercase ${customData?.titleColor ? '' : theme.text}`}
+            style={customData?.titleColor ? { color: customData.titleColor } : undefined}
+          >
+            Powered by OneTap
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

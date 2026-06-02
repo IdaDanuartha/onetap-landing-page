@@ -217,12 +217,13 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
         options: {
           arrowColor: "rgba(45, 16, 32, 0.95)",
           overlayColor: "rgba(24, 8, 15, 0.65)",
-          zIndex: 10000,
+          zIndex: 99999,
         },
         spotlight: {
           borderRadius: 20,
           border: "2px solid #FF5FA2",
           boxShadow: "0 0 15px rgba(255, 95, 162, 0.5)",
+          zIndex: 99998,
         },
       } as any}
     />

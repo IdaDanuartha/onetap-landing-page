@@ -9,8 +9,12 @@ export default function WhatsAppWidget() {
   const { t } = useLanguage();
   const pathname = usePathname();
 
-  // Hide on dashboard pages
-  if (pathname?.startsWith('/dashboard')) {
+  // Hide on dashboard, public profile pages (/l/), and payment pages (/pay/)
+  if (
+    pathname?.startsWith('/dashboard') || 
+    pathname?.startsWith('/l/') || 
+    pathname?.startsWith('/pay/')
+  ) {
     return null;
   }
 

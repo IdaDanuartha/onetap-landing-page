@@ -57,14 +57,24 @@ export function OneTapPreview({ profile, links, theme }: OneTapPreviewProps) {
 
       {/* Name */}
       {profile.title ? (
-        <p className={`font-bold text-sm text-center ${t.text}`}>{profile.title}</p>
+        <p 
+          className={`font-bold text-sm text-center ${customData?.titleColor ? '' : t.text}`}
+          style={customData?.titleColor ? { color: customData.titleColor } : undefined}
+        >
+          {profile.title}
+        </p>
       ) : (
         <p className="font-bold text-sm text-center text-gray-300">Nama Kamu</p>
       )}
 
       {/* Bio */}
       {profile.bio && (
-        <p className={`text-xs text-center mt-1 max-w-[200px] leading-relaxed ${t.bio}`}>{profile.bio}</p>
+        <p 
+          className={`text-xs text-center mt-1 max-w-[200px] leading-relaxed ${customData?.bioColor ? '' : t.bio}`}
+          style={customData?.bioColor ? { color: customData.bioColor } : undefined}
+        >
+          {profile.bio}
+        </p>
       )}
 
       {/* Links */}
@@ -94,8 +104,34 @@ export function OneTapPreview({ profile, links, theme }: OneTapPreviewProps) {
         )}
       </div>
 
+      {/* Social Links */}
+      {customData?.socialLinks && customData.socialLinks.length > 0 && (
+        <div className="flex items-center justify-center gap-3 mt-6 flex-wrap max-w-[240px]">
+          {customData.socialLinks.map((social: { platform: string; url: string }, index: number) => {
+            const IconComponent = iconMap[social.platform];
+            if (!IconComponent) return null;
+            return (
+              <div
+                key={index}
+                className={`opacity-70 hover:opacity-100 transition-opacity ${customData?.titleColor ? '' : t.text}`}
+                style={customData?.titleColor ? { color: customData.titleColor } : undefined}
+              >
+                <IconComponent className="w-4 h-4" />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Branding */}
-      <p className={`mt-auto pt-6 text-[10px] ${t.text} opacity-40`}>Powered by OneTap</p>
+      {customData?.showBranding !== false && (
+        <p 
+          className={`mt-auto pt-6 text-[10px] ${customData?.titleColor ? '' : t.text} opacity-40`}
+          style={customData?.titleColor ? { color: customData.titleColor } : undefined}
+        >
+          Powered by OneTap
+        </p>
+      )}
     </div>
   );
 }

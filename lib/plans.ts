@@ -81,7 +81,15 @@ export type FeatureKey = keyof (typeof PLANS)['starter']['features'];
 /** Check if a plan is expired */
 export function isExpired(expiresAt: string | null | undefined): boolean {
   if (!expiresAt) return false;
-  return new Date(expiresAt) < new Date();
+  
+  // Replace space with 'T' to ensure compatibility with all browsers (Safari, Firefox, etc.)
+  const normalized = expiresAt.includes(' ') && !expiresAt.includes('T')
+    ? expiresAt.replace(' ', 'T')
+    : expiresAt;
+    
+  const parsedDate = new Date(normalized);
+  if (isNaN(parsedDate.getTime())) return false; // Default to not expired if invalid date
+  return parsedDate < new Date();
 }
 
 /** Check if a plan has access to a specific feature */

@@ -14,6 +14,7 @@ import { themes, templates } from '@/lib/themes';
 import { SortableLinkCard } from '@/app/components/linktree/SortableLinkCard';
 import type { LinkItem } from '@/app/components/linktree/SortableLinkCard';
 import { OneTapPreview } from '@/app/components/linktree/OneTapPreview';
+import { iconMap } from '@/app/components/linktree/IconPicker';
 import Toast from '@/app/components/Toast';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { dict } from '@/lib/i18n/dict';
@@ -23,6 +24,20 @@ import nextDynamic from 'next/dynamic';
 const GuidedTour = nextDynamic(() => import('@/app/components/GuidedTour'), { ssr: false });
 
 export const dynamic = 'force-dynamic';
+
+const SOCIAL_PLATFORMS = [
+  { id: 'instagram', label: 'Instagram', placeholder: '@username atau URL' },
+  { id: 'whatsapp', label: 'WhatsApp', placeholder: 'Nomor WhatsApp (mis: 62812...)' },
+  { id: 'tiktok', label: 'TikTok', placeholder: '@username atau URL' },
+  { id: 'youtube', label: 'YouTube', placeholder: '@username atau URL' },
+  { id: 'twitter', label: 'Twitter/X', placeholder: '@username atau URL' },
+  { id: 'linkedin', label: 'LinkedIn', placeholder: 'username atau URL' },
+  { id: 'facebook', label: 'Facebook', placeholder: 'username atau URL' },
+  { id: 'github', label: 'GitHub', placeholder: 'username atau URL' },
+  { id: 'email', label: 'Email', placeholder: 'alamat email' },
+  { id: 'phone', label: 'Telepon', placeholder: 'Nomor telepon' },
+  { id: 'website', label: 'Website', placeholder: 'https://example.com' },
+];
 
 export default function OneTapBuilderPage() {
   const router = useRouter();
@@ -62,6 +77,35 @@ export default function OneTapBuilderPage() {
   const [customBgImage, setCustomBgImage] = useState('');
   const [customButtonStyle, setCustomButtonStyle] = useState<'rounded-xl' | 'rounded-full' | 'rounded-none' | 'glass' | ''>('');
   const [customLayout, setCustomLayout] = useState<'classic' | 'compact' | 'grid' | ''>('');
+  const [customTitleColor, setCustomTitleColor] = useState('');
+  const [customBioColor, setCustomBioColor] = useState('');
+  const [showBranding, setShowBranding] = useState(true);
+  const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
+  const [activeSocialTab, setActiveSocialTab] = useState<string>('instagram');
+
+  const setSocialUrl = (platform: string, value: string) => {
+    setSocialLinks(prev => {
+      const filtered = prev.filter(s => s.platform !== platform);
+      if (!value.trim()) return filtered;
+      let url = value.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        if (platform === 'instagram') url = `https://instagram.com/${url.replace('@', '')}`;
+        else if (platform === 'twitter') url = `https://x.com/${url.replace('@', '')}`;
+        else if (platform === 'tiktok') url = `https://tiktok.com/@${url.replace('@', '')}`;
+        else if (platform === 'youtube') url = `https://youtube.com/@${url.replace('@', '')}`;
+        else if (platform === 'github') url = `https://github.com/${url.replace('@', '')}`;
+        else if (platform === 'facebook') url = `https://facebook.com/${url}`;
+        else if (platform === 'linkedin') url = `https://linkedin.com/in/${url}`;
+        else if (platform === 'whatsapp') {
+          const cleanNum = url.replace(/\D/g, '');
+          url = `https://wa.me/${cleanNum}`;
+        }
+        else if (platform === 'email') url = `mailto:${url}`;
+        else if (platform === 'phone') url = `tel:${url}`;
+      }
+      return [...filtered, { platform, url }];
+    });
+  };
   const [uploadingBg, setUploadingBg] = useState(false);
   const fileInputBgRef = useRef<HTMLInputElement>(null);
 
@@ -70,16 +114,20 @@ export default function OneTapBuilderPage() {
     if (!hasPremiumAccess) {
       return selectedTheme;
     }
-    if (customBgImage || customButtonStyle || customLayout) {
+    if (customBgImage || customButtonStyle || customLayout || customTitleColor || customBioColor || !showBranding || (socialLinks && socialLinks.length > 0)) {
       return `custom:${JSON.stringify({
         themeId: selectedTheme,
         bgImage: customBgImage || undefined,
         buttonStyle: customButtonStyle || undefined,
         layout: customLayout || undefined,
+        titleColor: customTitleColor || undefined,
+        bioColor: customBioColor || undefined,
+        showBranding: showBranding,
+        socialLinks: socialLinks.length > 0 ? socialLinks : undefined,
       })}`;
     }
     return selectedTheme;
-  }, [selectedTheme, customBgImage, customButtonStyle, customLayout, hasPremiumAccess]);
+  }, [selectedTheme, customBgImage, customButtonStyle, customLayout, customTitleColor, customBioColor, showBranding, socialLinks, hasPremiumAccess]);
 
   // Filter exactly 4 basic and exactly 4 premium themes for dashboard main display
   const displayedThemes = useMemo(() => {
@@ -92,6 +140,18 @@ export default function OneTapBuilderPage() {
   const [runTour, setRunTour] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
   const [tourKey, setTourKey] = useState(0);
+
+  // Diagnostic logs
+  useEffect(() => {
+    if (!loading) {
+      console.log('[OneTap Builder] Plan status initialized:', {
+        plan,
+        expiresAt,
+        hasPremiumAccess,
+        isPro
+      });
+    }
+  }, [loading, plan, expiresAt, hasPremiumAccess, isPro]);
 
   useEffect(() => {
     if (!loading) {
@@ -201,8 +261,10 @@ export default function OneTapBuilderPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/auth/login'); return; }
 
-    const url = pageId ? `/api/linktree/save?pageId=${pageId}` : '/api/linktree/save';
-    const res = await fetch(url);
+    const url = pageId 
+      ? `/api/linktree/save?pageId=${pageId}&_t=${Date.now()}` 
+      : `/api/linktree/save?_t=${Date.now()}`;
+    const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       
@@ -212,6 +274,11 @@ export default function OneTapBuilderPage() {
       }
 
       if (data.profile) {
+        console.log('[loadData] Loaded profile plan details:', {
+          plan: data.profile.plan,
+          expires_at: data.profile.plan_expires_at,
+          email: data.profile.email
+        });
         setUsername(data.profile.username ?? '');
         const dbPlan = data.profile.plan;
         const userPlan = dbPlan === 'free' ? 'starter' : (dbPlan as PlanId) ?? 'starter';
@@ -238,6 +305,10 @@ export default function OneTapBuilderPage() {
             setCustomBgImage(customData.bgImage ?? '');
             setCustomButtonStyle(customData.buttonStyle ?? '');
             setCustomLayout(customData.layout ?? '');
+            setCustomTitleColor(customData.titleColor ?? '');
+            setCustomBioColor(customData.bioColor ?? '');
+            setShowBranding(customData.showBranding !== false);
+            setSocialLinks(customData.socialLinks ?? []);
           } catch (e) {
             console.error('Failed to parse loaded custom theme:', e);
             setSelectedTheme(dbThemeId);
@@ -247,6 +318,10 @@ export default function OneTapBuilderPage() {
           setCustomBgImage('');
           setCustomButtonStyle('');
           setCustomLayout('');
+          setCustomTitleColor('');
+          setCustomBioColor('');
+          setShowBranding(true);
+          setSocialLinks([]);
         }
       } else {
         // If no page exists yet, set slug to username as default
@@ -265,6 +340,12 @@ export default function OneTapBuilderPage() {
             clickCount: l.click_count,
           }))
         );
+      }
+    } else if (res.status === 404) {
+      if (pageId) {
+        localStorage.removeItem('onetap_last_active_page_id');
+        loadData();
+        return;
       }
     }
     setLoading(false);
@@ -385,6 +466,10 @@ export default function OneTapBuilderPage() {
     setCustomBgImage('');
     setCustomButtonStyle('');
     setCustomLayout('');
+    setCustomTitleColor('');
+    setCustomBioColor('');
+    setShowBranding(true);
+    setSocialLinks([]);
     setSlug(''); // User will need to enter a new slug
   };
 
@@ -1260,7 +1345,157 @@ export default function OneTapBuilderPage() {
                     </div>
                   </div>
 
-                  {(customBgImage || customButtonStyle || customLayout) && (
+                  <div className="h-px bg-gray-100 my-6" />
+
+                  {/* Colors & Branding Toggle */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Text Colors */}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Title Text Color */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest">
+                            {locale === 'id' ? 'Warna Judul' : 'Title Text Color'}
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={customTitleColor || '#18080F'}
+                              onChange={(e) => setCustomTitleColor(e.target.value)}
+                              className="w-9 h-9 rounded-xl border border-[#F6B7C8]/25 cursor-pointer shrink-0 overflow-hidden"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Default"
+                              value={customTitleColor}
+                              onChange={(e) => setCustomTitleColor(e.target.value)}
+                              className="flex-1 h-9 px-3 rounded-lg border border-[#F6B7C8]/10 bg-[#FFF8F2]/30 focus:bg-white text-xs font-bold font-mono text-[#18080F]"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Bio Text Color */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest">
+                            {locale === 'id' ? 'Warna Bio' : 'Bio Text Color'}
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={customBioColor || '#666666'}
+                              onChange={(e) => setCustomBioColor(e.target.value)}
+                              className="w-9 h-9 rounded-xl border border-[#F6B7C8]/25 cursor-pointer shrink-0 overflow-hidden"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Default"
+                              value={customBioColor}
+                              onChange={(e) => setCustomBioColor(e.target.value)}
+                              className="flex-1 h-9 px-3 rounded-lg border border-[#F6B7C8]/10 bg-[#FFF8F2]/30 focus:bg-white text-xs font-bold font-mono text-[#18080F]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Branding Copyright Toggle */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#F6B7C8]/10 shadow-sm shrink-0 self-center">
+                      <div className="flex flex-col gap-0.5 max-w-[70%]">
+                        <span className="text-xs font-black text-[#18080F] uppercase tracking-wider">
+                          {locale === 'id' ? 'Branding OneTap' : 'OneTap Branding'}
+                        </span>
+                        <span className="text-[9px] font-medium text-gray-400 leading-tight">
+                          {locale === 'id' ? 'Tampilkan "Powered by OneTap" di bawah' : 'Show "Powered by OneTap" at bottom'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowBranding(!showBranding)}
+                        className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 focus:outline-none shrink-0 cursor-pointer ${
+                          showBranding ? 'bg-[#FF5FA2]' : 'bg-gray-200'
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                            showBranding ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-gray-100 my-6" />
+
+                  {/* Social Links Configurator */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest">
+                      {locale === 'id' ? 'Tautan Sosial Media Bawah' : 'Bottom Social Media Links'}
+                    </label>
+                    <p className="text-[10px] font-medium text-gray-400">
+                      {locale === 'id' 
+                        ? 'Aktifkan ikon sosial media horizontal di bawah tombol tautan utama' 
+                        : 'Enable horizontal social media icons below the main link buttons'}
+                    </p>
+                    
+                    {/* Platform Selection Row */}
+                    <div className="flex flex-wrap gap-2.5 p-2 bg-gray-50 border border-gray-100 rounded-2xl">
+                      {SOCIAL_PLATFORMS.map((platform) => {
+                        const IconComponent = iconMap[platform.id];
+                        const hasValue = socialLinks.some(s => s.platform === platform.id);
+                        const isSelected = activeSocialTab === platform.id;
+                        return (
+                          <button
+                            key={platform.id}
+                            type="button"
+                            onClick={() => setActiveSocialTab(platform.id)}
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected 
+                                ? 'border-[#FF5FA2] bg-[#FF5FA2] text-white shadow-md shadow-[#FF5FA2]/20'
+                                : hasValue
+                                  ? 'border-green-400 bg-green-50 text-green-600'
+                                  : 'border-gray-200 bg-white hover:border-[#FF5FA2]/25 text-gray-400 hover:text-gray-600'
+                            }`}
+                            title={platform.label}
+                          >
+                            {IconComponent && <IconComponent className="w-4 h-4" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Active Platform Input */}
+                    {activeSocialTab && (
+                      <div className="p-4 rounded-2xl bg-[#FFF8F2]/30 border border-[#F6B7C8]/10 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-[#FF5FA2] uppercase tracking-widest flex items-center gap-1.5">
+                            {(() => {
+                              const IconComponent = iconMap[activeSocialTab];
+                              return IconComponent ? <IconComponent className="w-3.5 h-3.5" /> : null;
+                            })()}
+                            Tautan {SOCIAL_PLATFORMS.find(p => p.id === activeSocialTab)?.label}
+                          </span>
+                          {socialLinks.some(s => s.platform === activeSocialTab) && (
+                            <button
+                              type="button"
+                              onClick={() => setSocialUrl(activeSocialTab, '')}
+                              className="text-[9px] font-bold text-red-500 hover:underline uppercase cursor-pointer"
+                            >
+                              {locale === 'id' ? 'Hapus Tautan' : 'Remove Link'}
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          placeholder={SOCIAL_PLATFORMS.find(p => p.id === activeSocialTab)?.placeholder}
+                          value={socialLinks.find(s => s.platform === activeSocialTab)?.url || ''}
+                          onChange={(e) => setSocialUrl(activeSocialTab, e.target.value)}
+                          className="w-full h-10 px-3.5 rounded-xl border border-[#F6B7C8]/10 bg-white focus:bg-white focus:border-[#FF5FA2]/40 outline-none text-xs font-semibold text-[#18080F]"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {(customBgImage || customButtonStyle || customLayout || customTitleColor || customBioColor || !showBranding || socialLinks.length > 0) && (
                     <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
                       <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2.5 py-1 rounded-lg">
                         Kustomisasi premium diterapkan
@@ -1270,6 +1505,10 @@ export default function OneTapBuilderPage() {
                           setCustomBgImage('');
                           setCustomButtonStyle('');
                           setCustomLayout('');
+                          setCustomTitleColor('');
+                          setCustomBioColor('');
+                          setShowBranding(true);
+                          setSocialLinks([]);
                           setToastMsg('Pilihan kustomisasi premium direset.');
                           setToastType('info');
                           setShowToast(true);

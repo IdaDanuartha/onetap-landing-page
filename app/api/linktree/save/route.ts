@@ -169,15 +169,35 @@ export async function GET(req: Request) {
     }
 
     // 3. Load full data for the target page
-    const { data: page, error: pageError } = await supabase
+    let { data: page } = await supabase
       .from('linktree_pages')
       .select('*')
       .eq('id', targetPageId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (pageError || !page) {
-      return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+    if (!page) {
+      // Requested page not found or unauthorized. Let's fallback to user's pages.
+      if (pages && pages.length > 0) {
+        const firstPublished = pages.find(p => p.is_published);
+        targetPageId = (firstPublished ?? pages[0]).id;
+        const { data: fallbackPage } = await supabase
+          .from('linktree_pages')
+          .select('*')
+          .eq('id', targetPageId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        page = fallbackPage;
+      }
+    }
+
+    if (!page) {
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('username, display_name, avatar_url, plan, plan_expires_at')
+        .eq('id', user.id)
+        .single();
+      return NextResponse.json({ page: null, links: [], profile, pages: [] });
     }
 
     const { data: links } = await supabase
