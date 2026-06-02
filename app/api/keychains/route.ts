@@ -129,7 +129,7 @@ export async function POST(req: Request) {
 
     // --- ACTION: UPDATE ---
     if (action === 'update') {
-      const { id, label, active_mode, payload_data, link_password, tag_password } = body;
+      const { id, label, active_mode, payload_data, link_password } = body;
 
       if (!id) {
         return NextResponse.json({ error: 'ID keychain wajib diisi' }, { status: 400 });
@@ -152,6 +152,13 @@ export async function POST(req: Request) {
 
       const final_payload = { ...(payload_data || {}) };
 
+      // Preserve any existing tag_password (managed externally via NFC Tools)
+      if (existing.payload_data?.tag_password) {
+        final_payload.tag_password = existing.payload_data.tag_password;
+      } else {
+        delete final_payload.tag_password;
+      }
+
       // Handle Link Protection Password
       if (link_password === '••••••••' || link_password === '__KEEP_EXISTING__') {
         // Keep existing password hash if present
@@ -167,13 +174,6 @@ export async function POST(req: Request) {
       } else {
         // Remove protection password
         delete final_payload.link_password_hash;
-      }
-
-      // Handle NFC Tag Protection Password
-      if (tag_password && tag_password.trim() !== '') {
-        final_payload.tag_password = tag_password.trim();
-      } else {
-        delete final_payload.tag_password;
       }
 
       const { data: updated, error: updateError } = await supabase

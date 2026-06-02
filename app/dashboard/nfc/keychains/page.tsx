@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -106,8 +106,6 @@ export default function KeychainsManagerPage() {
   // Advanced Security states
   const [showSecurity, setShowSecurity] = useState(false);
   const [linkPassword, setLinkPassword] = useState('');
-  const [tagPassword, setTagPassword] = useState('');
-  const [showNfcPass, setShowNfcPass] = useState(false);
 
   // QR Scanner states & refs
   const [scanning, setScanning] = useState(false);
@@ -401,7 +399,6 @@ export default function KeychainsManagerPage() {
 
     // Pre-populate Advanced Security states
     setLinkPassword(payload.link_password_hash ? '••••••••' : '');
-    setTagPassword(payload.tag_password || '');
     setShowSecurity(false);
 
     if (kc.active_mode === 'app') {
@@ -504,8 +501,7 @@ export default function KeychainsManagerPage() {
           label: editLabel.trim(),
           active_mode: editMode,
           payload_data: editPayload,
-          link_password: linkPassword,
-          tag_password: tagPassword
+          link_password: linkPassword
         })
       });
 
@@ -521,7 +517,6 @@ export default function KeychainsManagerPage() {
         
         // Sync security fields in state
         setLinkPassword(data.keychain.payload_data?.link_password_hash ? '••••••••' : '');
-        setTagPassword(data.keychain.payload_data?.tag_password || '');
         
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
@@ -637,23 +632,13 @@ export default function KeychainsManagerPage() {
             } catch { /* ignore */ }
           }
 
-          // SECURITY CHECK: If the tag is protected, prompt immediately using our premium custom modal!
+          // SECURITY CHECK: If the tag is protected (has ot_p: record from a hardware NFC tool),
+          // prompt the user to provide the password before overwriting.
           let promptValue: string | null = null;
           if (isProtected) {
             let isValid = false;
 
-            // 1. Automatic Owner Authentication:
-            // Check if the tag's password matches the keychain's saved password in the database
-            const savedTagPass = kc.payload_data?.tag_password;
-            if (savedTagPass) {
-              const savedHash = await hashTagPassword(savedTagPass);
-              if (existingPassHash === savedHash) {
-                isValid = true;
-                promptValue = savedTagPass; // Automatically unlock using owner's saved password
-              }
-            }
-
-            // 2. Prompt user if not automatically authenticated
+            // Prompt user if tag is protected
             while (!isValid) {
               promptValue = await requestTagPassword();
               if (promptValue === null) {
@@ -699,16 +684,6 @@ export default function KeychainsManagerPage() {
           try {
             const writeUrl = `https://onetap-charm.com/r/${kc.token}`;
             const records: any[] = [{ recordType: 'url', data: writeUrl }];
-
-            const savedTagPass = kc.payload_data?.tag_password;
-            if (savedTagPass) {
-              const passHash = await hashTagPassword(savedTagPass);
-              records.push({ recordType: 'text', data: `ot_p:${passHash}` });
-            } else if (isProtected && promptValue) {
-              // Preserve the existing password lock
-              const passHash = await hashTagPassword(promptValue);
-              records.push({ recordType: 'text', data: `ot_p:${passHash}` });
-            }
 
             await ndef.write({ records });
             setNfcWriteStatus('success');
@@ -2441,58 +2416,47 @@ export default function KeychainsManagerPage() {
                               </span>
                             </div>
 
-                            {/* NFC Tag Protection Password */}
                             <div className="space-y-2">
                               <div className="flex items-center justify-between">
                                 <label className="text-xs font-bold text-slate-700">
-                                  {t('Password Kunci Tag NFC', 'NFC Tag Lock Password')}
+                                  {t('Kunci Hardware Tag NFC', 'NFC Tag Hardware Lock')}
                                 </label>
-                                <span className="bg-[#FF5FA2]/10 text-[#FF5FA2] text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                                  {t('Lock Tag', 'Lock Tag')}
+                                <span className="bg-blue-50 text-blue-600 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider border border-blue-100">
+                                  {t('Info', 'Info')}
                                 </span>
                               </div>
-                              <div className="relative">
-                                <input
-                                  type={showNfcPass ? 'text' : 'password'}
-                                  className="w-full h-11 pl-4 pr-10 rounded-xl bg-gray-50 border border-slate-200 focus:border-[#FF5FA2]/20 focus:bg-white outline-none transition-all text-xs font-bold text-[#18080F]"
-                                  value={tagPassword}
-                                  onChange={(e) => setTagPassword(e.target.value)}
-                                  placeholder={t('Password kunci software NFC...', 'NFC software lock password...')}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowNfcPass(!showNfcPass)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#FF5FA2] transition-colors"
-                                >
-                                  {showNfcPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
+                              <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl space-y-3">
+                                <div className="flex items-start gap-2.5">
+                                  <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                                  <p className="text-[10px] text-blue-700 font-semibold leading-relaxed">
+                                    {t(
+                                      'Untuk mencegah orang lain menimpa data chip NFC fisik Anda menggunakan aplikasi lain, gunakan fitur password hardware lock pada aplikasi NFC Tools.',
+                                      'To prevent others from overwriting your physical NFC chip data using other apps, use the hardware lock password feature in the NFC Tools app.'
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                                  <a
+                                    href="https://play.google.com/store/apps/details?id=com.wakdev.wdnfc"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 px-3 py-2 bg-white rounded-xl border border-blue-200 text-[10px] font-bold text-blue-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all group"
+                                  >
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.33.18.7.24 1.06.17L13.89 12 4.24.07C3.88 0 3.51.06 3.18.24 2.48.63 2 1.4 2 2.28v19.44c0 .88.48 1.65 1.18 2.04zM16.6 8.84l-2.3-2.3 2.3-2.29L20.54 12l-3.94 7.75-2.3-2.3 2.3-2.29L14.23 12l2.37-3.16zM5.44 1.95l11.8 6.41L14.95 10l-9.51-8.05zM5.44 22.05l9.51-8.05 2.29 1.64-11.8 6.41z"/></svg>
+                                    {t('NFC Tools — Android', 'NFC Tools — Android')}
+                                  </a>
+                                  <a
+                                    href="https://apps.apple.com/app/nfc-tools/id1252962749"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 px-3 py-2 bg-white rounded-xl border border-blue-200 text-[10px] font-bold text-blue-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all group"
+                                  >
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                                    {t('NFC Tools — iOS', 'NFC Tools — iOS')}
+                                  </a>
+                                </div>
                               </div>
-                              <span className="text-[9px] text-gray-400 font-medium leading-relaxed block">
-                                {t(
-                                  'Password ini akan digunakan sebagai referensi software lock untuk mencegah pihak ketiga menimpa data chip fisik NFC Anda.',
-                                  'This password acts as a software lock reference to prevent third parties from overwriting your physical NFC chip data.'
-                                )}
-                              </span>
-                              <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5 mt-2">
-                                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                                <p className="text-[10px] font-bold text-red-600 leading-normal">
-                                  {t(
-                                    'PENTING: Jangan sampai lupa password tag Anda! Jika lupa, tag Anda tidak akan bisa ditulis ulang kecuali dengan memformat paksa tag (yang akan menghapus seluruh data di dalamnya secara permanen).',
-                                    'WARNING: Do not forget your tag password! If forgotten, your tag cannot be rewritten unless you perform a force format (which will permanently erase all data inside it).'
-                                  )}
-                                </p>
-                              </div>
-                              <div className="pt-2 text-right">
-                                <button
-                                  type="button"
-                                  onClick={handleForceFormatDirect}
-                                  className="text-[10px] text-red-500 hover:text-red-600 font-bold hover:underline transition-all flex items-center gap-1.5 ml-auto"
-                                >
-                                  <Eraser className="w-3.5 h-3.5" />
-                                  {t('Lupa Password Tag? Format Paksa / Reset Tag', 'Forgot Password? Force Format / Reset Tag')}
-                                </button>
-                              </div>
-                            </div> 
+                            </div>
 
                           </div>
                         </motion.div>
