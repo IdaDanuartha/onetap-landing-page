@@ -141,13 +141,13 @@ export async function POST(
             break;
           }
           case 'location':
-            redirectUrl = `geo:${payload.lat || ''},${payload.lng || ''}`;
+            redirectUrl = `https://www.google.com/maps/search/?api=1&query=${payload.lat || ''},${payload.lng || ''}`;
             break;
           case 'navigation':
             redirectUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(payload.address || '')}`;
             break;
           case 'streetview':
-            redirectUrl = `google.streetview:cbll=${payload.lat || ''},${payload.lng || ''}`;
+            redirectUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${payload.lat || ''},${payload.lng || ''}`;
             break;
           case 'app': {
             const ua = req.headers.get('user-agent') || '';
@@ -170,8 +170,10 @@ export async function POST(
           redirectUrl === 'sms:' || 
           redirectUrl === 'mailto:' || 
           redirectUrl === 'geo:,' || 
+          redirectUrl === 'https://www.google.com/maps/search/?api=1&query=,' ||
           redirectUrl === 'https://www.google.com/maps/dir/?api=1&destination=' || 
           redirectUrl === 'google.streetview:cbll=,' || 
+          redirectUrl === 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=,' ||
           redirectUrl === 'intent://#Intent;package=;end';
 
         if (isEmptyUrl) {

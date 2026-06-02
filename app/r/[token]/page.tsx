@@ -68,8 +68,10 @@ export default function RedirectPage({ params }: RedirectPageProps) {
               data.url === 'sms:' || 
               data.url === 'mailto:' || 
               data.url === 'geo:,' || 
+              data.url === 'https://www.google.com/maps/search/?api=1&query=,' ||
               data.url === 'https://www.google.com/maps/dir/?api=1&destination=' || 
               data.url === 'google.streetview:cbll=,' || 
+              data.url === 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=,' ||
               data.url === 'intent://#Intent;package=;end';
 
             if (isEmptyUrl) {
@@ -152,8 +154,10 @@ export default function RedirectPage({ params }: RedirectPageProps) {
             data.url === 'sms:' || 
             data.url === 'mailto:' || 
             data.url === 'geo:,' || 
+            data.url === 'https://www.google.com/maps/search/?api=1&query=,' ||
             data.url === 'https://www.google.com/maps/dir/?api=1&destination=' || 
             data.url === 'google.streetview:cbll=,' || 
+            data.url === 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=,' ||
             data.url === 'intent://#Intent;package=;end';
 
           if (isEmptyUrl) {
