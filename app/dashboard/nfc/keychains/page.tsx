@@ -156,6 +156,7 @@ export default function KeychainsManagerPage() {
   const [nfcUnlockPassword, setNfcUnlockPassword] = useState('');
   const [showUnlockInput, setShowUnlockInput] = useState(false);
   const nfcWriteReaderRef = useRef<any>(null);
+  const processingNfcRef = useRef<boolean>(false);
 
   // Custom Tag Unlock Prompt State
   const [tagPrompt, setTagPrompt] = useState<{
@@ -599,105 +600,127 @@ export default function KeychainsManagerPage() {
   const handleStartNfcWrite = async (kc: Keychain, unlockPass?: string) => {
     setNfcWriteStatus('scanning');
     setNfcWriteError('');
+    processingNfcRef.current = false; // Reset lock on start
     try {
       const ndef = new (window as any).NDEFReader();
       nfcWriteReaderRef.current = ndef;
       await ndef.scan();
 
       ndef.onreading = async (event: any) => {
-        const message = event.message;
-        let isProtected = false;
-        let existingPassHash = '';
-        let isLegacyProtection = false;
-        let legacyPass = '';
+        // Concurrency Lock: block duplicate parallel triggers during prompt & write
+        if (processingNfcRef.current) return;
+        processingNfcRef.current = true;
 
-        for (const record of message.records) {
-          try {
-            const decoder = new TextDecoder();
-            const rawData = decoder.decode(record.data);
-            const otIndex = rawData.indexOf('ot_p:');
-            if (otIndex !== -1) {
-              isProtected = true;
-              existingPassHash = rawData.substring(otIndex + 5).replace(/[^a-fA-F0-9]/g, '').toLowerCase().substring(0, 64);
-              break;
-            }
-            const pMatch = rawData.match(/[?&]p=([^& \n\r\t]+)/);
-            if (pMatch) {
-              isProtected = true;
-              isLegacyProtection = true;
-              legacyPass = decodeURIComponent(pMatch[1]);
-            }
-          } catch { /* ignore */ }
-        }
+        try {
+          const message = event.message;
+          let isProtected = false;
+          let existingPassHash = '';
+          let isLegacyProtection = false;
+          let legacyPass = '';
 
-        // SECURITY CHECK: If the tag is protected, prompt immediately using our premium custom modal!
-        let promptValue: string | null = null;
-        if (isProtected) {
-          let isValid = false;
-          while (!isValid) {
-            promptValue = await requestTagPassword();
-            if (promptValue === null) {
-              setNfcWriteStatus('error');
-              setNfcWriteError(t('Penulisan dibatalkan.', 'Writing cancelled.'));
-              return;
-            }
+          for (const record of message.records) {
+            try {
+              const decoder = new TextDecoder();
+              const rawData = decoder.decode(record.data);
+              const otIndex = rawData.indexOf('ot_p:');
+              if (otIndex !== -1) {
+                isProtected = true;
+                existingPassHash = rawData.substring(otIndex + 5).replace(/[^a-fA-F0-9]/g, '').toLowerCase().substring(0, 64);
+                break;
+              }
+              const pMatch = rawData.match(/[?&]p=([^& \n\r\t]+)/);
+              if (pMatch) {
+                isProtected = true;
+                isLegacyProtection = true;
+                legacyPass = decodeURIComponent(pMatch[1]);
+              }
+            } catch { /* ignore */ }
+          }
 
-            if (promptValue === 'force_format_bypass') {
-              setNfcWriteStatus('writing');
-              try {
-                await ndef.write({ records: [{ recordType: 'empty' }] });
-                setNfcWriteStatus('success');
-                setTagPrompt({ isOpen: false, resolve: null, error: '' });
-                return;
-              } catch {
-                setNfcWriteStatus('error');
-                setNfcWriteError(t('Gagal memformat paksa tag.', 'Failed to force format tag.'));
-                setTagPrompt({ isOpen: false, resolve: null, error: '' });
-                return;
+          // SECURITY CHECK: If the tag is protected, prompt immediately using our premium custom modal!
+          let promptValue: string | null = null;
+          if (isProtected) {
+            let isValid = false;
+
+            // 1. Automatic Owner Authentication:
+            // Check if the tag's password matches the keychain's saved password in the database
+            const savedTagPass = kc.payload_data?.tag_password;
+            if (savedTagPass) {
+              const savedHash = await hashTagPassword(savedTagPass);
+              if (existingPassHash === savedHash) {
+                isValid = true;
+                promptValue = savedTagPass; // Automatically unlock using owner's saved password
               }
             }
 
-            if (isLegacyProtection) {
-              isValid = (legacyPass === promptValue);
-            } else {
-              const inputHash = await hashTagPassword(promptValue);
-              isValid = (existingPassHash === inputHash);
-            }
+            // 2. Prompt user if not automatically authenticated
+            while (!isValid) {
+              promptValue = await requestTagPassword();
+              if (promptValue === null) {
+                setNfcWriteStatus('error');
+                setNfcWriteError(t('Penulisan dibatalkan.', 'Writing cancelled.'));
+                return;
+              }
 
-            if (!isValid) {
-              setTagPrompt(prev => ({
-                ...prev,
-                error: t('Password Tag salah! Coba lagi.', 'Wrong tag password! Try again.')
-              }));
-            } else {
-              setTagPrompt({ isOpen: false, resolve: null, error: '' });
+              if (promptValue === 'force_format_bypass') {
+                setNfcWriteStatus('writing');
+                try {
+                  await ndef.write({ records: [{ recordType: 'empty' }] });
+                  setNfcWriteStatus('success');
+                  setTagPrompt({ isOpen: false, resolve: null, error: '' });
+                  return;
+                } catch {
+                  setNfcWriteStatus('error');
+                  setNfcWriteError(t('Gagal memformat paksa tag.', 'Failed to force format tag.'));
+                  setTagPrompt({ isOpen: false, resolve: null, error: '' });
+                  return;
+                }
+              }
+
+              if (isLegacyProtection) {
+                isValid = (legacyPass === promptValue);
+              } else {
+                const inputHash = await hashTagPassword(promptValue);
+                isValid = (existingPassHash === inputHash);
+              }
+
+              if (!isValid) {
+                setTagPrompt(prev => ({
+                  ...prev,
+                  error: t('Password Tag salah! Coba lagi.', 'Wrong tag password! Try again.')
+                }));
+              } else {
+                setTagPrompt({ isOpen: false, resolve: null, error: '' });
+              }
             }
           }
-        }
 
-        setNfcWriteStatus('writing');
-        try {
-          const writeUrl = `https://onetap-charm.com/r/${kc.token}`;
-          const records: any[] = [{ recordType: 'url', data: writeUrl }];
+          setNfcWriteStatus('writing');
+          try {
+            const writeUrl = `https://onetap-charm.com/r/${kc.token}`;
+            const records: any[] = [{ recordType: 'url', data: writeUrl }];
 
-          const savedTagPass = kc.payload_data?.tag_password;
-          if (savedTagPass) {
-            const passHash = await hashTagPassword(savedTagPass);
-            records.push({ recordType: 'text', data: `ot_p:${passHash}` });
-          } else if (isProtected && promptValue) {
-            // Preserve the existing password lock
-            const passHash = await hashTagPassword(promptValue);
-            records.push({ recordType: 'text', data: `ot_p:${passHash}` });
+            const savedTagPass = kc.payload_data?.tag_password;
+            if (savedTagPass) {
+              const passHash = await hashTagPassword(savedTagPass);
+              records.push({ recordType: 'text', data: `ot_p:${passHash}` });
+            } else if (isProtected && promptValue) {
+              // Preserve the existing password lock
+              const passHash = await hashTagPassword(promptValue);
+              records.push({ recordType: 'text', data: `ot_p:${passHash}` });
+            }
+
+            await ndef.write({ records });
+            setNfcWriteStatus('success');
+          } catch {
+            setNfcWriteStatus('error');
+            setNfcWriteError(t(
+              'Gagal menulis ke tag. Tahan tag tetap menempel.',
+              'Failed to write to tag. Keep tag close to the device.'
+            ));
           }
-
-          await ndef.write({ records });
-          setNfcWriteStatus('success');
-        } catch {
-          setNfcWriteStatus('error');
-          setNfcWriteError(t(
-            'Gagal menulis ke tag. Tahan tag tetap menempel.',
-            'Failed to write to tag. Keep tag close to the device.'
-          ));
+        } finally {
+          processingNfcRef.current = false; // Reset lock when done
         }
       };
 
