@@ -330,8 +330,10 @@ export default function ConnectNfcPage() {
     resolve: ((val: string | null) => void) | null;
     error: string;
   }>({ isOpen: false, resolve: null, error: '' });
-  const [tagPromptInput, setTagPromptInput] = useState('');
-  const [showTagPromptPass, setShowTagPromptPass] = useState(false);
+
+  const handleTagPromptCancel = () => {
+    setTagPrompt({ isOpen: false, resolve: null, error: '' });
+  };
 
   // Custom Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
@@ -362,47 +364,6 @@ export default function ConnectNfcPage() {
       confirmModal.resolve(val);
     }
     setConfirmModal({ isOpen: false, title: '', message: '', resolve: null });
-  };
-
-  const requestTagPassword = () => {
-    setTagPromptInput('');
-    setShowTagPromptPass(false);
-    return new Promise<string | null>((resolve) => {
-      setTagPrompt({
-        isOpen: true,
-        resolve,
-        error: ''
-      });
-    });
-  };
-
-  const handleTagPromptSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (tagPrompt.resolve) {
-      tagPrompt.resolve(tagPromptInput);
-    }
-  };
-
-  const handleTagPromptCancel = () => {
-    if (tagPrompt.resolve) {
-      tagPrompt.resolve(null);
-    }
-    setTagPrompt({ isOpen: false, resolve: null, error: '' });
-  };
-
-  const handleForceFormat = async () => {
-    const confirmMsg = locale === 'id'
-      ? "Apakah Anda yakin ingin memformat paksa tag ini? Seluruh data dan password di dalam tag akan dihapus permanen."
-      : "Are you sure you want to force format this tag? All data and password inside the tag will be permanently erased.";
-    const confirmed = await requestConfirmation(
-      locale === 'id' ? "Konfirmasi Format Paksa" : "Confirm Force Format",
-      confirmMsg
-    );
-    if (!confirmed) return;
-
-    if (tagPrompt.resolve) {
-      tagPrompt.resolve('force_format_bypass');
-    }
   };
 
   const handleForceFormatDirect = async () => {
@@ -661,27 +622,14 @@ export default function ConnectNfcPage() {
       }
 
 
-      // NEW: We no longer append ?p= to the URL because it's visible in OS notifications.
-      // Instead, we store it in a SEPARATE record that OS doesn't show in the popup.
       const mainPayload = data.trim();
       
-      // Helper to hash password for tag storage
-      const hashTagPassword = async (pass: string) => {
-        const msgUint8 = new TextEncoder().encode(pass + "onetap_salt");
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      };
-
       const ndef = new (window as any).NDEFReader();
       await ndef.scan();
       
       ndef.onreading = async (event: any) => {
         const message = event.message;
         let isProtected = false;
-        let existingPassHash = '';
-        let isLegacyProtection = false;
-        let legacyPass = '';
 
         // Robust record scanning for protection markers
         for (const record of message.records) {
@@ -693,7 +641,6 @@ export default function ConnectNfcPage() {
             const otIndex = rawData.indexOf('ot_p:');
             if (otIndex !== -1) {
               isProtected = true;
-              existingPassHash = rawData.substring(otIndex + 5).replace(/[^a-fA-F0-9]/g, '').toLowerCase().substring(0, 64);
               break;
             }
 
@@ -701,58 +648,22 @@ export default function ConnectNfcPage() {
             const pMatch = rawData.match(/[?&]p=([^& \n\r\t]+)/);
             if (pMatch) {
               isProtected = true;
-              isLegacyProtection = true;
-              legacyPass = decodeURIComponent(pMatch[1]);
-              // Don't break yet, might find a new protection record which takes priority
+              break;
             }
           } catch (e) {
             console.error("Error decoding record:", e);
           }
         }
 
-        // SECURITY CHECK: If the tag is protected, prompt immediately using our premium custom modal!
-        let promptValue: string | null = null;
+        // SECURITY CHECK: If the tag is protected, abort and instruct the user to use the NFC Tools app.
         if (isProtected) {
-          let isValid = false;
-          while (!isValid) {
-            promptValue = await requestTagPassword();
-            if (promptValue === null) {
-              setError(locale === 'id' ? "Penulisan dibatalkan." : "Writing cancelled.");
-              setIsConnecting(false);
-              return;
-            }
-
-            if (promptValue === 'force_format_bypass') {
-              try {
-                await ndef.write({ records: [{ recordType: 'empty' }] });
-                setConnected(true);
-                setIsConnecting(false);
-                setTagPrompt({ isOpen: false, resolve: null, error: '' });
-                return;
-              } catch (err) {
-                setError(locale === 'id' ? "Gagal memformat paksa tag." : "Failed to force format tag.");
-                setIsConnecting(false);
-                setTagPrompt({ isOpen: false, resolve: null, error: '' });
-                return;
-              }
-            }
-
-            if (isLegacyProtection) {
-              isValid = (legacyPass === promptValue);
-            } else {
-              const inputHash = await hashTagPassword(promptValue);
-              isValid = (existingPassHash === inputHash);
-            }
-
-            if (!isValid) {
-              setTagPrompt(prev => ({
-                ...prev,
-                error: locale === 'id' ? "Password Tag salah! Coba lagi." : "Wrong tag password! Try again."
-              }));
-            } else {
-              setTagPrompt({ isOpen: false, resolve: null, error: '' });
-            }
-          }
+          setError(locale === 'id' 
+            ? 'Tag ini dilindungi password. Silakan gunakan aplikasi NFC Tools untuk membuka kunci atau memformat tag.'
+            : 'This tag is password protected. Please use the NFC Tools app to unlock or format the tag.'
+          );
+          setIsConnecting(false);
+          setTagPrompt({ isOpen: true, resolve: null, error: '' });
+          return;
         }
 
         try {
@@ -789,17 +700,6 @@ export default function ConnectNfcPage() {
                 record = { recordType: 'url', data: finalPayload };
               }
               records.push(record);
-            }
-
-            // Secondary Protection Record (Hidden from OS notifications)
-            // Note: NFC hardware lock is handled externally via NFC Tools app
-            const activeWritePassword = isProtected ? promptValue : '';
-            if (activeWritePassword) {
-              const passHash = await hashTagPassword(activeWritePassword);
-              records.push({
-                recordType: 'text',
-                data: `ot_p:${passHash}`
-              });
             }
           }
 
@@ -1629,7 +1529,7 @@ export default function ConnectNfcPage() {
               {/* Decorative Accent */}
               <div className="absolute -right-20 -top-20 w-44 h-44 rounded-full bg-[#FF5FA2]/10 blur-3xl" />
 
-              <form onSubmit={handleTagPromptSubmit} className="space-y-6">
+              <div className="space-y-6">
                 <div className="text-center space-y-2">
                   <div className="w-12 h-12 rounded-2xl bg-[#FF5FA2]/10 text-[#FF5FA2] flex items-center justify-center mx-auto">
                     <Lock className="w-6 h-6 animate-pulse" />
@@ -1637,77 +1537,44 @@ export default function ConnectNfcPage() {
                   <h3 className="text-xl font-black text-[#18080F]">
                     {locale === 'id' ? "Tag Terkunci Password" : "Password-Protected Tag"}
                   </h3>
-                  <p className="text-xs text-gray-400 font-medium leading-relaxed max-w-[280px] mx-auto">
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-[280px] mx-auto">
                     {locale === 'id'
-                      ? "Tag ini dilindungi password. Masukkan password tag NFC untuk membuka dan menulis ulang."
-                      : "This tag is protected. Please enter the NFC tag password to unlock and write."}
+                      ? "Tag ini dilindungi password. Silakan gunakan aplikasi NFC Tools untuk membuka kunci atau memformat tag terlebih dahulu."
+                      : "This tag is protected. Please use the NFC Tools app to unlock or format the tag first."}
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-[#18080F] uppercase tracking-wider block">
-                    {locale === 'id' ? "Password Tag NFC" : "NFC Tag Password"}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showTagPromptPass ? "text" : "password"}
-                      required
-                      autoFocus
-                      value={tagPromptInput}
-                      onChange={(e) => setTagPromptInput(e.target.value)}
-                      placeholder={locale === 'id' ? "Masukkan password..." : "Enter password..."}
-                      className="w-full h-12 px-4 pr-12 rounded-xl bg-gray-50 border border-slate-200 focus:border-[#FF5FA2]/40 outline-none text-sm font-bold text-[#18080F]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowTagPromptPass(!showTagPromptPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showTagPromptPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  {tagPrompt.error && (
-                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-xs font-bold text-red-500">
-                      <AlertCircle className="w-4.5 h-4.5 shrink-0" />
-                      <span>{tagPrompt.error}</span>
-                    </div>
-                  )}
+                <div className="space-y-3">
+                  <a
+                    href="https://play.google.com/store/apps/details?id=com.wakdev.wdnfc"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2.5 w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 text-xs font-black transition-all active:scale-[0.98]"
+                  >
+                    <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.33.18.7.24 1.06.17L13.89 12 4.24.07C3.88 0 3.51.06 3.18.24 2.48.63 2 1.4 2 2.28v19.44c0 .88.48 1.65 1.18 2.04zM16.6 8.84l-2.3-2.3 2.3-2.29L20.54 12l-3.94 7.75-2.3-2.3 2.3-2.29L14.23 12l2.37-3.16zM5.44 1.95l11.8 6.41L14.95 10l-9.51-8.05zM5.44 22.05l9.51-8.05 2.29 1.64-11.8 6.41z"/></svg>
+                    {locale === 'id' ? "Download NFC Tools (Android)" : "Download NFC Tools (Android)"}
+                  </a>
+                  <a
+                    href="https://apps.apple.com/app/nfc-tools/id1252962749"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2.5 w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 text-xs font-black transition-all active:scale-[0.98]"
+                  >
+                    <svg className="w-4 h-4 text-[#FF5FA2]" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                    {locale === 'id' ? "Download NFC Tools (iOS)" : "Download NFC Tools (iOS)"}
+                  </a>
                 </div>
 
                 <div className="flex items-center gap-3 pt-2">
                   <button
                     type="button"
                     onClick={handleTagPromptCancel}
-                    className="flex-1 h-12 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all active:scale-95"
+                    className="w-full h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs transition-all active:scale-95"
                   >
-                    {locale === 'id' ? "Batal" : "Cancel"}
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 h-12 rounded-xl bg-[#FF5FA2] hover:bg-[#E8457E] text-white font-black text-xs transition-all active:scale-95 shadow-md shadow-[#FF5FA2]/10"
-                  >
-                    {locale === 'id' ? "Unlock & Tulis" : "Unlock & Write"}
+                    {locale === 'id' ? "Tutup" : "Close"}
                   </button>
                 </div>
-
-                <div className="text-center pt-2 border-t border-slate-100 space-y-2">
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5">
-                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                    <p className="text-[10px] font-bold text-red-600 leading-normal text-left">
-                      {locale === 'id'
-                        ? 'PENTING: Memformat paksa tag akan menghapus seluruh data dan password di dalamnya secara permanen.'
-                        : 'IMPORTANT: Force formatting the tag will permanently erase all data and password inside it.'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleForceFormat}
-                    className="text-xs text-red-500 hover:text-red-600 font-bold underline transition-colors block mx-auto"
-                  >
-                    {locale === 'id' ? "Lupa Password? Format Paksa Tag" : "Forgot Password? Force Format Tag"}
-                  </button>
-                </div>
-              </form>
+              </div>
             </motion.div>
           </div>
         )}
