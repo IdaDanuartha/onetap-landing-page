@@ -45,9 +45,31 @@ export default function RedirectPage({ params }: RedirectPageProps) {
         if (res.ok) {
           const data = await res.json();
           if (data.url) {
+            // Check if it's just a placeholder/empty redirect URL
+            const isEmptyUrl = 
+              data.url === '/l/' || 
+              data.url === 'https://wa.me/' || 
+              data.url === 'tel:' || 
+              data.url === 'sms:' || 
+              data.url === 'mailto:' || 
+              data.url === 'geo:,' || 
+              data.url === 'https://www.google.com/maps/dir/?api=1&destination=' || 
+              data.url === 'google.streetview:cbll=,' || 
+              data.url === 'intent://#Intent;package=;end';
+
+            if (isEmptyUrl) {
+              window.location.href = 'https://onetap-charm.com';
+              return;
+            }
             window.location.href = data.url;
           } else {
             if (data.is_keychain) {
+              // If it's a redirect mode but has no URL, redirect directly to the home page
+              const redirectModes = ['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'];
+              if (redirectModes.includes(data.active_mode) || !data.active_mode) {
+                window.location.href = 'https://onetap-charm.com';
+                return;
+              }
               setKeychainData(data);
             }
             setChecking(false);
@@ -82,9 +104,31 @@ export default function RedirectPage({ params }: RedirectPageProps) {
       if (res.ok) {
         const data = await res.json();
         if (data.url) {
+          // Check if it's just a placeholder/empty redirect URL
+          const isEmptyUrl = 
+            data.url === '/l/' || 
+            data.url === 'https://wa.me/' || 
+            data.url === 'tel:' || 
+            data.url === 'sms:' || 
+            data.url === 'mailto:' || 
+            data.url === 'geo:,' || 
+            data.url === 'https://www.google.com/maps/dir/?api=1&destination=' || 
+            data.url === 'google.streetview:cbll=,' || 
+            data.url === 'intent://#Intent;package=;end';
+
+          if (isEmptyUrl) {
+            window.location.href = 'https://onetap-charm.com';
+            return;
+          }
           window.location.href = data.url;
         } else {
           if (data.is_keychain) {
+            // If it's a redirect mode but has no URL, redirect directly to the home page
+            const redirectModes = ['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'];
+            if (redirectModes.includes(data.active_mode) || !data.active_mode) {
+              window.location.href = 'https://onetap-charm.com';
+              return;
+            }
             setKeychainData(data);
           }
           setLoading(false);

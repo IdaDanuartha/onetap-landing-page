@@ -161,6 +161,23 @@ export async function POST(
           }
         }
 
+        // Check if redirectUrl is empty or placeholder (no data)
+        const isEmptyUrl = 
+          !redirectUrl ||
+          redirectUrl === '/l/' || 
+          redirectUrl === 'https://wa.me/' || 
+          redirectUrl === 'tel:' || 
+          redirectUrl === 'sms:' || 
+          redirectUrl === 'mailto:' || 
+          redirectUrl === 'geo:,' || 
+          redirectUrl === 'https://www.google.com/maps/dir/?api=1&destination=' || 
+          redirectUrl === 'google.streetview:cbll=,' || 
+          redirectUrl === 'intent://#Intent;package=;end';
+
+        if (isEmptyUrl) {
+          redirectUrl = 'https://onetap-charm.com';
+        }
+
         return NextResponse.json({
           is_keychain: true,
           active_mode: mode,
