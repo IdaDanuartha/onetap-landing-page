@@ -201,16 +201,21 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'ID keychain wajib diisi' }, { status: 400 });
       }
 
-      // Verify ownership & delete
+      // Verify ownership & mark as unclaimed (set user_id to null and reset redirect configs)
       const { error: deleteError } = await supabase
         .from('user_keychains')
-        .delete()
+        .update({
+          user_id: null,
+          active_mode: 'url',
+          payload_data: {},
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .eq('user_id', user.id);
 
       if (deleteError) {
         console.error('[keychains DELETE] DB Error:', deleteError);
-        return NextResponse.json({ error: 'Gagal menghapus keychain' }, { status: 500 });
+        return NextResponse.json({ error: 'Gagal melepas (unclaim) keychain' }, { status: 500 });
       }
 
       return NextResponse.json({ success: true });
