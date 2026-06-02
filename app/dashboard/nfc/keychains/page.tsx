@@ -12,7 +12,7 @@ import {
   ChevronRight, Smartphone, Eye, EyeOff, Globe,
   MessageCircle, Contact2, Bluetooth, AppWindow, MapPin, 
   Navigation, Map, Type, MessageSquare, Link2, CheckCircle2, Lock, Info,
-  QrCode, Camera, Github, Eraser
+  QrCode, Camera, Github, Eraser, Sparkles
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { InstagramIcon, FacebookIcon, LinkedinIcon, XIcon, YoutubeIcon, TiktokIcon, TelegramIcon, SpotifyIcon } from '@/app/components/BrandIcons';
@@ -1064,12 +1064,24 @@ export default function KeychainsManagerPage() {
                             </div>
                           </div>
 
-                          {/* Info Display Badge */}
-                          <div className="flex items-center gap-2">
+                          {/* Info Display Badge & Click Indicator */}
+                          <div className="flex items-center justify-between gap-2 mt-1">
                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider ${badge.bg} ${badge.border} ${badge.text}`}>
                               {badge.icon}
                               {badge.label}
                             </span>
+
+                            {isSelected ? (
+                              <span className="text-[9px] font-black text-[#FF5FA2] bg-[#FF5FA2]/5 px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse border border-[#FF5FA2]/10 uppercase tracking-wider">
+                                <Sparkles className="w-3 h-3 text-[#FF5FA2]" />
+                                {t('Dipilih', 'Selected')}
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-black text-gray-400 group-hover:text-[#FF5FA2] transition-colors flex items-center gap-0.5 uppercase tracking-wider">
+                                {t('Klik Kustomisasi', 'Configure')}
+                                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" />
+                              </span>
+                            )}
                           </div>
                         </div>
 

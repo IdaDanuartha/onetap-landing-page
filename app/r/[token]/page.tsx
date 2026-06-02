@@ -664,7 +664,7 @@ export default function RedirectPage({ params }: RedirectPageProps) {
             onClick={() => window.location.href = setupUrl}
             className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#FF5FA2]/20 hover:shadow-[#FF5FA2]/30 active:scale-[0.98] transition-all"
           >
-            {locale === 'id' ? 'Hubungkan Sekarang' : 'Connect Now'}
+            {locale === 'id' ? 'Klaim Sekarang' : 'Claim Now'}
             <ArrowRight className="w-5 h-5" />
           </button>
 
