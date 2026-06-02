@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,7 +84,8 @@ export async function POST(req: Request) {
           }
         } else {
           // Exists but unclaimed (pre-populated factory keychain) -> Update owner
-          const { data: updated, error: updateError } = await supabase
+          const adminSupabase = createAdminClient();
+          const { data: updated, error: updateError } = await adminSupabase
             .from('user_keychains')
             .update({
               user_id: user.id,
@@ -103,7 +105,8 @@ export async function POST(req: Request) {
         }
       } else {
         // Does not exist -> Create and claim on the fly (frictionless for blank tags)
-        const { data: inserted, error: insertError } = await supabase
+        const adminSupabase = createAdminClient();
+        const { data: inserted, error: insertError } = await adminSupabase
           .from('user_keychains')
           .insert({
             token: cleanToken,
@@ -201,8 +204,21 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'ID keychain wajib diisi' }, { status: 400 });
       }
 
-      // Verify ownership & mark as unclaimed (set user_id to null and reset redirect configs)
-      const { error: deleteError } = await supabase
+      // 1. Verify ownership using standard client first to ensure the user owns this keychain
+      const { data: existing, error: checkError } = await supabase
+        .from('user_keychains')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (checkError || !existing) {
+        return NextResponse.json({ error: 'Keychain tidak ditemukan atau akses ditolak' }, { status: 403 });
+      }
+
+      // 2. Perform unclaim using admin client to bypass RLS restrictions
+      const adminSupabase = createAdminClient();
+      const { error: deleteError } = await adminSupabase
         .from('user_keychains')
         .update({
           user_id: null,
@@ -210,8 +226,7 @@ export async function POST(req: Request) {
           payload_data: {},
           updated_at: new Date().toISOString()
         })
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (deleteError) {
         console.error('[keychains DELETE] DB Error:', deleteError);
