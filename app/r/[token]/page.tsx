@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface RedirectPageProps {
   params: Promise<{ token: string }>;
@@ -16,6 +17,7 @@ interface RedirectPageProps {
 
 export default function RedirectPage({ params }: RedirectPageProps) {
   const { token } = use(params);
+  const { locale } = useLanguage();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -592,7 +594,7 @@ export default function RedirectPage({ params }: RedirectPageProps) {
           {/* Sparkly Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFF1F7] border border-[#FFF1F7] text-[#FF5FA2] text-[10px] font-black uppercase tracking-wider mb-6 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#FF5FA2]" />
-            Keychain Siap Diklaim
+            {locale === 'id' ? 'Keychain Siap Diklaim' : 'Keychain Ready to Claim'}
           </div>
 
           {/* QR Code Card Wrapper */}
@@ -620,12 +622,12 @@ export default function RedirectPage({ params }: RedirectPageProps) {
                 {qrCopied ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    Tautan Disalin
+                    {locale === 'id' ? 'Tautan Disalin' : 'Link Copied'}
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    Salin Tautan QR
+                    {locale === 'id' ? 'Salin Tautan QR' : 'Copy QR Link'}
                   </>
                 )}
               </button>
@@ -640,7 +642,7 @@ export default function RedirectPage({ params }: RedirectPageProps) {
                 ) : (
                   <Download className="w-3.5 h-3.5" />
                 )}
-                Unduh QR Code
+                {locale === 'id' ? 'Unduh QR Code' : 'Download QR Code'}
               </button>
             </div>
           </div>
@@ -648,10 +650,12 @@ export default function RedirectPage({ params }: RedirectPageProps) {
           {/* Text/Details info */}
           <div className="text-center mb-8 px-2">
             <h1 className="text-xl font-extrabold text-[#18080F] mb-2 leading-tight">
-              Aktifkan Gantungan Kunci
+              {locale === 'id' ? 'Aktifkan Gantungan Kunci' : 'Activate Keychain'}
             </h1>
             <p className="text-xs text-gray-500 leading-relaxed max-w-[280px] mx-auto">
-              Gantungan kunci OneTap NFC premium Anda terdeteksi baru/belum dikonfigurasi. Hubungkan ke akun Anda sekarang untuk menjadikannya kartu nama digital, profil sosial, atau Wi-Fi instan!
+              {locale === 'id' 
+                ? 'Gantungan kunci OneTap NFC premium Anda terdeteksi baru/belum dikonfigurasi. Hubungkan ke akun Anda sekarang untuk menjadikannya kartu nama digital, profil sosial, atau Wi-Fi instan!'
+                : 'Your premium OneTap NFC keychain is detected as new/unconfigured. Connect it to your account now to make it your digital business card, social profile, or instant Wi-Fi!'}
             </p>
           </div>
 
@@ -660,7 +664,7 @@ export default function RedirectPage({ params }: RedirectPageProps) {
             onClick={() => window.location.href = setupUrl}
             className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#FF5FA2]/20 hover:shadow-[#FF5FA2]/30 active:scale-[0.98] transition-all"
           >
-            Hubungkan Sekarang
+            {locale === 'id' ? 'Hubungkan Sekarang' : 'Connect Now'}
             <ArrowRight className="w-5 h-5" />
           </button>
 

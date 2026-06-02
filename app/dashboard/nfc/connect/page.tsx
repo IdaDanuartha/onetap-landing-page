@@ -1011,9 +1011,19 @@ export default function ConnectNfcPage() {
           >
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div className="text-left">
-              <p className="font-extrabold text-green-900">Keychain Berhasil Diklaim!</p>
+              <p className="font-extrabold text-green-900">
+                {locale === 'id' ? 'Keychain Berhasil Diklaim!' : 'Keychain Claimed Successfully!'}
+              </p>
               <p className="text-green-700/80 font-medium mt-0.5">
-                Kode keychain <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-green-900 font-bold">{claimedToken}</span> telah berhasil dihubungkan ke akun Anda. Silakan kustomisasi aksinya di bawah dan tulis ke gantungan kunci fisik Anda.
+                {locale === 'id' ? (
+                  <>
+                    Kode keychain <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-green-900 font-bold">{claimedToken}</span> telah berhasil dihubungkan ke akun Anda. Silakan kustomisasi aksinya di bawah dan tulis ke gantungan kunci fisik Anda.
+                  </>
+                ) : (
+                  <>
+                    Keychain code <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-green-900 font-bold">{claimedToken}</span> has been successfully connected to your account. Please customize its action below and write it to your physical keychain.
+                  </>
+                )}
               </p>
             </div>
           </motion.div>
