@@ -155,7 +155,11 @@ export async function POST(
             if (isIos && payload.iosUrl) {
               redirectUrl = payload.iosUrl;
             } else {
-              redirectUrl = `intent://#Intent;package=${payload.package || ''};end`;
+              let pkg = payload.package || '';
+              if (pkg === 'com.zhiliaoapp.musically') {
+                pkg = 'com.ss.android.ugc.trill';
+              }
+              redirectUrl = `intent://#Intent;package=${pkg};end`;
             }
             break;
           }

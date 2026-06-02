@@ -210,7 +210,7 @@ const TYPE_OPTIONS: { id: RecordType; category: string; label: string; icon: any
 const POPULAR_APPS = [
   { name: 'WhatsApp', package: 'com.whatsapp', iosUrl: 'https://wa.me' },
   { name: 'Instagram', package: 'com.instagram.android', iosUrl: 'https://instagram.com' },
-  { name: 'TikTok', package: 'com.zhiliaoapp.musically', iosUrl: 'https://tiktok.com' },
+  { name: 'TikTok', package: 'com.ss.android.ugc.trill', iosUrl: 'https://tiktok.com' },
   { name: 'YouTube', package: 'com.google.android.youtube', iosUrl: 'https://youtube.com' },
   { name: 'Facebook', package: 'com.facebook.katana', iosUrl: 'https://facebook.com' },
   { name: 'Spotify', package: 'com.spotify.music', iosUrl: 'https://open.spotify.com' },
