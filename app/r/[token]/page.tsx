@@ -600,7 +600,7 @@ export default function RedirectPage({ params }: RedirectPageProps) {
           {/* QR Code Card Wrapper */}
           <div className="w-full bg-white border border-gray-100 rounded-3xl p-5 shadow-inner mb-6 flex flex-col items-center">
             <div className="relative w-48 h-48 bg-[#FFF8F2] rounded-2xl flex items-center justify-center p-3 border-2 border-dashed border-[#FF5FA2]/20 mb-4 group hover:border-[#FF5FA2] transition-colors">
-              <Image 
+              <img 
                 src={qrCodeUrl} 
                 alt="OneTap QR Code" 
                 width={192} 
