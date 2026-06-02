@@ -87,7 +87,7 @@ export async function POST(req: Request) {
             .from('user_keychains')
             .update({
               user_id: user.id,
-              label: finalLabel,
+              label: existing.label || finalLabel,
               updated_at: new Date().toISOString()
             })
             .eq('id', existing.id)

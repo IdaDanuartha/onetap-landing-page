@@ -200,8 +200,6 @@ export default function ConnectNfcPage() {
   const [selectedProfileSlug, setSelectedProfileSlug] = useState('');
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [activeCategory, setActiveCategory] = useState('networking');
-  const [claimSuccess, setClaimSuccess] = useState(false);
-  const [claimedToken, setClaimedToken] = useState('');
 
   // Guided Tour State
   const [runTour, setRunTour] = useState(false);
@@ -499,34 +497,6 @@ export default function ConnectNfcPage() {
       }
       setLoading(false);
       const searchParams = new URLSearchParams(window.location.search);
-      
-      // Auto Claim Keychain logic
-      const tokenParam = searchParams.get('token');
-      if (tokenParam) {
-        try {
-          const claimRes = await fetch('/api/keychains', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'claim',
-              token: tokenParam.trim().toLowerCase(),
-              label: 'OneTap Keychain'
-            })
-          });
-          if (claimRes.ok) {
-            setClaimedToken(tokenParam);
-            setClaimSuccess(true);
-            // Clean the token parameter from URL so it doesn't claim again on page refresh
-            if (window.history.replaceState) {
-              const url = new URL(window.location.href);
-              url.searchParams.delete('token');
-              window.history.replaceState({ path: url.href }, '', url.href);
-            }
-          }
-        } catch (err) {
-          console.error("Auto claim token error:", err);
-        }
-      }
 
       const isTourParam = searchParams.get('tour') === 'true';
       const completed = localStorage.getItem('onetap_tour_nfc_completed');
@@ -1002,32 +972,6 @@ export default function ConnectNfcPage() {
               : 'Pilih mode dan kustomisasi aksi keychain OneTap kamu.'}
           </p>
         </motion.div>
-
-        {claimSuccess && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-8 p-4 rounded-3xl bg-green-50 border border-green-100 flex items-start gap-3 text-green-800 text-xs sm:text-sm font-semibold shadow-sm"
-          >
-            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div className="text-left">
-              <p className="font-extrabold text-green-900">
-                {locale === 'id' ? 'Keychain Berhasil Diklaim!' : 'Keychain Claimed Successfully!'}
-              </p>
-              <p className="text-green-700/80 font-medium mt-0.5">
-                {locale === 'id' ? (
-                  <>
-                    Kode keychain <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-green-900 font-bold">{claimedToken}</span> telah berhasil dihubungkan ke akun Anda. Silakan kustomisasi aksinya di bawah dan tulis ke gantungan kunci fisik Anda.
-                  </>
-                ) : (
-                  <>
-                    Keychain code <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-green-900 font-bold">{claimedToken}</span> has been successfully connected to your account. Please customize its action below and write it to your physical keychain.
-                  </>
-                )}
-              </p>
-            </div>
-          </motion.div>
-        )}
 
         {!connected && (
           <div className="space-y-6">

@@ -574,8 +574,8 @@ export default function RedirectPage({ params }: RedirectPageProps) {
   if (isUnconfigured) {
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`https://onetap-charm.com/r/${token}`)}`;
     const setupUrl = isLoggedIn 
-      ? `/dashboard/nfc/connect?token=${token}` 
-      : `/auth/login?next=${encodeURIComponent(`/dashboard/nfc/connect?token=${token}`)}`;
+      ? `/dashboard/nfc/keychains?token=${token}` 
+      : `/auth/login?next=${encodeURIComponent(`/dashboard/nfc/keychains?token=${token}`)}`;
 
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#FFF8F2] relative overflow-hidden">

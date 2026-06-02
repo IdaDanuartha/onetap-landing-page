@@ -142,6 +142,11 @@ export default function KeychainsManagerPage() {
   // UI Helpers
   const [showWifiPassword, setShowWifiPassword] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  
+  // Auto-claim states
+  const [claimSuccess, setClaimSuccess] = useState(false);
+  const [claimedToken, setClaimedToken] = useState('');
+  const [claimedLabel, setClaimedLabel] = useState('');
 
   // NFC Writing states
   const [showWriteModal, setShowWriteModal] = useState(false);
@@ -259,10 +264,6 @@ export default function KeychainsManagerPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   // QR Code camera scanning logic
   const startScanner = async () => {
@@ -428,6 +429,61 @@ export default function KeychainsManagerPage() {
       setEditPayload({ slug: profiles[0].slug });
     }
   };
+
+  // Mount logic: load keychains & handle auto-claim from query parameter
+  useEffect(() => {
+    async function init() {
+      await loadData();
+      
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenParam = searchParams.get('token');
+      if (tokenParam) {
+        try {
+          const cleanToken = tokenParam.trim().toLowerCase();
+          const claimRes = await fetch('/api/keychains', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'claim',
+              token: cleanToken
+            })
+          });
+          if (claimRes.ok) {
+            const data = await claimRes.json();
+            if (data.success && data.keychain) {
+              setClaimedToken(cleanToken);
+              setClaimedLabel(data.keychain.label);
+              setClaimSuccess(true);
+              
+              // Reload keychains list
+              const keychainsRes = await fetch('/api/keychains');
+              if (keychainsRes.ok) {
+                const keyData = await keychainsRes.json();
+                const list = keyData.keychains || [];
+                setKeychains(list);
+                
+                // Automatically select the newly claimed keychain
+                const newlyClaimed = list.find((k: Keychain) => k.id === data.keychain.id || k.token === cleanToken);
+                if (newlyClaimed) {
+                  handleSelectKeychain(newlyClaimed);
+                }
+              }
+              
+              // Clean query parameter
+              if (window.history.replaceState) {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('token');
+                window.history.replaceState({ path: url.href }, '', url.href);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Auto claim token error:", err);
+        }
+      }
+    }
+    init();
+  }, []);
 
   // 4. Save updates handler
   const handleSaveConfig = async () => {
@@ -874,6 +930,35 @@ export default function KeychainsManagerPage() {
 
       {/* Main Grid */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <AnimatePresence>
+          {claimSuccess && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="mb-8 p-4 rounded-3xl bg-green-50 border border-green-100 flex items-start gap-3 text-green-800 text-xs sm:text-sm font-semibold shadow-sm"
+            >
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="font-extrabold text-green-900">
+                  {locale === 'id' ? `Gantungan Kunci "${claimedLabel}" Berhasil Diklaim!` : `Keychain "${claimedLabel}" Claimed Successfully!`}
+                </p>
+                <p className="text-green-700/80 font-medium mt-0.5">
+                  {locale === 'id' ? (
+                    <>
+                      Gantungan kunci <span className="font-bold text-green-900">{claimedLabel}</span> (kode: <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-green-900 font-bold">{claimedToken}</span>) telah berhasil dihubungkan ke akun Anda.
+                    </>
+                  ) : (
+                    <>
+                      Keychain <span className="font-bold text-green-900">{claimedLabel}</span> (code: <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-green-900 font-bold">{claimedToken}</span>) has been successfully connected to your account.
+                    </>
+                  )}
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* LEFT PANEL: KEYCHAIN LIST (lg:col-span-5) */}
