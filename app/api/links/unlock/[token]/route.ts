@@ -175,7 +175,7 @@ export async function POST(
           redirectUrl === 'intent://#Intent;package=;end';
 
         if (isEmptyUrl) {
-          redirectUrl = 'https://onetap-charm.com';
+          redirectUrl = '';
         }
 
         return NextResponse.json({
