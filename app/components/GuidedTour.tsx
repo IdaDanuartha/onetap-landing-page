@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import * as ReactJoyrideNamespace from "react-joyride";
+import { Joyride, STATUS } from "react-joyride";
 import type { Step } from "react-joyride";
 import { motion, AnimatePresence } from "framer-motion";
 
-const Joyride = ((ReactJoyrideNamespace as any).default || (ReactJoyrideNamespace as any).Joyride || ReactJoyrideNamespace) as any;
-const STATUS = ReactJoyrideNamespace.STATUS;
+if (typeof window !== "undefined") {
+  console.log("[GuidedTour Module] Joyride component:", typeof Joyride, "STATUS:", typeof STATUS);
+}
 import {
   X,
   ChevronRight,
@@ -58,6 +59,7 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
 
   useEffect(() => {
     setMounted(true);
+    console.log("[GuidedTour Mounted] pageKey:", pageKey, "run:", run, "stepIndex:", stepIndex, "steps count:", steps?.length);
   }, []);
 
 
@@ -187,20 +189,19 @@ export default function GuidedTour({ pageKey, steps, run, onClose, stepIndex, ca
     }));
   }, [steps]);
 
-  const JoyrideComp = Joyride as any;
-
   if (!mounted) return null;
 
+  console.log("[GuidedTour Rendering] key:", `${pageKey}-${run}`, "run:", run, "stepIndex:", stepIndex, "Joyride defined:", !!Joyride);
+
   return (
-    <JoyrideComp
+    <Joyride
       key={`${pageKey}-${run}`}
       steps={stepsWithDisabledBeacons}
       run={run}
       continuous
       scrollToFirstStep
-      showSkipButton
       tooltipComponent={CustomTooltip}
-      callback={callback || handleJoyrideCallback}
+      onEvent={callback || handleJoyrideCallback}
       stepIndex={stepIndex}
       styles={{
         options: {
