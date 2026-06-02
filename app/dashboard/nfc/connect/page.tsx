@@ -860,8 +860,8 @@ export default function ConnectNfcPage() {
           <Image
             src="/images/logo_simple.png"
             alt="OneTap"
-            width={64}
-            height={64}
+            width={112}
+            height={112}
             className="relative object-contain animate-pulse"
           />
         </div>
@@ -875,7 +875,7 @@ export default function ConnectNfcPage() {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#F6B7C8]/20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-4 max-w-[50%] min-w-0">
-            <Link href="/dashboard" className="p-2 sm:p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all flex-shrink-0">
+            <Link href="/dashboard/nfc" className="p-2 sm:p-2.5 rounded-xl hover:bg-[#FFF8F2] text-gray-500 hover:text-[#FF5FA2] transition-all flex-shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <h1 className="text-lg sm:text-xl font-black text-[#18080F] truncate whitespace-nowrap">NFC Activator</h1>
@@ -920,12 +920,12 @@ export default function ConnectNfcPage() {
           
           <motion.div 
             animate={connected ? { scale: [1, 1.05, 1], rotate: [0, 5, 0] } : {}}
-            className={`absolute inset-0 flex items-center justify-center rounded-[56px] shadow-2xl transition-all duration-700 ${
+            className={`absolute inset-0 flex items-center justify-center rounded-[56px] transition-all duration-700 ${
               connected 
-                ? 'bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] text-white shadow-[#FF5FA2]/40' 
+                ? 'bg-gradient-to-br from-[#FF5FA2] to-[#E8457E] text-white shadow-[#FF5FA2]/40 shadow-2xl' 
                 : mode === 'erase'
-                  ? 'bg-red-500 text-white shadow-red-500/30'
-                  : 'bg-white border border-[#F6B7C8]/20 text-[#FF5FA2]'
+                  ? 'bg-red-500 text-white shadow-red-500/30 shadow-2xl'
+                  : 'text-[#FF5FA2]'
             }`}
           >
             {connected ? (
@@ -950,8 +950,8 @@ export default function ConnectNfcPage() {
               <Image 
                 src="/images/logo_simple.png" 
                 alt="OneTap" 
-                width={56} 
-                height={56} 
+                width={120} 
+                height={120} 
                 className="object-contain"
               />
             )}
