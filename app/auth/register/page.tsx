@@ -36,9 +36,17 @@ export default function RegisterPage() {
   const [resendMessage, setResendMessage] = useState('');
   const [resendError, setResendError] = useState('');
 
+  const [nextParam, setNextParam] = useState('');
+
   // Restore success state on page refresh
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const next = searchParams.get('next');
+      if (next) {
+        setNextParam(next);
+      }
+
       const success = sessionStorage.getItem('register_success');
       if (success === 'true') {
         setIsSuccess(true);
@@ -151,10 +159,14 @@ export default function RegisterPage() {
 
   const handleGoogleLogin = async () => {
     const supabase = createClient();
+    const redirectTo = nextParam 
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextParam)}`
+      : `${window.location.origin}/auth/callback`;
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo,
       },
     });
   };
@@ -198,7 +210,7 @@ export default function RegisterPage() {
               </p>
               
               <Link
-                href="/auth/login"
+                href={nextParam ? `/auth/login?next=${encodeURIComponent(nextParam)}` : "/auth/login"}
                 onClick={handleClearSuccessState}
                 className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold shadow-xl shadow-[#FF5FA2]/25 hover:shadow-[#FF5FA2]/40 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center mb-4"
               >
@@ -407,7 +419,7 @@ export default function RegisterPage() {
               {/* Footer */}
               <p className="text-center text-[#18080F]/50 text-sm mt-10 font-medium">
                 Sudah punya akun?{" "}
-                <Link href="/auth/login" className="text-[#FF5FA2] font-bold hover:underline">
+                <Link href={nextParam ? `/auth/login?next=${encodeURIComponent(nextParam)}` : "/auth/login"} className="text-[#FF5FA2] font-bold hover:underline">
                   Masuk Disini
                 </Link>
               </p>

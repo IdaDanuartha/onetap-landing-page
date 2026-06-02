@@ -5,9 +5,10 @@ import {
   Lock, Loader2, AlertCircle, ArrowRight, Wifi, 
   Copy, Check, Eye, EyeOff, User, Phone, Mail, 
   Building2, Download, ExternalLink, ShieldCheck,
-  Bluetooth, Type
+  Bluetooth, Type, QrCode, Sparkles
 } from 'lucide-react';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
 
 interface RedirectPageProps {
   params: Promise<{ token: string }>;
@@ -24,6 +25,18 @@ export default function RedirectPage({ params }: RedirectPageProps) {
   const [keychainData, setKeychainData] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [showWifiPassword, setShowWifiPassword] = useState(false);
+  const [isUnconfigured, setIsUnconfigured] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [downloadingQr, setDownloadingQr] = useState(false);
+  const [qrCopied, setQrCopied] = useState(false);
+
+  // Fetch session on mount to see if user is logged in
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+  }, []);
 
   // Check if link is a keychain or protected on mount
   useEffect(() => {
@@ -58,19 +71,26 @@ export default function RedirectPage({ params }: RedirectPageProps) {
               data.url === 'intent://#Intent;package=;end';
 
             if (isEmptyUrl) {
-              window.location.href = 'https://onetap-charm.com';
-              return;
-            }
-            window.location.href = data.url;
-          } else {
-            if (data.is_keychain) {
-              // If it's a redirect mode but has no URL, redirect directly to the home page
-              const redirectModes = ['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'];
-              if (redirectModes.includes(data.active_mode) || !data.active_mode) {
+              if (data.is_keychain) {
+                setKeychainData(data);
+                setIsUnconfigured(true);
+              } else {
                 window.location.href = 'https://onetap-charm.com';
                 return;
               }
-              setKeychainData(data);
+            } else {
+              window.location.href = data.url;
+            }
+          } else {
+            if (data.is_keychain) {
+              // If it's a redirect mode but has no URL, show setup page
+              const redirectModes = ['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'];
+              if (redirectModes.includes(data.active_mode) || !data.active_mode) {
+                setKeychainData(data);
+                setIsUnconfigured(true);
+              } else {
+                setKeychainData(data);
+              }
             }
             setChecking(false);
           }
@@ -117,19 +137,26 @@ export default function RedirectPage({ params }: RedirectPageProps) {
             data.url === 'intent://#Intent;package=;end';
 
           if (isEmptyUrl) {
-            window.location.href = 'https://onetap-charm.com';
-            return;
-          }
-          window.location.href = data.url;
-        } else {
-          if (data.is_keychain) {
-            // If it's a redirect mode but has no URL, redirect directly to the home page
-            const redirectModes = ['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'];
-            if (redirectModes.includes(data.active_mode) || !data.active_mode) {
+            if (data.is_keychain) {
+              setKeychainData(data);
+              setIsUnconfigured(true);
+            } else {
               window.location.href = 'https://onetap-charm.com';
               return;
             }
-            setKeychainData(data);
+          } else {
+            window.location.href = data.url;
+          }
+        } else {
+          if (data.is_keychain) {
+            // If it's a redirect mode but has no URL, show setup page
+            const redirectModes = ['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'];
+            if (redirectModes.includes(data.active_mode) || !data.active_mode) {
+              setKeychainData(data);
+              setIsUnconfigured(true);
+            } else {
+              setKeychainData(data);
+            }
           }
           setLoading(false);
         }
@@ -147,6 +174,34 @@ export default function RedirectPage({ params }: RedirectPageProps) {
     navigator.clipboard.writeText(pass);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadQr = async () => {
+    setDownloadingQr(true);
+    try {
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(`https://onetap-charm.com/r/${token}`)}`;
+      const res = await fetch(qrUrl);
+      const blob = await res.blob();
+      const localUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = localUrl;
+      link.setAttribute('download', `onetap-qr-${token}.png`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(localUrl);
+    } catch (err) {
+      window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(`https://onetap-charm.com/r/${token}`)}`, '_blank');
+    } finally {
+      setDownloadingQr(false);
+    }
+  };
+
+  const handleCopyQrLink = () => {
+    navigator.clipboard.writeText(`https://onetap-charm.com/r/${token}`);
+    setQrCopied(true);
+    setTimeout(() => setQrCopied(false), 2000);
   };
 
   const handleDownloadVcard = () => {
@@ -500,6 +555,113 @@ export default function RedirectPage({ params }: RedirectPageProps) {
                 Salin Isi Pesan
               </>
             )}
+          </button>
+
+          <div className="mt-8 flex flex-col items-center gap-1 opacity-40">
+            <span className="text-[9px] font-black tracking-[0.2em] text-[#18080F] uppercase">
+              Powered by OneTap NFC
+            </span>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // --- UNCONFIGURED KEYCHAIN SETUP VIEW ---
+  if (isUnconfigured) {
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`https://onetap-charm.com/r/${token}`)}`;
+    const setupUrl = isLoggedIn 
+      ? `/dashboard/nfc/connect?token=${token}` 
+      : `/auth/login?next=${encodeURIComponent(`/dashboard/nfc/connect?token=${token}`)}`;
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#FFF8F2] relative overflow-hidden">
+        {/* Background Decorative Blobs */}
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#FF5FA2] rounded-full opacity-[0.06] blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#F6B7C8] rounded-full opacity-[0.08] blur-[120px]" />
+
+        <div className="w-full max-w-sm bg-white/80 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl shadow-[#FF5FA2]/5 overflow-hidden border border-white/60 p-8 flex flex-col items-center relative z-10">
+          
+          {/* Logo */}
+          <div className="mb-6 flex items-center gap-2">
+            <Image src="/images/logo_simple.png" alt="OneTap" width={32} height={32} className="object-contain" />
+            <span className="text-sm font-black tracking-widest text-[#18080F]">ONETAP</span>
+          </div>
+
+          {/* Sparkly Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFF1F7] border border-[#FFF1F7] text-[#FF5FA2] text-[10px] font-black uppercase tracking-wider mb-6 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#FF5FA2]" />
+            Keychain Siap Diklaim
+          </div>
+
+          {/* QR Code Card Wrapper */}
+          <div className="w-full bg-white border border-gray-100 rounded-3xl p-5 shadow-inner mb-6 flex flex-col items-center">
+            <div className="relative w-48 h-48 bg-[#FFF8F2] rounded-2xl flex items-center justify-center p-3 border-2 border-dashed border-[#FF5FA2]/20 mb-4 group hover:border-[#FF5FA2] transition-colors">
+              <Image 
+                src={qrCodeUrl} 
+                alt="OneTap QR Code" 
+                width={192} 
+                height={192}
+                className="object-contain rounded-lg"
+              />
+            </div>
+            
+            {/* Quick Actions (Copy & Download) */}
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={handleCopyQrLink}
+                className={`flex-1 h-10 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition-all ${
+                  qrCopied 
+                    ? 'bg-green-50 border-green-200 text-green-600' 
+                    : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {qrCopied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Tautan Disalin
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    Salin Tautan QR
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleDownloadQr}
+                disabled={downloadingQr}
+                className="flex-1 h-10 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 hover:bg-slate-100 font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                {downloadingQr ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                Unduh QR Code
+              </button>
+            </div>
+          </div>
+
+          {/* Text/Details info */}
+          <div className="text-center mb-8 px-2">
+            <h1 className="text-xl font-extrabold text-[#18080F] mb-2 leading-tight">
+              Aktifkan Gantungan Kunci
+            </h1>
+            <p className="text-xs text-gray-500 leading-relaxed max-w-[280px] mx-auto">
+              Gantungan kunci OneTap NFC premium Anda terdeteksi baru/belum dikonfigurasi. Hubungkan ke akun Anda sekarang untuk menjadikannya kartu nama digital, profil sosial, atau Wi-Fi instan!
+            </p>
+          </div>
+
+          {/* Primary CTA */}
+          <button
+            onClick={() => window.location.href = setupUrl}
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#FF5FA2]/20 hover:shadow-[#FF5FA2]/30 active:scale-[0.98] transition-all"
+          >
+            Hubungkan Sekarang
+            <ArrowRight className="w-5 h-5" />
           </button>
 
           <div className="mt-8 flex flex-col items-center gap-1 opacity-40">
