@@ -74,6 +74,10 @@ export default function RedirectPage({ params }: RedirectPageProps) {
 
             if (isEmptyUrl) {
               if (data.is_keychain) {
+                if (data.is_claimed) {
+                  window.location.href = 'https://onetap-charm.com';
+                  return;
+                }
                 setKeychainData(data);
                 setIsUnconfigured(true);
               } else {
@@ -88,9 +92,23 @@ export default function RedirectPage({ params }: RedirectPageProps) {
               // If it's a redirect mode but has no URL, show setup page
               const redirectModes = ['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'];
               if (redirectModes.includes(data.active_mode) || !data.active_mode) {
+                if (data.is_claimed) {
+                  window.location.href = 'https://onetap-charm.com';
+                  return;
+                }
                 setKeychainData(data);
                 setIsUnconfigured(true);
               } else {
+                const isPayloadEmpty = !data.payload_data || Object.keys(data.payload_data).length === 0 || 
+                  (data.active_mode === 'wifi' && !data.payload_data.ssid) ||
+                  (data.active_mode === 'vcard' && !data.payload_data.firstName) ||
+                  (data.active_mode === 'text' && !data.payload_data.text) ||
+                  (data.active_mode === 'bluetooth' && !data.payload_data.mac);
+
+                if (data.is_claimed && isPayloadEmpty) {
+                  window.location.href = 'https://onetap-charm.com';
+                  return;
+                }
                 setKeychainData(data);
               }
             }
@@ -140,6 +158,10 @@ export default function RedirectPage({ params }: RedirectPageProps) {
 
           if (isEmptyUrl) {
             if (data.is_keychain) {
+              if (data.is_claimed) {
+                window.location.href = 'https://onetap-charm.com';
+                return;
+              }
               setKeychainData(data);
               setIsUnconfigured(true);
             } else {
@@ -154,9 +176,23 @@ export default function RedirectPage({ params }: RedirectPageProps) {
             // If it's a redirect mode but has no URL, show setup page
             const redirectModes = ['url', 'profile', 'whatsapp', 'phone', 'sms', 'email', 'location', 'navigation', 'streetview', 'app', 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'tiktok', 'telegram', 'github', 'spotify'];
             if (redirectModes.includes(data.active_mode) || !data.active_mode) {
+              if (data.is_claimed) {
+                window.location.href = 'https://onetap-charm.com';
+                return;
+              }
               setKeychainData(data);
               setIsUnconfigured(true);
             } else {
+              const isPayloadEmpty = !data.payload_data || Object.keys(data.payload_data).length === 0 || 
+                (data.active_mode === 'wifi' && !data.payload_data.ssid) ||
+                (data.active_mode === 'vcard' && !data.payload_data.firstName) ||
+                (data.active_mode === 'text' && !data.payload_data.text) ||
+                (data.active_mode === 'bluetooth' && !data.payload_data.mac);
+
+              if (data.is_claimed && isPayloadEmpty) {
+                window.location.href = 'https://onetap-charm.com';
+                return;
+              }
               setKeychainData(data);
             }
           }

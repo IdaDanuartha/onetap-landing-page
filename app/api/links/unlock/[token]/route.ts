@@ -181,7 +181,8 @@ export async function POST(
         return NextResponse.json({
           is_keychain: true,
           active_mode: mode,
-          url: redirectUrl
+          url: redirectUrl,
+          is_claimed: keychain.user_id !== null
         });
       }
 
@@ -189,7 +190,8 @@ export async function POST(
       return NextResponse.json({
         is_keychain: true,
         active_mode: mode,
-        payload_data: payload
+        payload_data: payload,
+        is_claimed: keychain.user_id !== null
       });
     }
 
