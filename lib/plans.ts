@@ -33,7 +33,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       nfcConnect: true,
       analytics: true, // Analitik Dasar
       attendance: false,
-      customBranding: true,
+      customBranding: false,
       passwordLinks: true,
       maxProfiles: 1,
     },

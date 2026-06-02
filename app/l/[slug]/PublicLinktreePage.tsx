@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getTheme } from '@/lib/themes';
+import { getTheme, parseCustomTheme } from '@/lib/themes';
 import Link from 'next/link';
 import { User, Lock } from 'lucide-react';
 import { iconMap } from '@/app/components/linktree/IconPicker';
@@ -37,6 +37,10 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
   const [error, setError] = useState('');
 
   const theme = getTheme(page.theme_id);
+  const customData = parseCustomTheme(page.theme_id);
+
+  const isGrid = theme.layout === 'grid';
+  const isCompact = theme.layout === 'compact';
 
   const handleLinkClick = async (linkId: string) => {
     // Track click in background — non-blocking
@@ -62,9 +66,28 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
     }
   };
 
+  const getButtonStyle = () => {
+    switch (theme.buttonStyle) {
+      case 'rounded-full': return 'rounded-full shadow-sm';
+      case 'rounded-none': return 'rounded-none';
+      case 'glass': return 'backdrop-blur-md shadow-xl border-white/20';
+      default: return 'rounded-2xl shadow-sm';
+    }
+  };
+
+  const bgStyle = customData?.bgImage ? {
+    backgroundImage: `url("${customData.bgImage}")`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  } : undefined;
+
   if (!isUnlocked) {
     return (
-      <div className={`min-h-screen flex flex-col items-center justify-center py-12 px-4 ${theme.bg}`}>
+      <div 
+        className={`min-h-screen flex flex-col items-center justify-center py-12 px-4 ${theme.bg}`}
+        style={bgStyle}
+      >
         <div className={`w-full max-w-sm p-8 rounded-3xl ${theme.card} text-center shadow-xl border border-white/20`}>
           <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full bg-black/5">
             <Lock className="w-8 h-8 opacity-40" />
@@ -97,7 +120,10 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
   }
 
   return (
-    <div className={`min-h-screen flex flex-col items-center py-12 px-4 ${theme.bg}`}>
+    <div 
+      className={`min-h-screen flex flex-col items-center py-12 px-4 ${theme.bg}`}
+      style={bgStyle}
+    >
       {/* Profile */}
       <div className="text-center mb-8">
         {profile.avatar_url ? (
@@ -116,7 +142,7 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
       </div>
 
       {/* Links */}
-      <div className="w-full max-w-xl space-y-4">
+      <div className={`w-full max-w-xl ${isGrid ? 'grid grid-cols-2 gap-4' : isCompact ? 'space-y-2.5' : 'space-y-4'}`}>
         {links.map((link) => {
           const IconComponent = link.icon ? (iconMap[link.icon as keyof typeof iconMap] || iconMap.Globe) : iconMap.Globe;
           
@@ -127,17 +153,19 @@ export default function OneTapBio({ username, profile, page, links }: OneTapBioP
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => handleLinkClick(link.id)}
-              className={`w-full p-4 rounded-2xl ${theme.card} flex items-center justify-between border border-white/10 shadow-lg shadow-black/5 active:scale-[0.98] transition-all group`}
+              className={`w-full ${isCompact ? 'p-3' : 'p-4'} ${theme.card} flex ${isGrid ? 'flex-col justify-center text-center py-6 px-4 gap-3' : 'items-center justify-between'} active:scale-[0.98] transition-all group ${getButtonStyle()}`}
             >
-              <div className="flex items-center gap-4">
+              <div className={`flex ${isGrid ? 'flex-col items-center' : 'items-center'} gap-4 w-full`}>
                 <div className={`w-12 h-12 rounded-xl bg-black/5 flex items-center justify-center ${theme.text} opacity-80 group-hover:opacity-100 transition-opacity`}>
                   <IconComponent className="w-6 h-6" />
                 </div>
-                <span className={`font-bold ${theme.text}`}>{link.label}</span>
+                <span className={`font-bold ${theme.text} ${isGrid ? 'text-xs truncate w-full text-center' : ''}`}>{link.label}</span>
               </div>
-              <div className={`w-8 h-8 rounded-full bg-black/5 flex items-center justify-center opacity-30 group-hover:opacity-100 transition-all`}>
-                <ArrowRight className="w-4 h-4" />
-              </div>
+              {!isGrid && (
+                <div className={`w-8 h-8 rounded-full bg-black/5 flex items-center justify-center opacity-30 group-hover:opacity-100 transition-all`}>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              )}
             </a>
           );
         })}

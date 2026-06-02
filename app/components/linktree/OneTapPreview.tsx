@@ -1,5 +1,5 @@
 import { User } from 'lucide-react';
-import { getTheme } from '@/lib/themes';
+import { getTheme, parseCustomTheme } from '@/lib/themes';
 import type { LinkItem } from './SortableLinkCard';
 import { iconMap } from './IconPicker';
 
@@ -11,6 +11,11 @@ interface OneTapPreviewProps {
 
 export function OneTapPreview({ profile, links, theme }: OneTapPreviewProps) {
   const t = getTheme(theme);
+  const customData = parseCustomTheme(theme);
+  
+  const isGrid = t.layout === 'grid';
+  const isCompact = t.layout === 'compact';
+  
   const activeLinks = links.filter((l) => l.isActive);
 
   const getButtonStyle = () => {
@@ -22,8 +27,18 @@ export function OneTapPreview({ profile, links, theme }: OneTapPreviewProps) {
     }
   };
 
+  const bgStyle = customData?.bgImage ? {
+    backgroundImage: `url("${customData.bgImage}")`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  } : undefined;
+
   return (
-    <div className={`min-h-full flex flex-col items-center py-10 px-4 transition-colors duration-500 ${t.bg}`}>
+    <div 
+      className={`min-h-full flex flex-col items-center py-10 px-4 transition-all duration-500 overflow-y-auto ${t.bg}`}
+      style={bgStyle}
+    >
       {/* Avatar placeholder */}
       {profile.avatar ? (
         <img
@@ -53,24 +68,26 @@ export function OneTapPreview({ profile, links, theme }: OneTapPreviewProps) {
       )}
 
       {/* Links */}
-      <div className="w-full max-w-[240px] mt-6 space-y-3">
+      <div className={`w-full ${isGrid ? 'max-w-[260px] grid grid-cols-2 gap-2.5' : 'max-w-[240px]'} mt-6 ${isGrid ? '' : isCompact ? 'space-y-2' : 'space-y-3'}`}>
         {activeLinks.length === 0 ? (
-          <p className="text-center text-xs text-gray-400 mt-4 italic">Belum ada link</p>
+          <p className="text-center text-xs text-gray-400 mt-4 italic col-span-2">Belum ada link</p>
         ) : (
           activeLinks.map((link) => {
             const Icon = iconMap[link.icon];
             return (
               <div
                 key={link.id}
-                className={`flex items-center justify-between gap-2 py-3 px-4 text-[10px] font-bold transition-all duration-300 hover:scale-[1.02] cursor-pointer ${t.card} ${getButtonStyle()}`}
+                className={`flex ${isGrid ? 'flex-col justify-center text-center py-4 px-2 gap-1.5' : 'items-center justify-between gap-2 py-3 px-4'} text-[10px] font-bold transition-all duration-300 hover:scale-[1.02] cursor-pointer ${t.card} ${getButtonStyle()}`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`flex ${isGrid ? 'flex-col items-center' : 'items-center'} gap-2 min-w-0 w-full`}>
                   {Icon && <Icon className="w-4 h-4 flex-shrink-0" />}
-                  <span className="truncate">{link.label || 'Link saya'}</span>
+                  <span className="truncate w-full text-center">{link.label || 'Link saya'}</span>
                 </div>
-                <div className="w-4 h-4 rounded-full bg-black/5 flex items-center justify-center shrink-0">
-                  <div className="w-1.5 h-1.5 rounded-full bg-black/20" />
-                </div>
+                {!isGrid && (
+                  <div className="w-4 h-4 rounded-full bg-black/5 flex items-center justify-center shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-black/20" />
+                  </div>
+                )}
               </div>
             );
           })
@@ -78,8 +95,7 @@ export function OneTapPreview({ profile, links, theme }: OneTapPreviewProps) {
       </div>
 
       {/* Branding */}
-      <p className="mt-6 text-[10px] text-gray-400">Powered by OneTap</p>
+      <p className={`mt-auto pt-6 text-[10px] ${t.text} opacity-40`}>Powered by OneTap</p>
     </div>
   );
 }
-

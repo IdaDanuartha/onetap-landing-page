@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getPlan } from '@/lib/plans';
+import { getPlan, canAccess } from '@/lib/plans';
+import { templates } from '@/lib/themes';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,15 @@ export async function POST(req: Request) {
     // Use getPlan() which falls back to 'starter' when plan is expired
     const activePlan = getPlan(userPlan, expiresAt);
     const maxPages = activePlan.features.maxProfiles;
+
+    // Validate theme access
+    const selectedTemplate = templates.find(t => t.id === theme);
+    const hasPremiumAccess = canAccess(userPlan, 'customBranding', expiresAt);
+    if (selectedTemplate?.isPro && !hasPremiumAccess) {
+      return NextResponse.json({
+        error: 'Maaf, Anda memerlukan paket Professional atau Education untuk menggunakan template premium ini!'
+      }, { status: 403 });
+    }
 
     // Check current pages count
     const { count } = await supabase

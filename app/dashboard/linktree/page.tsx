@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, EyeOff, Layers, AlertCircle, Radio, BookOpen } from 'lucide-react';
+import { Plus, Save, Check, ArrowLeft, ExternalLink, Loader2, LogOut, Camera, Trash2, Zap, Layout, Globe, Copy, Share2, Smartphone, Lock, X, Eye, EyeOff, Layers, AlertCircle, Radio, BookOpen, Search, SlidersHorizontal } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { createClient } from '@/lib/supabase/client';
 import { themes, templates } from '@/lib/themes';
@@ -45,8 +45,48 @@ export default function OneTapBuilderPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const language = locale;
   const d = dict[language].dashboard.builder;
+
+  const selectedTemplate = useMemo(() => templates.find(t => t.id === selectedTheme), [selectedTheme]);
+  const hasPremiumAccess = useMemo(() => canAccess(plan, 'customBranding', expiresAt), [plan, expiresAt]);
+  const isPremiumThemeSelected = useMemo(() => !!(selectedTemplate?.isPro && !hasPremiumAccess), [selectedTemplate, hasPremiumAccess]);
+
+  // Themes Explorer Modal State
+  const [showThemesModal, setShowThemesModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterTab, setFilterTab] = useState<'all' | 'free' | 'pro'>('all');
+
+  // Premium Customizations
+  const [customBgImage, setCustomBgImage] = useState('');
+  const [customButtonStyle, setCustomButtonStyle] = useState<'rounded-xl' | 'rounded-full' | 'rounded-none' | 'glass' | ''>('');
+  const [customLayout, setCustomLayout] = useState<'classic' | 'compact' | 'grid' | ''>('');
+  const [uploadingBg, setUploadingBg] = useState(false);
+  const fileInputBgRef = useRef<HTMLInputElement>(null);
+
+  // Dynamic theme ID serialization for save body & previews
+  const resolvedThemeId = useMemo(() => {
+    if (!hasPremiumAccess) {
+      return selectedTheme;
+    }
+    if (customBgImage || customButtonStyle || customLayout) {
+      return `custom:${JSON.stringify({
+        themeId: selectedTheme,
+        bgImage: customBgImage || undefined,
+        buttonStyle: customButtonStyle || undefined,
+        layout: customLayout || undefined,
+      })}`;
+    }
+    return selectedTheme;
+  }, [selectedTheme, customBgImage, customButtonStyle, customLayout, hasPremiumAccess]);
+
+  // Filter exactly 4 basic and exactly 4 premium themes for dashboard main display
+  const displayedThemes = useMemo(() => {
+    const basicThemes = themes.filter(t => !t.isPro).slice(0, 4);
+    const premiumThemes = themes.filter(t => t.isPro).slice(0, 4);
+    return [...basicThemes, ...premiumThemes];
+  }, []);
 
   // Guided Tour State
   const [runTour, setRunTour] = useState(false);
@@ -189,7 +229,25 @@ export default function OneTapBuilderPage() {
           bio: data.page.bio ?? '',
           avatar: data.profile?.avatar_url ?? '',
         });
-        setSelectedTheme(data.page.theme_id ?? 'pink');
+        
+        const dbThemeId = data.page.theme_id ?? 'pink';
+        if (dbThemeId.startsWith('custom:')) {
+          try {
+            const customData = JSON.parse(dbThemeId.substring(7));
+            setSelectedTheme(customData.themeId || 'pink');
+            setCustomBgImage(customData.bgImage ?? '');
+            setCustomButtonStyle(customData.buttonStyle ?? '');
+            setCustomLayout(customData.layout ?? '');
+          } catch (e) {
+            console.error('Failed to parse loaded custom theme:', e);
+            setSelectedTheme(dbThemeId);
+          }
+        } else {
+          setSelectedTheme(dbThemeId);
+          setCustomBgImage('');
+          setCustomButtonStyle('');
+          setCustomLayout('');
+        }
       } else {
         // If no page exists yet, set slug to username as default
         setSlug(data.profile?.username ?? '');
@@ -257,13 +315,8 @@ export default function OneTapBuilderPage() {
     }
 
     // Check if user is trying to save a Pro template without being Pro
-    const selectedTemplate = templates.find(t => t.id === selectedTheme);
-    const hasPremiumAccess = canAccess(plan, 'customBranding', expiresAt);
-
-    if (selectedTemplate?.isPro && !hasPremiumAccess) {
-      setToastMsg(d.profile.premiumTemplateError);
-      setToastType('warning');
-      setShowToast(true);
+    if (isPremiumThemeSelected) {
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -282,7 +335,7 @@ export default function OneTapBuilderPage() {
         body: JSON.stringify({ 
           profile, 
           links, 
-          theme: selectedTheme,
+          theme: resolvedThemeId,
           pageId: currentPageId,
           slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
           isPublished
@@ -329,6 +382,9 @@ export default function OneTapBuilderPage() {
     setProfile({ title: d.profile.newProfile, bio: '', avatar: profile.avatar });
     setLinks([]);
     setSelectedTheme('pink');
+    setCustomBgImage('');
+    setCustomButtonStyle('');
+    setCustomLayout('');
     setSlug(''); // User will need to enter a new slug
   };
 
@@ -366,6 +422,24 @@ export default function OneTapBuilderPage() {
   const deleteProfile = async (pageId: string) => {
     setDeletingPageId(pageId);
     try {
+      // Clear custom premium background from storage before deleting the page data
+      try {
+        const detailRes = await fetch(`/api/linktree/save?pageId=${pageId}`);
+        if (detailRes.ok) {
+          const detailData = await detailRes.json();
+          const dbThemeId = detailData.page?.theme_id;
+          if (dbThemeId && dbThemeId.startsWith('custom:')) {
+            const customData = JSON.parse(dbThemeId.substring(7));
+            if (customData.bgImage) {
+              const { deleteStorageFile } = await import('@/lib/supabase/storage');
+              await deleteStorageFile(customData.bgImage);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to clean up page custom bg on delete:', e);
+      }
+
       const res = await fetch(`/api/linktree/save?pageId=${pageId}`, {
         method: 'DELETE',
       });
@@ -426,6 +500,17 @@ export default function OneTapBuilderPage() {
         setShowToast(true);
         return;
       }
+
+      // Delete old avatar from storage to save space
+      if (profile.avatar) {
+        try {
+          const { deleteStorageFile } = await import('@/lib/supabase/storage');
+          await deleteStorageFile(profile.avatar);
+        } catch (e) {
+          console.error('Failed to delete old avatar:', e);
+        }
+      }
+
       setProfile((prev) => ({ ...prev, avatar: publicUrl }));
       
       await supabase
@@ -440,6 +525,49 @@ export default function OneTapBuilderPage() {
       setShowToast(true);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBg(true);
+    try {
+      const { uploadBg } = await import('@/lib/supabase/storage');
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const publicUrl = await uploadBg(user.id, file);
+      if (!publicUrl) {
+        setToastMsg('Gagal mengunggah latar belakang.');
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
+      
+      // Delete old background image from storage to save space
+      if (customBgImage) {
+        try {
+          const { deleteStorageFile } = await import('@/lib/supabase/storage');
+          await deleteStorageFile(customBgImage);
+        } catch (e) {
+          console.error('Failed to delete old background:', e);
+        }
+      }
+
+      setCustomBgImage(publicUrl);
+      setToastMsg('Latar belakang berhasil diunggah!');
+      setToastType('success');
+      setShowToast(true);
+    } catch (err) {
+      console.error('Error uploading custom bg:', err);
+      setToastMsg('Gagal mengunggah latar belakang.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setUploadingBg(false);
     }
   };
 
@@ -510,13 +638,17 @@ export default function OneTapBuilderPage() {
                 className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-base transition-all duration-300 whitespace-nowrap ${
                   saved 
                     ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
-                    : 'bg-[#18080F] text-white hover:bg-[#FF5FA2] shadow-lg shadow-[#18080F]/10'
+                    : isPremiumThemeSelected
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/20'
+                      : 'bg-[#18080F] text-white hover:bg-[#FF5FA2] shadow-lg shadow-[#18080F]/10'
                 }`}
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 sm:w-4 h-4 animate-spin" />
                 ) : saved ? (
                   <><Check className="w-3.5 h-3.5 sm:w-4 h-4" /> {d.saved}</>
+                ) : isPremiumThemeSelected ? (
+                  <><Lock className="w-3.5 h-3.5 sm:w-4 h-4" /> {locale === 'id' ? 'Upgrade Paket' : 'Upgrade Plan'}</>
                 ) : (
                   <><Save className="w-3.5 h-3.5 sm:w-4 h-4" /> {d.save}</>
                 )}
@@ -907,91 +1039,247 @@ export default function OneTapBuilderPage() {
             <div id="tour-theme-picker" className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black text-[#18080F] tracking-tight">{d.appearance.theme}</h2>
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full">Standard</span>
+                <button
+                  onClick={() => setShowThemesModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-[#FF5FA2]/5 hover:bg-[#FF5FA2]/10 border border-[#FF5FA2]/10 text-xs font-black text-[#FF5FA2] transition-all duration-300 cursor-pointer shadow-sm hover:shadow active:scale-95 animate-pulse"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>{locale === 'id' ? 'Lihat Semua' : 'Explore All'}</span>
+                </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
-                {themes.map((theme) => (
-                  <button
-                    key={theme.id}
-                    onClick={() => {
-                      setSelectedTheme(theme.id);
-                      if (runTour && tourStepIndex === 3) {
-                        setTourStepIndex(4);
-                      }
-                    }}
-                    className={`group relative p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 flex flex-col items-center gap-2 sm:gap-3 ${
-                      selectedTheme === theme.id 
-                        ? 'border-[#FF5FA2] bg-white shadow-xl shadow-[#FF5FA2]/10 -translate-y-1' 
-                        : 'border-[#F6B7C8]/10 bg-white hover:border-[#FF5FA2]/30'
-                    }`}
-                  >
-                    <div className={`w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl shadow-inner ${theme.previewBg}`} />
-                    <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${selectedTheme === theme.id ? 'text-[#FF5FA2]' : 'text-gray-400'}`}>
-                      {theme.name}
-                    </span>
-                    {selectedTheme === theme.id && (
-                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-lg">
-                        <Check className="w-2.5 h-2.5" strokeWidth={5} />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Template picker */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-black text-[#18080F] tracking-tight">{d.appearance.template}</h2>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100">
-                  <Zap className="w-3 h-3" fill="currentColor" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Premium</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-                {templates.map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => setSelectedTheme(template.id)}
-                    className={`group relative p-3 sm:p-4 rounded-[28px] sm:rounded-[32px] border-2 transition-all duration-300 flex flex-col items-center gap-3 sm:gap-4 ${
-                      selectedTheme === template.id 
-                        ? 'border-[#FF5FA2] bg-white shadow-2xl shadow-[#FF5FA2]/20 -translate-y-2' 
-                        : 'border-[#F6B7C8]/10 bg-white hover:border-[#FF5FA2]/30'
-                    }`}
-                  >
-                    <div className={`w-full aspect-[4/5] rounded-xl sm:rounded-2xl shadow-inner overflow-hidden relative ${template.previewBg}`}>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4 gap-2">
-                        <div className="w-6 h-6 rounded-full bg-white/20" />
-                        <div className="w-full h-2 rounded-full bg-white/20" />
-                        <div className="w-full h-2 rounded-full bg-white/20" />
-                      </div>
-                      {!canAccess(plan, 'customBranding', expiresAt) && (
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                           <div className="bg-white rounded-full p-2">
-                             <Lock className="w-4 h-4 text-[#18080F]" />
-                           </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+                {displayedThemes.map((theme) => {
+                  const isSelected = selectedTheme === theme.id;
+                  const isThemePro = theme.isPro;
+                  const isPreviewMode = isThemePro && !hasPremiumAccess;
+                  
+                  return (
+                    <button
+                      key={theme.id}
+                      onClick={() => {
+                        setSelectedTheme(theme.id);
+                        if (runTour && tourStepIndex === 3) {
+                          setTourStepIndex(4);
+                        }
+                      }}
+                      className={`group relative p-3 sm:p-4 rounded-[28px] sm:rounded-[32px] border-2 transition-all duration-300 flex flex-col items-center gap-3 sm:gap-4 ${
+                        isSelected 
+                          ? isPreviewMode 
+                            ? 'border-amber-500 bg-white shadow-2xl shadow-amber-500/10 -translate-y-2'
+                            : 'border-[#FF5FA2] bg-white shadow-2xl shadow-[#FF5FA2]/15 -translate-y-2' 
+                          : 'border-[#F6B7C8]/10 bg-white hover:border-[#FF5FA2]/30 hover:-translate-y-1'
+                      }`}
+                    >
+                      {/* PRO Badge */}
+                      {isThemePro && (
+                        <div className="absolute top-5 left-5 z-10 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm">
+                          PRO
                         </div>
                       )}
-                    </div>
-                    <div className="text-center">
-                      <p className={`text-[10px] font-black uppercase tracking-widest ${selectedTheme === template.id ? 'text-[#FF5FA2]' : 'text-gray-400'}`}>
-                        {template.name}
-                      </p>
-                    </div>
-                    {selectedTheme === template.id && (
-                      <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-xl z-10">
-                        <Check className="w-3.5 h-3.5" strokeWidth={5} />
+
+                      <div className={`w-full aspect-[4/5] rounded-xl sm:rounded-2xl shadow-inner overflow-hidden relative ${theme.previewBg}`}>
+                        {/* Inner mockup look */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 gap-2">
+                          <div className="w-6 h-6 rounded-full bg-white/20" />
+                          <div className="w-full h-2 rounded-full bg-white/20" />
+                          <div className="w-full h-2 rounded-full bg-white/20" />
+                        </div>
+
+                        {/* Lock Overlay for non-premium accounts when viewing/hovering pro themes */}
+                        {isPreviewMode && (
+                          <div className="absolute inset-0 bg-[#18080F]/45 backdrop-blur-[1px] flex items-center justify-center transition-all duration-300 opacity-100">
+                            <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg">
+                              <Lock className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </button>
-                ))}
+
+                      <div className="text-center">
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${
+                          isSelected 
+                            ? isPreviewMode ? 'text-amber-600' : 'text-[#FF5FA2]' 
+                            : 'text-gray-400'
+                        }`}>
+                          {theme.name}
+                        </p>
+                      </div>
+
+                      {/* Selected Indicator */}
+                      {isSelected && (
+                        isPreviewMode ? (
+                          <div className="absolute -top-2.5 -right-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-widest shadow-xl z-10 flex items-center gap-1">
+                            <Eye className="w-2.5 h-2.5" />
+                            <span>{locale === 'id' ? 'Pratinjau' : 'Preview'}</span>
+                          </div>
+                        ) : (
+                          <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-xl z-10">
+                            <Check className="w-3.5 h-3.5" strokeWidth={5} />
+                          </div>
+                        )
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-              {!canAccess(plan, 'customBranding', expiresAt) && (
+
+              {!canAccess(plan, 'customBranding', expiresAt) ? (
                 <div className="text-xs font-medium text-amber-600 bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <div>
                     <strong className="font-bold">Info:</strong> {d.appearance.premiumInfo}
                   </div>
+                </div>
+              ) : (
+                /* Premium Customizer UI Panel */
+                <div className="p-6 sm:p-8 bg-white/60 border border-[#F6B7C8]/15 rounded-[32px] shadow-sm backdrop-blur-md space-y-6">
+                  <div>
+                    <h3 className="text-lg font-black text-[#18080F] flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-amber-500" fill="currentColor" />
+                      {locale === 'id' ? 'Kustomisasi Tampilan Premium' : 'Premium Layout Customization'}
+                    </h3>
+                    <p className="text-xs font-medium text-gray-400 mt-0.5">
+                      {locale === 'id' 
+                        ? 'Sesuaikan latar belakang, bentuk tombol, dan tata letak sesukamu' 
+                        : 'Customize the background, button shapes, and overall layout as you like'}
+                    </p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Background Customization */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest">
+                        {locale === 'id' ? 'Latar Belakang Kustom (Gambar)' : 'Custom Background (Image)'}
+                      </label>
+                      
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                          type="text"
+                          placeholder="https://example.com/image.jpg"
+                          value={customBgImage}
+                          onChange={(e) => setCustomBgImage(e.target.value)}
+                          className="flex-1 h-11 px-4 rounded-xl border border-[#F6B7C8]/10 bg-[#FFF8F2]/30 focus:bg-white focus:border-[#FF5FA2]/40 outline-none text-xs font-bold text-[#18080F]"
+                        />
+                        
+                        <button
+                          onClick={() => fileInputBgRef.current?.click()}
+                          disabled={uploadingBg}
+                          className="h-11 px-4 rounded-xl bg-gray-50 hover:bg-[#FF5FA2]/5 border border-gray-100 hover:border-[#FF5FA2]/20 text-xs font-bold text-gray-600 hover:text-[#FF5FA2] flex items-center justify-center gap-1.5 transition-all shrink-0"
+                        >
+                          {uploadingBg ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Camera className="w-4 h-4" />
+                          )}
+                          <span>{locale === 'id' ? 'Unggah' : 'Upload'}</span>
+                        </button>
+                        <input 
+                          type="file" 
+                          ref={fileInputBgRef} 
+                          onChange={handleBgUpload} 
+                          className="hidden" 
+                          accept="image/*" 
+                        />
+                      </div>
+                      
+                      {customBgImage && (
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-[#FFF8F2]/20 border border-[#F6B7C8]/10">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-10 h-10 rounded-lg bg-cover bg-center border border-gray-100 shrink-0"
+                              style={{ backgroundImage: `url("${customBgImage}")` }}
+                            />
+                            <span className="text-[10px] font-bold text-gray-400 truncate max-w-[150px]">Latar kustom aktif</span>
+                            <button 
+                              onClick={async () => {
+                                if (customBgImage) {
+                                  try {
+                                    const { deleteStorageFile } = await import('@/lib/supabase/storage');
+                                    await deleteStorageFile(customBgImage);
+                                  } catch (e) {
+                                    console.error('Failed to delete background:', e);
+                                  }
+                                }
+                                setCustomBgImage('');
+                              }}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Layout Styles */}
+                    <div className="space-y-4">
+                      {/* Button style selector */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest">
+                          {locale === 'id' ? 'Gaya & Bentuk Tombol' : 'Button Style Shape'}
+                        </label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {(['rounded-xl', 'rounded-full', 'rounded-none', 'glass'] as const).map((style) => (
+                            <button
+                              key={style}
+                              onClick={() => setCustomButtonStyle(customButtonStyle === style ? '' : style)}
+                              className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer ${
+                                customButtonStyle === style 
+                                  ? 'border-[#FF5FA2] bg-[#FF5FA2]/5 text-[#FF5FA2]' 
+                                  : 'border-gray-100 bg-white hover:border-[#FF5FA2]/20 text-gray-400'
+                              }`}
+                            >
+                              {style === 'rounded-xl' ? 'Square' : style === 'rounded-full' ? 'Pill' : style === 'rounded-none' ? 'Flat' : 'Glass'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Layout Orientation */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-[#FF5FA2] uppercase tracking-widest">
+                          {locale === 'id' ? 'Tata Letak & Tata Ruang' : 'Layout Structure'}
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(['classic', 'compact', 'grid'] as const).map((layout) => (
+                            <button
+                              key={layout}
+                              onClick={() => setCustomLayout(customLayout === layout ? '' : layout)}
+                              className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer ${
+                                customLayout === layout 
+                                  ? 'border-[#FF5FA2] bg-[#FF5FA2]/5 text-[#FF5FA2]' 
+                                  : 'border-gray-100 bg-white hover:border-[#FF5FA2]/20 text-gray-400'
+                              }`}
+                            >
+                              {layout === 'classic' ? 'Classic' : layout === 'compact' ? 'Compact' : 'Grid 2x2'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(customBgImage || customButtonStyle || customLayout) && (
+                    <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
+                      <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2.5 py-1 rounded-lg">
+                        Kustomisasi premium diterapkan
+                      </span>
+                      <button
+                        onClick={() => {
+                          setCustomBgImage('');
+                          setCustomButtonStyle('');
+                          setCustomLayout('');
+                          setToastMsg('Pilihan kustomisasi premium direset.');
+                          setToastType('info');
+                          setShowToast(true);
+                        }}
+                        className="text-xs font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-wider"
+                      >
+                        Hapus Kustomisasi
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1035,7 +1323,7 @@ export default function OneTapBuilderPage() {
               <div className="relative mx-auto w-[320px] h-[640px] bg-[#18080F] rounded-[56px] p-4 shadow-[0_40px_100px_-20px_rgba(24,8,15,0.3)] ring-1 ring-gray-800">
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#18080F] rounded-b-3xl z-20" />
                 <div className="w-full h-full rounded-[42px] overflow-hidden bg-white relative">
-                <OneTapPreview profile={profile} links={links} theme={selectedTheme} />
+                <OneTapPreview profile={profile} links={links} theme={resolvedThemeId} />
                 </div>
                 <div className="absolute top-32 -left-1 w-1 h-12 bg-gray-800 rounded-r-lg" />
                 <div className="absolute top-48 -left-1 w-1 h-12 bg-gray-800 rounded-r-lg" />
@@ -1106,7 +1394,7 @@ export default function OneTapBuilderPage() {
             >
               <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#18080F] rounded-b-2xl z-20" />
               <div className="w-full h-full rounded-[42px] overflow-hidden bg-white relative">
-                <OneTapPreview profile={profile} links={links} theme={selectedTheme} />
+                <OneTapPreview profile={profile} links={links} theme={resolvedThemeId} />
               </div>
               
               <div className="absolute -bottom-16 left-0 right-0 flex flex-col items-center gap-2">
@@ -1211,6 +1499,277 @@ export default function OneTapBuilderPage() {
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Menghapus...</>
                     : <><Trash2 className="w-4 h-4" /> Hapus Sekarang</>
                   }
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== PREMIUM UPGRADE MODAL ===== */}
+      <AnimatePresence>
+        {showUpgradeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowUpgradeModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="bg-white rounded-[32px] shadow-2xl w-full max-w-md p-8 space-y-6 relative overflow-hidden"
+            >
+              {/* Premium Gradient Background Accent */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-[#FF5FA2] to-[#E8457E]" />
+
+              {/* Icon */}
+              <div className="w-16 h-16 rounded-[24px] bg-[#FFF1F7] flex items-center justify-center mx-auto shadow-inner relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#FF5FA2]/10 to-amber-500/10 animate-pulse" />
+                <Zap className="w-8 h-8 text-[#FF5FA2]" fill="currentColor" />
+              </div>
+
+              {/* Text */}
+              <div className="text-center space-y-3">
+                <h3 className="text-2xl font-black text-[#18080F] tracking-tight">
+                  {locale === 'id' ? 'Template Premium Terkunci' : 'Premium Template Locked'}
+                </h3>
+                <p className="text-sm font-medium text-gray-500 leading-relaxed">
+                  {locale === 'id' 
+                    ? 'Anda sedang dalam mode pratinjau untuk template premium ini. Upgrade ke paket Professional atau Education untuk mempublikasikan dan menyimpan perubahan menggunakan template ini.'
+                    : 'You are currently previewing this premium template. Upgrade to Professional or Education plan to publish and save changes using this template.'
+                  }
+                </p>
+                {selectedTemplate && (
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-100 text-amber-700 font-bold text-xs uppercase tracking-wide">
+                    <Layout className="w-3.5 h-3.5" />
+                    {selectedTemplate.name}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-3 pt-2">
+                <Link
+                  href="/pricing"
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#FF5FA2] to-[#E8457E] text-white text-center font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[#FF5FA2]/20 flex items-center justify-center gap-2"
+                >
+                  <Zap className="w-4 h-4 fill-currentColor" />
+                  {locale === 'id' ? 'Upgrade Sekarang' : 'Upgrade Now'}
+                </Link>
+                <button
+                  onClick={() => {
+                    // Reset to a standard free theme (e.g. pink theme)
+                    setSelectedTheme('pink');
+                    setShowUpgradeModal(false);
+                    setToastMsg(locale === 'id' ? 'Kembali ke tema standard.' : 'Reverted to standard theme.');
+                    setToastType('info');
+                    setShowToast(true);
+                  }}
+                  className="w-full py-4 rounded-2xl border border-gray-100 text-xs font-black text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {locale === 'id' ? 'Gunakan Tema Standard' : 'Use Standard Theme'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== THEMES EXPLORER MODAL ===== */}
+      <AnimatePresence>
+        {showThemesModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md"
+            onClick={(e) => { if (e.target === e.currentTarget) { setShowThemesModal(false); setSearchQuery(''); setFilterTab('all'); } }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 30 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-gray-100"
+            >
+              {/* Header */}
+              <div className="p-6 sm:p-8 border-b border-gray-100 flex items-start justify-between">
+                <div>
+                  <h3 className="text-2xl font-black text-[#18080F] tracking-tight">
+                    {locale === 'id' ? 'Pilih Tema & Tampilan' : 'Select Theme & Layout'}
+                  </h3>
+                  <p className="text-sm font-medium text-gray-400 mt-1">
+                    {locale === 'id' 
+                      ? 'Temukan gaya visual yang cocok untuk OneTap Card Anda' 
+                      : 'Find the perfect visual style for your OneTap Card'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setShowThemesModal(false); setSearchQuery(''); setFilterTab('all'); }}
+                  className="p-2.5 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-red-50 hover:border-red-100 hover:text-red-500 transition-all duration-300 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Search & Filters */}
+              <div className="p-6 sm:px-8 sm:py-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                {/* Search */}
+                <div className="relative w-full sm:max-w-xs">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder={locale === 'id' ? 'Cari tema...' : 'Search themes...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-gray-200 outline-none text-sm font-bold text-gray-700 focus:border-[#FF5FA2]/50 shadow-inner"
+                  />
+                </div>
+
+                {/* Filter Tabs */}
+                <div className="flex bg-gray-100 p-1 rounded-2xl w-full sm:w-auto border border-gray-200">
+                  {(['all', 'free', 'pro'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setFilterTab(tab)}
+                      className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
+                        filterTab === tab 
+                          ? 'bg-white text-[#FF5FA2] shadow-sm' 
+                          : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      {tab === 'all' 
+                        ? (locale === 'id' ? 'Semua' : 'All')
+                        : tab === 'free'
+                          ? (locale === 'id' ? 'Dasar' : 'Basic')
+                          : 'Premium'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Main Content Grid */}
+              <div className="flex-1 overflow-y-auto p-6 sm:p-8">
+                {/* Grid */}
+                {(() => {
+                  const filtered = themes.filter((theme) => {
+                    const matchesSearch = theme.name.toLowerCase().includes(searchQuery.toLowerCase());
+                    const matchesFilter = filterTab === 'all' 
+                      ? true 
+                      : filterTab === 'free' 
+                        ? !theme.isPro 
+                        : theme.isPro;
+                    return matchesSearch && matchesFilter;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <SlidersHorizontal className="w-12 h-12 text-gray-300 mb-4 stroke-1 animate-pulse" />
+                        <p className="text-base font-black text-gray-500">
+                          {locale === 'id' ? 'Tema tidak ditemukan' : 'Theme not found'}
+                        </p>
+                        <p className="text-xs font-medium text-gray-400 mt-1">
+                          {locale === 'id' 
+                            ? 'Coba gunakan kata kunci pencarian yang lain.' 
+                            : 'Try using a different search keyword.'}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+                      {filtered.map((theme) => {
+                        const isSelected = selectedTheme === theme.id;
+                        const isThemePro = theme.isPro;
+                        const isPreviewMode = isThemePro && !hasPremiumAccess;
+                        
+                        return (
+                          <button
+                            key={theme.id}
+                            onClick={() => {
+                              setSelectedTheme(theme.id);
+                              if (runTour && tourStepIndex === 3) {
+                                setTourStepIndex(4);
+                              }
+                            }}
+                            className={`group relative p-3 sm:p-4 rounded-[28px] sm:rounded-[32px] border-2 transition-all duration-300 flex flex-col items-center gap-3 sm:gap-4 ${
+                              isSelected 
+                                ? isPreviewMode
+                                  ? 'border-amber-500 bg-white shadow-2xl shadow-amber-500/10 -translate-y-2'
+                                  : 'border-[#FF5FA2] bg-white shadow-2xl shadow-[#FF5FA2]/15 -translate-y-2' 
+                                : 'border-[#F6B7C8]/10 bg-white hover:border-[#FF5FA2]/30 hover:-translate-y-1'
+                            }`}
+                          >
+                            {/* PRO Badge */}
+                            {isThemePro && (
+                              <div className="absolute top-5 left-5 z-10 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm">
+                                PRO
+                              </div>
+                            )}
+
+                            <div className={`w-full aspect-[4/5] rounded-xl sm:rounded-2xl shadow-inner overflow-hidden relative ${theme.previewBg}`}>
+                              {/* Inner mockup look */}
+                              <div className="absolute inset-0 flex flex-col items-center justify-center p-4 gap-2">
+                                <div className="w-6 h-6 rounded-full bg-white/20" />
+                                <div className="w-full h-2 rounded-full bg-white/20" />
+                                <div className="w-full h-2 rounded-full bg-white/20" />
+                              </div>
+
+                              {/* Lock Overlay for non-premium accounts when viewing/hovering pro themes */}
+                              {isPreviewMode && (
+                                <div className="absolute inset-0 bg-[#18080F]/45 backdrop-blur-[1px] flex items-center justify-center transition-all duration-300 opacity-100">
+                                  <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg">
+                                    <Lock className="w-3.5 h-3.5" />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="text-center">
+                              <p className={`text-[10px] font-black uppercase tracking-widest ${
+                                isSelected 
+                                  ? isPreviewMode ? 'text-amber-600' : 'text-[#FF5FA2]' 
+                                  : 'text-gray-400'
+                              }`}>
+                                {theme.name}
+                              </p>
+                            </div>
+
+                            {/* Selected Indicator */}
+                            {isSelected && (
+                              isPreviewMode ? (
+                                <div className="absolute -top-2.5 -right-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-widest shadow-xl z-10 flex items-center gap-1">
+                                  <Eye className="w-2.5 h-2.5" />
+                                  <span>{locale === 'id' ? 'Pratinjau' : 'Preview'}</span>
+                                </div>
+                              ) : (
+                                <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-xl z-10">
+                                  <Check className="w-3.5 h-3.5" strokeWidth={5} />
+                                </div>
+                              )
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-100 flex items-center justify-end bg-gray-50/50">
+                <button
+                  onClick={() => { setShowThemesModal(false); setSearchQuery(''); setFilterTab('all'); }}
+                  className="px-6 py-3 rounded-2xl bg-[#18080F] hover:bg-[#18080F]/90 text-white text-xs font-black uppercase tracking-widest cursor-pointer shadow-lg active:scale-95 transition-all duration-300"
+                >
+                  {locale === 'id' ? 'Selesai' : 'Done'}
                 </button>
               </div>
             </motion.div>
