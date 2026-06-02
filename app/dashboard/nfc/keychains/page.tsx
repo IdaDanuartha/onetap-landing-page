@@ -981,6 +981,26 @@ export default function KeychainsManagerPage() {
               </p>
             </div>
 
+            {/* Click Card Reminder Alert */}
+            {keychains.length > 0 && !loading && (
+              <div className="p-4 rounded-3xl bg-white border border-[#FF5FA2]/20 flex items-start gap-2.5 shadow-sm shadow-[#FF5FA2]/5">
+                <div className="w-8 h-8 rounded-xl bg-[#FFF1F7] border border-[#FFF1F7] flex items-center justify-center text-[#FF5FA2] flex-shrink-0 animate-pulse">
+                  <Info className="w-4 h-4 text-[#FF5FA2]" />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <p className="text-[10px] font-black text-[#FF5FA2] uppercase tracking-wider mb-0.5">
+                    {t('Petunjuk Penggunaan', 'Usage Guide')}
+                  </p>
+                  <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                    {t(
+                      'Silakan klik salah satu kartu gantungan kunci di bawah ini terlebih dahulu untuk melihat detail atau mengubah data konfigurasinya.',
+                      'Please click on one of the keychain cards below first to view details or configure its redirection settings.'
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Skeletons Loading */}
             {loading ? (
               <div className="space-y-4">
@@ -1064,24 +1084,12 @@ export default function KeychainsManagerPage() {
                             </div>
                           </div>
 
-                          {/* Info Display Badge & Click Indicator */}
-                          <div className="flex items-center justify-between gap-2 mt-1">
+                          {/* Info Display Badge */}
+                          <div className="flex items-center gap-2">
                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider ${badge.bg} ${badge.border} ${badge.text}`}>
                               {badge.icon}
                               {badge.label}
                             </span>
-
-                            {isSelected ? (
-                              <span className="text-[9px] font-black text-[#FF5FA2] bg-[#FF5FA2]/5 px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse border border-[#FF5FA2]/10 uppercase tracking-wider">
-                                <Sparkles className="w-3 h-3 text-[#FF5FA2]" />
-                                {t('Dipilih', 'Selected')}
-                              </span>
-                            ) : (
-                              <span className="text-[9px] font-black text-gray-400 group-hover:text-[#FF5FA2] transition-colors flex items-center gap-0.5 uppercase tracking-wider">
-                                {t('Klik Kustomisasi', 'Configure')}
-                                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" />
-                              </span>
-                            )}
                           </div>
                         </div>
 
