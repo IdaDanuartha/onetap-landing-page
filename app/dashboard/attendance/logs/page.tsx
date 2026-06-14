@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle2, XCircle, Search, Calendar, User, ArrowRight, Filter, Download, Globe } from "lucide-react";
+import { CheckCircle2, XCircle, Search, Calendar, User, ArrowRight, Filter, Download, Globe, RefreshCw, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { dict } from "@/lib/i18n/dict";
+import Toast from "@/app/components/Toast";
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,12 @@ export default function DashboardAttendanceLogsPage() {
   const [subjectFilter, setSubjectFilter] = useState("");
   const [uniqueClasses, setUniqueClasses] = useState<string[]>([]);
   const [uniqueSubjects, setUniqueSubjects] = useState<string[]>([]);
+  
+  // Resend WhatsApp states
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "warning" | "info">("success");
 
   useEffect(() => {
     async function fetchLogs() {
@@ -92,6 +99,40 @@ export default function DashboardAttendanceLogsPage() {
     };
   }, []);
 
+  const handleResend = async (logId: string) => {
+    setResendingId(logId);
+    try {
+      const res = await fetch("/api/attendance/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logId })
+      });
+      const result = await res.json();
+      
+      if (res.ok && result.success) {
+        // Update local logs list
+        setLogs(prev => prev.map(log => 
+          log.id === logId 
+            ? { ...log, wa_sent: true } 
+            : log
+        ));
+        setToastMsg("WhatsApp berhasil dikirim ulang!");
+        setToastType("success");
+        setShowToast(true);
+      } else {
+        setToastMsg(result.error || "Gagal mengirim ulang WhatsApp");
+        setToastType("error");
+        setShowToast(true);
+      }
+    } catch (err) {
+      console.error("Error resending WA:", err);
+      setToastMsg("Terjadi kesalahan koneksi.");
+      setToastType("error");
+      setShowToast(true);
+    } finally {
+      setResendingId(null);
+    }
+  };
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = 
@@ -266,10 +307,25 @@ export default function DashboardAttendanceLogsPage() {
                             Terkirim
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wider border border-red-100">
-                            <XCircle className="w-3 h-3" />
-                            Gagal
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wider border border-red-100">
+                              <XCircle className="w-3 h-3" />
+                              Gagal
+                            </span>
+                            <button
+                              onClick={() => handleResend(log.id)}
+                              disabled={resendingId === log.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-gray-500 hover:text-[#FF5FA2] bg-gray-50 hover:bg-[#FF5FA2]/5 border border-gray-200 hover:border-[#FF5FA2]/30 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              title="Kirim Ulang WhatsApp"
+                            >
+                              {resendingId === log.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-[#FF5FA2]" />
+                              ) : (
+                                <RefreshCw className="w-3 h-3" />
+                              )}
+                              <span>Kirim Ulang</span>
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -289,6 +345,12 @@ export default function DashboardAttendanceLogsPage() {
           </div>
         </div>
       </main>
+      <Toast 
+        isVisible={showToast} 
+        message={toastMsg} 
+        type={toastType} 
+        onClose={() => setShowToast(false)} 
+      />
     </div>
   );
 }
