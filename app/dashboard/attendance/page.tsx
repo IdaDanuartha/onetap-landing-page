@@ -84,6 +84,8 @@ export default function AttendanceManagementPage() {
   const [tourStepIndex, setTourStepIndex] = useState(0);
   const [tourKey, setTourKey] = useState(0);
   const [isProcessingTap, setIsProcessingTap] = useState(false);
+  const [waStatus, setWaStatus] = useState<{ isConnected: boolean; deviceStatus: string } | null>(null);
+  const [checkingWA, setCheckingWA] = useState(false);
 
   useEffect(() => {
     if (!loading && hasAccess) {
@@ -282,6 +284,23 @@ export default function AttendanceManagementPage() {
         }
         
         setPresentToday(count || 0);
+
+        // Fetch WhatsApp connection status
+        setCheckingWA(true);
+        try {
+          const res = await fetch("/api/whatsapp/status");
+          if (res.ok) {
+            const statusData = await res.json();
+            setWaStatus(statusData);
+          } else {
+            setWaStatus({ isConnected: false, deviceStatus: "error" });
+          }
+        } catch (err) {
+          console.error("Failed to check WA status:", err);
+          setWaStatus({ isConnected: false, deviceStatus: "error" });
+        } finally {
+          setCheckingWA(false);
+        }
     }
     setLoading(false);
   };
@@ -1870,6 +1889,25 @@ export default function AttendanceManagementPage() {
                   <X className="w-5 h-5 md:w-6 md:h-6 text-gray-400 group-hover:text-red-500 transition-colors" />
                 </button>
               </div>
+
+              {/* WhatsApp Warning Banner if disconnected */}
+              {waStatus && !waStatus.isConnected && (
+                <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="text-xs md:text-sm text-left">
+                    <p className="font-bold">WhatsApp Belum Terhubung</p>
+                    <p className="text-amber-700 font-medium leading-relaxed mt-0.5">
+                      {waStatus.deviceStatus === 'unconfigured' 
+                        ? 'Anda belum mengonfigurasi Token WhatsApp di menu Pengaturan.' 
+                        : `Nomor WhatsApp Anda sedang tidak aktif (Status: ${waStatus.deviceStatus}).`} 
+                      {' '}Absensi tetap bisa dicatat, tetapi notifikasi tidak akan terkirim. Anda dapat mengirim ulang notifikasi yang gagal secara massal nanti melalui halaman Histori Absensi.
+                    </p>
+                    <Link href="/dashboard/whatsapp" className="text-amber-900 font-bold underline mt-1.5 inline-block hover:text-amber-950">
+                      Buka Pengaturan WhatsApp &rarr;
+                    </Link>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                 {/* Visual Radar / Error State */}

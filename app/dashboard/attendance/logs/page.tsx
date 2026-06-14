@@ -35,6 +35,7 @@ export default function DashboardAttendanceLogsPage() {
   
   // Resend WhatsApp states
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [isBulkResending, setIsBulkResending] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "warning" | "info">("success");
@@ -134,6 +135,42 @@ export default function DashboardAttendanceLogsPage() {
     }
   };
 
+  const handleBulkResend = async (idsToResend: string[]) => {
+    if (idsToResend.length === 0) return;
+    setIsBulkResending(true);
+    try {
+      const res = await fetch("/api/attendance/resend-bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logIds: idsToResend })
+      });
+      const result = await res.json();
+      
+      if (res.ok && result.success) {
+        // Update local logs list
+        setLogs(prev => prev.map(log => 
+          idsToResend.includes(log.id) 
+            ? { ...log, wa_sent: true } 
+            : log
+        ));
+        setToastMsg(`Berhasil memproses ${result.processedCount} notifikasi! (${result.successCount} terkirim, ${result.failCount} gagal)`);
+        setToastType("success");
+        setShowToast(true);
+      } else {
+        setToastMsg(result.message || result.error || "Gagal mengirim notifikasi massal");
+        setToastType("error");
+        setShowToast(true);
+      }
+    } catch (err) {
+      console.error("Error bulk resending WA:", err);
+      setToastMsg("Terjadi kesalahan koneksi.");
+      setToastType("error");
+      setShowToast(true);
+    } finally {
+      setIsBulkResending(false);
+    }
+  };
+
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = 
       log.student_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -174,6 +211,23 @@ export default function DashboardAttendanceLogsPage() {
               {locale}
             </button>
             <div className="h-8 w-px bg-gray-200 mx-1" />
+            {filteredLogs.some(log => !log.wa_sent) && (
+              <button
+                onClick={() => {
+                  const failedIds = filteredLogs.filter(log => !log.wa_sent).map(log => log.id);
+                  handleBulkResend(failedIds);
+                }}
+                disabled={isBulkResending}
+                className="px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-bold hover:bg-[#E8457E] transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+              >
+                {isBulkResending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Kirim Ulang Semua Gagal
+              </button>
+            )}
             <button             onClick={() => {
               if (filteredLogs.length === 0) return;
               
