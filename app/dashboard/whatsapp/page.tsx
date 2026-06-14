@@ -140,7 +140,10 @@ export default function WhatsAppSetupPage() {
       const res = await fetch("/api/whatsapp/qr", { method: "POST" });
       const data = await res.json();
       if (data.status && data.url) {
-        setQrCode(data.url);
+        const qrSrc = data.url.startsWith("data:image") || data.url.startsWith("http")
+          ? data.url
+          : `data:image/png;base64,${data.url}`;
+        setQrCode(qrSrc);
       } else {
         setToastMsg(data.message || "Gagal mengambil QR Code.");
         setToastType("error");
@@ -322,7 +325,7 @@ export default function WhatsAppSetupPage() {
                   <button
                     onClick={handleRegisterDevice}
                     disabled={isRegistering || !phone}
-                    className="w-full py-3.5 rounded-xl bg-[#18080F] text-white text-xs font-black hover:bg-orange-500 disabled:opacity-50 disabled:hover:bg-[#18080F] transition-all flex items-center justify-center gap-2 shadow-md"
+                    className="w-full py-3.5 rounded-xl bg-[#18080F] text-white text-xs font-black hover:bg-black/80 disabled:opacity-50 disabled:hover:bg-[#18080F] transition-all flex items-center justify-center gap-2 shadow-md"
                   >
                     {isRegistering ? <Loader2 className="w-4 h-4 animate-spin" /> : "Daftarkan Perangkat"}
                     {!isRegistering && <ArrowRight className="w-4 h-4" />}
