@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { sendWhatsApp } from '@/lib/whatsapp';
@@ -209,9 +209,11 @@ export async function POST(
       }
     };
 
-    // Trigger in the background
-    sendWABackground().catch(err => {
-      console.error('[attendance/token] Background task error:', err);
+    // Trigger in the background reliably using next/server after()
+    after(() => {
+      sendWABackground().catch(err => {
+        console.error('[attendance/token] Background task error:', err);
+      });
     });
 
     return NextResponse.json({
