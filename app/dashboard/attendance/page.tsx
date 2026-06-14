@@ -1086,49 +1086,27 @@ export default function AttendanceManagementPage() {
         </div>
 
         {/* Global Settings */}
-        <div className="mb-10 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
+        <div className="mb-10 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF5FA2]/5 rounded-full -mr-16 -mt-16 blur-3xl" />
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="relative z-10 flex-1">
+            <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Zap className="w-5 h-5 text-orange-500" />
               </div>
-              <h3 className="text-xl font-black text-[#18080F]">{d.globalSettings.title}</h3>
+              <h3 className="text-xl font-black text-[#18080F]">Konfigurasi Notifikasi WhatsApp</h3>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between ml-1 gap-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0">{d.globalSettings.templateLabel}</label>
-                <div className="flex flex-wrap gap-2 md:justify-end">
-                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{student_name}`}</span>
-                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{class_name}`}</span>
-                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{subject}`}</span>
-                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{date}`}</span>
-                  <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full">{`{time}`}</span>
-                </div>
-              </div>
-              <div className="flex flex-col lg:flex-row gap-4">
-                <textarea
-                  rows={5}
-                  value={globalMessageTemplate}
-                  onChange={(e) => setGlobalMessageTemplate(e.target.value)}
-                  placeholder="Halo Pendamping {student_name}, ananda telah hadir..."
-                  className="flex-1 px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold text-sm resize-none"
-                />
-                <button
-                  onClick={handleSaveGlobalTemplate}
-                  className="px-8 py-4 bg-[#FF5FA2] text-white font-black rounded-2xl hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 w-full lg:w-fit h-fit"
-                >
-                  <Save className="w-4 h-4" />
-                  {d.globalSettings.saveTemplate}
-                </button>
-              </div>
-              <p className="text-[10px] text-gray-400 font-medium ml-1">
-                {d.globalSettings.templateNotice}
-              </p>
-            </div>
+            <p className="text-sm text-gray-400 font-medium max-w-xl">
+              Hubungkan nomor WhatsApp Anda sendiri secara otomatis menggunakan Fonnte, dan sesuaikan template notifikasi kehadiran yang dikirim ke orang tua.
+            </p>
           </div>
+          <Link
+            href="/dashboard/whatsapp"
+            className="relative z-10 px-8 py-4 bg-[#FF5FA2] text-white font-black rounded-2xl hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5FA2]/20 w-full md:w-fit h-fit whitespace-nowrap cursor-pointer"
+          >
+            <span>Buka Pengaturan WA</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Warning Banner */}

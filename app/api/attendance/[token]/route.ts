@@ -86,6 +86,17 @@ export async function POST(
       }, { status: 403 });
     }
 
+    // Fetch the tag creator's custom WhatsApp token and template from users_profile
+    const { data: creatorProfile, error: creatorProfileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('whatsapp_token, whatsapp_template')
+      .eq('id', tag.created_by)
+      .maybeSingle();
+
+    if (creatorProfileError) {
+      console.warn('[attendance/token] Warning: Failed to fetch tag creator profile:', creatorProfileError);
+    }
+
     // Check if student already attended today (prevent duplicates)
     // Use Asia/Jakarta timezone for "today" boundaries
     const formatter = new Intl.DateTimeFormat('en-CA', { 
@@ -171,7 +182,7 @@ export async function POST(
     });
 
     const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB';
-    const template = (tag.message_template as string) || defaultTemplate;
+    const template = creatorProfile?.whatsapp_template || (tag.message_template as string) || defaultTemplate;
 
     const message = template
       .replace(/{student_name}/g, tag.student_name || 'Siswa')
@@ -188,7 +199,7 @@ export async function POST(
         waResult = await sendWhatsApp({ 
           target: tag.teacher_phone, 
           message,
-          token: tag.whatsapp_token 
+          token: creatorProfile?.whatsapp_token || undefined 
         });
       } catch (waErr: any) {
         console.error('[attendance/token] WhatsApp send error in background:', waErr);

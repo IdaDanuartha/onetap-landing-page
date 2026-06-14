@@ -57,6 +57,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Data siswa/tag tidak ditemukan untuk log ini' }, { status: 404 });
     }
 
+    // Fetch the tag creator's custom WhatsApp token and template from users_profile
+    const { data: creatorProfile, error: creatorProfileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('whatsapp_token, whatsapp_template')
+      .eq('id', log.created_by)
+      .maybeSingle();
+
+    if (creatorProfileError) {
+      console.warn('[attendance/resend] Warning: Failed to fetch tag creator profile:', creatorProfileError);
+    }
+
     // 4. Format the message with the original tapped_at timestamp
     const tappedAt = new Date(log.tapped_at);
     const date = tappedAt.toLocaleDateString('id-ID', {
@@ -73,7 +84,7 @@ export async function POST(req: Request) {
     });
 
     const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB';
-    const template = tag.message_template || defaultTemplate;
+    const template = creatorProfile?.whatsapp_template || tag.message_template || defaultTemplate;
 
     const message = template
       .replace(/{student_name}/g, log.student_name || 'Siswa')
@@ -89,7 +100,7 @@ export async function POST(req: Request) {
       waResult = await sendWhatsApp({
         target: tag.teacher_phone,
         message,
-        token: tag.whatsapp_token
+        token: creatorProfile?.whatsapp_token || undefined
       });
     } catch (waErr: any) {
       console.error('[attendance/resend] WhatsApp resend error:', waErr);
