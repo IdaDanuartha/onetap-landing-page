@@ -195,15 +195,21 @@ export async function POST(
     // Send WA via configured gateway in the background (non-blocking)
     const sendWABackground = async () => {
       let waResult: { success: boolean; error?: string } = { success: false, error: 'Not attempted' };
-      try {
-        waResult = await sendWhatsApp({
-          target: tag.teacher_phone,
-          message,
-          token: creatorProfile?.whatsapp_token || undefined
-        });
-      } catch (waErr: any) {
-        console.error('[attendance/token] WhatsApp send error in background:', waErr);
-        waResult = { success: false, error: waErr.message || String(waErr) };
+      const customToken = creatorProfile?.whatsapp_token?.trim();
+
+      if (!customToken) {
+        waResult = { success: false, error: 'WhatsApp belum dikonfigurasi di Pengaturan' };
+      } else {
+        try {
+          waResult = await sendWhatsApp({
+            target: tag.teacher_phone,
+            message,
+            token: customToken
+          });
+        } catch (waErr: any) {
+          console.error('[attendance/token] WhatsApp send error in background:', waErr);
+          waResult = { success: false, error: waErr.message || String(waErr) };
+        }
       }
 
       // Update log with WA send status

@@ -96,15 +96,21 @@ export async function POST(req: Request) {
 
     // 5. Send WhatsApp
     let waResult: { success: boolean; error?: string } = { success: false, error: 'Not attempted' };
-    try {
-      waResult = await sendWhatsApp({
-        target: tag.teacher_phone,
-        message,
-        token: creatorProfile?.whatsapp_token || undefined
-      });
-    } catch (waErr: any) {
-      console.error('[attendance/resend] WhatsApp resend error:', waErr);
-      waResult = { success: false, error: waErr.message || String(waErr) };
+    const customToken = creatorProfile?.whatsapp_token?.trim();
+
+    if (!customToken) {
+      waResult = { success: false, error: 'WhatsApp belum dikonfigurasi di Pengaturan' };
+    } else {
+      try {
+        waResult = await sendWhatsApp({
+          target: tag.teacher_phone,
+          message,
+          token: customToken
+        });
+      } catch (waErr: any) {
+        console.error('[attendance/resend] WhatsApp resend error:', waErr);
+        waResult = { success: false, error: waErr.message || String(waErr) };
+      }
     }
 
     // 6. Update log
