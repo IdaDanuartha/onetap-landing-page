@@ -271,17 +271,17 @@ export default function DashboardAttendanceLogsPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50/50">
-                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Siswa</th>
-                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Kelas</th>
-                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Waktu Tap</th>
-                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Status WA</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Siswa</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Kelas</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Waktu Tap</th>
+                  <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Status WA</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {loading ? null : filteredLogs.length > 0 ? (
                   filteredLogs.map((log) => (
                     <tr key={log.id} className="hover:bg-gray-50/30 transition-colors">
-                      <td className="px-8 py-5">
+                      <td className="px-8 py-5 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-[#FFF8F2] border border-[#F6B7C8]/20 flex items-center justify-center text-[#FF5FA2] font-black text-xs">
                             {log.student_name?.[0]}
@@ -289,8 +289,8 @@ export default function DashboardAttendanceLogsPage() {
                           <span className="font-bold text-[#18080F]">{log.student_name}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5 text-gray-500 font-medium">{log.class_name}</td>
-                      <td className="px-8 py-5">
+                      <td className="px-8 py-5 text-gray-500 font-medium whitespace-nowrap">{log.class_name}</td>
+                      <td className="px-8 py-5 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-[#18080F] font-bold text-sm">
                             {new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(new Date(log.tapped_at))} WIB
@@ -300,28 +300,28 @@ export default function DashboardAttendanceLogsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-8 py-5 whitespace-nowrap">
                         {log.wa_sent ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-100">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-100 whitespace-nowrap">
                             <CheckCircle2 className="w-3 h-3" />
                             Terkirim
                           </span>
                         ) : (
-                          <div className="flex items-center gap-3">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wider border border-red-100">
+                          <div className="flex items-center gap-3 flex-row flex-nowrap whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wider border border-red-100 whitespace-nowrap">
                               <XCircle className="w-3 h-3" />
                               Gagal
                             </span>
                             <button
                               onClick={() => handleResend(log.id)}
                               disabled={resendingId === log.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-gray-500 hover:text-[#FF5FA2] bg-gray-50 hover:bg-[#FF5FA2]/5 border border-gray-200 hover:border-[#FF5FA2]/30 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-gray-500 hover:text-[#FF5FA2] bg-gray-50 hover:bg-[#FF5FA2]/5 border border-gray-200 hover:border-[#FF5FA2]/30 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
                               title="Kirim Ulang WhatsApp"
                             >
                               {resendingId === log.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin text-[#FF5FA2]" />
+                                <Loader2 className="w-3 h-3 animate-spin text-[#FF5FA2] shrink-0" />
                               ) : (
-                                <RefreshCw className="w-3 h-3" />
+                                <RefreshCw className="w-3 h-3 shrink-0" />
                               )}
                               <span>Kirim Ulang</span>
                             </button>
