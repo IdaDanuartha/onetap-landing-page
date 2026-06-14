@@ -437,11 +437,18 @@ export default function WhatsAppSetupPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0">Template Pesan</label>
-                      <div className="flex flex-wrap gap-1.5 sm:justify-end">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Template Pesan</label>
+                      <div className="flex flex-wrap gap-1.5">
                         {["{student_name}", "{class_name}", "{subject}", "{date}", "{time}"].map(v => (
-                          <span key={v} className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full border border-gray-100">{v}</span>
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setTemplate(prev => prev + v)}
+                            className="text-[9px] font-bold text-gray-400 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 hover:border-[#FF5FA2]/20 px-2 py-1 bg-gray-50 rounded-full border border-gray-100 transition-all cursor-pointer active:scale-95 select-none"
+                          >
+                            {v}
+                          </button>
                         ))}
                       </div>
                     </div>
