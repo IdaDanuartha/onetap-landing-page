@@ -73,12 +73,12 @@ export default function WhatsAppSetupPage() {
     loadProfile();
   }, []);
 
-  // Poll status every 10 seconds if token is configured
+  // Poll status every 20 seconds if token is configured
   useEffect(() => {
     if (!hasAccess || !token) return;
 
     checkStatus();
-    const interval = setInterval(checkStatus, 10000);
+    const interval = setInterval(checkStatus, 20000);
     return () => clearInterval(interval);
   }, [hasAccess, token]);
 

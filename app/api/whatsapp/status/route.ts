@@ -10,6 +10,15 @@ const supabaseAdmin = createSupabaseClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// Global in-memory cache for WhatsApp status to prevent hitting Fonnte rate limits
+const globalForCache = globalThis as unknown as { 
+  waStatusCache: Map<string, { timestamp: number; data: { isConnected: boolean; deviceStatus: string } }> 
+};
+if (!globalForCache.waStatusCache) {
+  globalForCache.waStatusCache = new Map();
+}
+const CACHE_TTL_MS = 20_000; // 20 seconds cache TTL
+
 export async function GET() {
   try {
     const supabase = await createServerClient();
@@ -29,11 +38,26 @@ export async function GET() {
       return NextResponse.json({ isConnected: false, deviceStatus: 'forbidden' }, { status: 403 });
     }
 
-    if (!profile.whatsapp_token) {
+    const token = profile.whatsapp_token?.trim();
+    if (!token) {
       return NextResponse.json({ isConnected: false, deviceStatus: 'unconfigured' });
     }
 
-    const status = await getWhatsAppStatus(profile.whatsapp_token);
+    // Check cache
+    const cached = globalForCache.waStatusCache.get(token);
+    const now = Date.now();
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+      return NextResponse.json(cached.data);
+    }
+
+    const status = await getWhatsAppStatus(token);
+    
+    // Save to cache
+    globalForCache.waStatusCache.set(token, {
+      timestamp: now,
+      data: status
+    });
+
     return NextResponse.json(status);
   } catch (err) {
     console.error('[WhatsApp Status Route] Error:', err);
