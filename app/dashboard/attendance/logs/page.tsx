@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle2, XCircle, Search, Calendar, User, ArrowRight, Filter, Download, Globe, RefreshCw, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { CheckCircle2, XCircle, Search, Calendar, User, ArrowRight, Filter, Download, Globe, RefreshCw, Loader2, AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { dict } from "@/lib/i18n/dict";
@@ -39,6 +39,11 @@ export default function DashboardAttendanceLogsPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "warning" | "info">("success");
+  
+  // WhatsApp connection validation states
+  const [waStatus, setWaStatus] = useState<{ isConnected: boolean; deviceStatus: string } | null>(null);
+  const [showWAWarningModal, setShowWAWarningModal] = useState(false);
+  const [pendingResendAction, setPendingResendAction] = useState<{ type: "single" | "bulk"; id?: string; ids?: string[] } | null>(null);
 
   useEffect(() => {
     async function fetchLogs() {
@@ -68,6 +73,17 @@ export default function DashboardAttendanceLogsPage() {
         if (tags) {
           setUniqueClasses(Array.from(new Set(tags.map(t => t.class_name).filter(Boolean))) as string[]);
           setUniqueSubjects(Array.from(new Set(tags.map(t => t.subject).filter(Boolean))) as string[]);
+        }
+
+        // Check WhatsApp status on load
+        try {
+          const res = await fetch("/api/whatsapp/status");
+          if (res.ok) {
+            const statusData = await res.json();
+            setWaStatus(statusData);
+          }
+        } catch (err) {
+          console.error("Failed to check WA status:", err);
         }
       }
       setLoading(false);
@@ -171,6 +187,35 @@ export default function DashboardAttendanceLogsPage() {
     }
   };
 
+  const triggerResend = (logId: string) => {
+    if (waStatus && !waStatus.isConnected) {
+      setPendingResendAction({ type: "single", id: logId });
+      setShowWAWarningModal(true);
+    } else {
+      handleResend(logId);
+    }
+  };
+
+  const triggerBulkResend = (failedIds: string[]) => {
+    if (waStatus && !waStatus.isConnected) {
+      setPendingResendAction({ type: "bulk", ids: failedIds });
+      setShowWAWarningModal(true);
+    } else {
+      handleBulkResend(failedIds);
+    }
+  };
+
+  const executePendingResend = () => {
+    if (!pendingResendAction) return;
+    if (pendingResendAction.type === "single" && pendingResendAction.id) {
+      handleResend(pendingResendAction.id);
+    } else if (pendingResendAction.type === "bulk" && pendingResendAction.ids) {
+      handleBulkResend(pendingResendAction.ids);
+    }
+    setShowWAWarningModal(false);
+    setPendingResendAction(null);
+  };
+
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = 
       log.student_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -215,7 +260,7 @@ export default function DashboardAttendanceLogsPage() {
               <button
                 onClick={() => {
                   const failedIds = filteredLogs.filter(log => !log.wa_sent).map(log => log.id);
-                  handleBulkResend(failedIds);
+                  triggerBulkResend(failedIds);
                 }}
                 disabled={isBulkResending}
                 className="px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-bold hover:bg-[#E8457E] transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
@@ -367,7 +412,7 @@ export default function DashboardAttendanceLogsPage() {
                               Gagal
                             </span>
                             <button
-                              onClick={() => handleResend(log.id)}
+                              onClick={() => triggerResend(log.id)}
                               disabled={resendingId === log.id}
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-gray-500 hover:text-[#FF5FA2] bg-gray-50 hover:bg-[#FF5FA2]/5 border border-gray-200 hover:border-[#FF5FA2]/30 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
                               title="Kirim Ulang WhatsApp"
@@ -405,6 +450,59 @@ export default function DashboardAttendanceLogsPage() {
         type={toastType} 
         onClose={() => setShowToast(false)} 
       />
+
+      {/* WA Warning Modal */}
+      <AnimatePresence>
+        {showWAWarningModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-[#18080F]/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-gray-100 text-center relative"
+            >
+              <div className="w-16 h-16 rounded-full bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center mx-auto mb-6">
+                <AlertTriangle className="w-8 h-8 animate-pulse" />
+              </div>
+
+              <h3 className="text-xl font-black text-[#18080F] mb-3">WhatsApp Belum Terhubung</h3>
+              <p className="text-sm text-gray-500 font-medium leading-relaxed mb-8">
+                {waStatus?.deviceStatus === 'unconfigured' 
+                  ? 'Anda belum mengonfigurasi Token WhatsApp di menu Pengaturan.' 
+                  : `Nomor WhatsApp Anda sedang tidak aktif (Status: ${waStatus?.deviceStatus || 'disconnect'}).`} 
+                <br />Silakan hubungkan perangkat Anda terlebih dahulu agar notifikasi dapat terkirim dengan sukses.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <Link 
+                  href="/dashboard/whatsapp"
+                  className="w-full py-4 bg-[#FF5FA2] text-white rounded-2xl font-bold text-sm hover:bg-[#E8457E] transition-all shadow-lg shadow-[#FF5FA2]/15 flex items-center justify-center gap-2"
+                >
+                  Buka Pengaturan WhatsApp
+                </Link>
+                
+                <div className="grid grid-cols-2 gap-3 mt-1">
+                  <button
+                    onClick={executePendingResend}
+                    className="py-3.5 bg-gray-50 hover:bg-gray-100 text-[#18080F] border border-gray-200 rounded-2xl font-bold text-xs transition-all cursor-pointer"
+                  >
+                    Tetap Kirim Ulang
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowWAWarningModal(false);
+                      setPendingResendAction(null);
+                    }}
+                    className="py-3.5 bg-white hover:bg-gray-50 text-gray-400 border border-gray-100 rounded-2xl font-bold text-xs transition-all cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
