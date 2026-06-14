@@ -80,9 +80,11 @@ export async function POST(req: Request) {
     const fonnteData = JSON.parse(text);
     if (fonnteData.status !== true) {
       console.error('[WhatsApp Register] Fonnte API failed:', fonnteData);
-      return NextResponse.json({ 
-        error: fonnteData.reason || 'Gagal mendaftarkan perangkat di Fonnte. Pastikan nomor belum terdaftar dan slot perangkat Anda masih tersedia.' 
-      }, { status: 400 });
+      let errorMsg = fonnteData.reason || 'Gagal mendaftarkan perangkat di Fonnte. Pastikan nomor belum terdaftar dan slot perangkat Anda masih tersedia.';
+      if (fonnteData.reason === 'unknown user') {
+        errorMsg = 'Token Fonnte tidak valid (unknown user). Pastikan Anda telah mengonfigurasi "Account Token" (bukan Device Token) pada variabel FONNTE_ACCOUNT_TOKEN di file .env.local Anda.';
+      }
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
     const deviceToken = fonnteData.token;
