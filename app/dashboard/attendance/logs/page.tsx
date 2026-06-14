@@ -223,7 +223,7 @@ export default function DashboardAttendanceLogsPage() {
   return (
     <div className="min-h-screen bg-[#FFF8F2]">
       <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
             <Link href="/dashboard/attendance" className="text-gray-400 hover:text-[#FF5FA2] flex items-center gap-2 mb-4 font-bold transition-all">
               <ArrowRight className="w-4 h-4 rotate-180" />
@@ -233,65 +233,71 @@ export default function DashboardAttendanceLogsPage() {
             <p className="text-gray-500 font-medium">Log kehadiran lengkap dengan status pengiriman WhatsApp.</p>
           </div>
           
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-[10px] sm:text-xs font-bold uppercase"
-            >
-              <Globe className="w-3.5 h-3.5 sm:w-4 h-4" />
-              {locale}
-            </button>
-            <div className="h-8 w-px bg-gray-200 mx-1" />
-            {filteredLogs.some(log => !log.wa_sent) && (
+          <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
+            <div className="flex items-center justify-between md:justify-start gap-2 w-full md:w-auto">
+              <button
+                onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-500 hover:text-[#FF5FA2] hover:bg-[#FF5FA2]/5 transition-all duration-300 text-xs font-bold uppercase border border-gray-100 bg-white shadow-sm md:border-transparent md:bg-transparent md:shadow-none cursor-pointer"
+              >
+                <Globe className="w-4 h-4" />
+                {locale}
+              </button>
+              <div className="hidden md:block h-8 w-px bg-gray-200 mx-1" />
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              {filteredLogs.some(log => !log.wa_sent) && (
+                <button
+                  onClick={() => {
+                    const failedIds = filteredLogs.filter(log => !log.wa_sent).map(log => log.id);
+                    triggerBulkResend(failedIds);
+                  }}
+                  disabled={isBulkResending}
+                  className="px-4 py-3 rounded-2xl bg-[#FF5FA2] text-white font-bold hover:bg-[#E8457E] transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm whitespace-nowrap w-full sm:w-auto"
+                >
+                  {isBulkResending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Kirim Ulang Semua Gagal
+                </button>
+              )}
               <button
                 onClick={() => {
-                  const failedIds = filteredLogs.filter(log => !log.wa_sent).map(log => log.id);
-                  triggerBulkResend(failedIds);
-                }}
-                disabled={isBulkResending}
-                className="px-6 py-3 rounded-2xl bg-[#FF5FA2] text-white font-bold hover:bg-[#E8457E] transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
-              >
-                {isBulkResending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                Kirim Ulang Semua Gagal
-              </button>
-            )}
-            <button             onClick={() => {
-              if (filteredLogs.length === 0) return;
-              
-              const headers = ["Nama Siswa", "Kelas", "Mapel", "Waktu Tap", "Status WA"];
-              const csvContent = [
-                headers.join(","),
-                ...filteredLogs.map(log => [
-                  `"${log.student_name}"`,
-                  `"${log.class_name}"`,
-                  `"${log.subject || '-'}"`,
-                  `"${new Date(log.tapped_at).toLocaleString('id-ID')}"`,
-                  log.wa_sent ? "Terkirim" : "Gagal"
-                ].join(","))
-              ].join("\n");
+                  if (filteredLogs.length === 0) return;
+                  
+                  const headers = ["Nama Siswa", "Kelas", "Mapel", "Waktu Tap", "Status WA"];
+                  const csvContent = [
+                    headers.join(","),
+                    ...filteredLogs.map(log => [
+                      `"${log.student_name}"`,
+                      `"${log.class_name}"`,
+                      `"${log.subject || '-'}"`,
+                      `"${new Date(log.tapped_at).toLocaleString('id-ID')}"`,
+                      log.wa_sent ? "Terkirim" : "Gagal"
+                    ].join(","))
+                  ].join("\n");
 
-              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-              const link = document.createElement("a");
-              const url = URL.createObjectURL(blob);
-              link.setAttribute("href", url);
-              link.setAttribute("download", `histori_absensi_${new Date().toISOString().split('T')[0]}.csv`);
-              link.style.visibility = 'hidden';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-            className="px-6 py-3 rounded-2xl bg-white border border-gray-200 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={filteredLogs.length === 0}
-          >
-            <Download className="w-5 h-5" />
-            Ekspor CSV
-          </button>
+                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                  const link = document.createElement("a");
+                  const url = URL.createObjectURL(blob);
+                  link.setAttribute("href", url);
+                  link.setAttribute("download", `histori_absensi_${new Date().toISOString().split('T')[0]}.csv`);
+                  link.style.visibility = 'hidden';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="px-4 py-3 rounded-2xl bg-white border border-gray-200 text-[#18080F] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap w-full sm:w-auto"
+                disabled={filteredLogs.length === 0}
+              >
+                <Download className="w-5 h-5" />
+                Ekspor CSV
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
         {/* Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
