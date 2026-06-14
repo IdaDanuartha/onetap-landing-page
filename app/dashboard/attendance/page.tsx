@@ -83,6 +83,7 @@ export default function AttendanceManagementPage() {
   const [runTour, setRunTour] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
   const [tourKey, setTourKey] = useState(0);
+  const [isProcessingTap, setIsProcessingTap] = useState(false);
 
   useEffect(() => {
     if (!loading && hasAccess) {
@@ -165,7 +166,7 @@ export default function AttendanceManagementPage() {
       spotlightClicks: true,
     },
     {
-      target: '#tour-student-form',
+      target: '#tour-student-title',
       title: t('dashboard.tour.attendance.studentForm.title'),
       content: t('dashboard.tour.attendance.studentForm.desc'),
       placement: 'bottom' as const,
@@ -201,10 +202,10 @@ export default function AttendanceManagementPage() {
       spotlightClicks: true,
     },
     {
-      target: '#tour-scan-modal',
+      target: '#tour-scan-modal-title',
       title: t('dashboard.tour.attendance.scanModal.title'),
       content: t('dashboard.tour.attendance.scanModal.desc'),
-      placement: 'top' as const,
+      placement: 'bottom' as const,
       data: { id: 'scanner' },
       disableBeacon: true,
       spotlightClicks: true,
@@ -627,6 +628,8 @@ export default function AttendanceManagementPage() {
     if (processingTokens.current[token]) return;
     
     processingTokens.current[token] = true;
+    setIsProcessingTap(true);
+    const startTime = Date.now();
 
     try {
       const res = await fetch(`/api/attendance/${token}`, { method: 'POST' });
@@ -651,6 +654,14 @@ export default function AttendanceManagementPage() {
     } catch (err) {
       console.error("Attendance processing error:", err);
     } finally {
+      // Ensure loading state is shown for at least 400ms to be visually clear
+      const elapsedTime = Date.now() - startTime;
+      const minDelay = 400;
+      if (elapsedTime < minDelay) {
+        await new Promise(resolve => setTimeout(resolve, minDelay - elapsedTime));
+      }
+      setIsProcessingTap(false);
+
       // Release lock after 3 seconds to prevent duplicate rapid scans
       setTimeout(() => {
         processingTokens.current[token] = false;
@@ -1360,7 +1371,7 @@ export default function AttendanceManagementPage() {
               className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black text-[#18080F] tracking-tight">
+                <h2 id="tour-student-title" className="text-2xl font-black text-[#18080F] tracking-tight">
                   {editingTag ? d.modal.editTitle : d.modal.addTitle}
                 </h2>
                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -1861,7 +1872,7 @@ export default function AttendanceManagementPage() {
                     <Signal className="w-3.5 h-3.5 animate-ping" />
                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{d.bulkScan.activeSystem}</span>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-black text-[#18080F]">{d.bulkScan.title}</h3>
+                  <h3 id="tour-scan-modal-title" className="text-2xl md:text-3xl font-black text-[#18080F]">{d.bulkScan.title}</h3>
                   <p className="text-xs md:text-sm text-gray-400 font-medium">{d.bulkScan.instruction}</p>
                 </div>
                 <button 
@@ -1901,6 +1912,20 @@ export default function AttendanceManagementPage() {
                     >
                       {locale === 'id' ? "Coba Lagi" : "Try Again"}
                     </button>
+                  </div>
+                ) : isProcessingTap ? (
+                  <div className="aspect-square bg-blue-50/30 rounded-[1.5rem] md:rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden border border-blue-100 min-h-[220px]">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <motion.div 
+                        className="w-32 h-32 md:w-48 md:h-48 border-2 border-blue-200 rounded-full"
+                        animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      />
+                    </div>
+                    <Loader2 className="w-12 h-12 md:w-16 md:h-16 text-blue-500 relative z-10 mb-3 md:mb-4 animate-spin" />
+                    <p className="text-xs md:text-sm font-bold text-blue-500 uppercase tracking-widest animate-pulse">
+                      {locale === 'id' ? "Memproses..." : "Processing..."}
+                    </p>
                   </div>
                 ) : (
                   <div className="aspect-square bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden border border-gray-100 min-h-[220px]">

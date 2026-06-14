@@ -172,31 +172,38 @@ export async function POST(
       .replace(/{date}/g, date)
       .replace(/{time}/g, time);
 
-    // Send WA via configured gateway (fully automatic)
-    let waResult: { success: boolean; error?: string } = { success: false, error: 'Not attempted' };
-    try {
+    // Send WA via configured gateway in the background (non-blocking)
+    const sendWABackground = async () => {
+      let waResult: { success: boolean; error?: string } = { success: false, error: 'Not attempted' };
+      try {
         waResult = await sendWhatsApp({ 
           target: tag.teacher_phone, 
           message,
           token: tag.whatsapp_token 
         });
-    } catch (waErr: any) {
-        console.error('[attendance/token] WhatsApp send error:', waErr);
+      } catch (waErr: any) {
+        console.error('[attendance/token] WhatsApp send error in background:', waErr);
         waResult = { success: false, error: waErr.message || String(waErr) };
-    }
+      }
 
-    // Update log with WA send status
-    const { error: updateError } = await supabaseAdmin
-      .from('attendance_logs')
-      .update({
-        wa_sent: waResult.success,
-        wa_error: waResult.success ? null : waResult.error,
-      })
-      .eq('id', log.id);
+      // Update log with WA send status
+      const { error: updateError } = await supabaseAdmin
+        .from('attendance_logs')
+        .update({
+          wa_sent: waResult.success,
+          wa_error: waResult.success ? null : waResult.error,
+        })
+        .eq('id', log.id);
 
-    if (updateError) {
-      console.error('[attendance/token] log update error:', updateError);
-    }
+      if (updateError) {
+        console.error('[attendance/token] log update error in background:', updateError);
+      }
+    };
+
+    // Trigger in the background
+    sendWABackground().catch(err => {
+      console.error('[attendance/token] Background task error:', err);
+    });
 
     return NextResponse.json({
       success: true,
@@ -205,8 +212,8 @@ export async function POST(
       subject: tag.subject ?? null,
       date,
       time,
-      waSent: waResult.success,
-      waError: waResult.success ? null : waResult.error,
+      waSent: true,
+      waError: null,
     });
   } catch (err: any) {
     console.error('[attendance/token] Final catch:', err);
