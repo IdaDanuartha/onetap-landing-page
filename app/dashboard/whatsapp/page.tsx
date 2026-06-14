@@ -39,6 +39,9 @@ export default function WhatsAppSetupPage() {
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "warning" | "info">("success");
 
+  // Confirm Disconnect modal state
+  const [showConfirmDisconnect, setShowConfirmDisconnect] = useState(false);
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -197,8 +200,6 @@ export default function WhatsAppSetupPage() {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm("Apakah Anda yakin ingin memutuskan nomor WhatsApp ini? Seluruh riwayat kirim notifikasi akan terhenti sementara.")) return;
-
     setIsDisconnecting(true);
     try {
       const res = await fetch("/api/whatsapp/disconnect", { method: "POST" });
@@ -404,7 +405,7 @@ export default function WhatsAppSetupPage() {
                     )}
                     
                     <button
-                      onClick={handleDisconnect}
+                      onClick={() => setShowConfirmDisconnect(true)}
                       disabled={isDisconnecting}
                       className="w-full py-3 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 text-xs font-bold text-gray-500 hover:text-red-500 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
@@ -492,6 +493,54 @@ export default function WhatsAppSetupPage() {
         type={toastType} 
         onClose={() => setShowToast(false)} 
       />
+
+      <AnimatePresence>
+        {showConfirmDisconnect && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowConfirmDisconnect(false)}
+              className="absolute inset-0 bg-[#18080F]/45 backdrop-blur-[2px]"
+            />
+
+            {/* Modal Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-[2rem] p-6 max-w-sm w-full border border-gray-100 shadow-2xl relative z-10 overflow-hidden text-center"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 mb-4 mx-auto border border-red-100">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-black text-[#18080F] mb-2">Putuskan Koneksi?</h3>
+              <p className="text-xs text-gray-500 font-semibold leading-relaxed mb-6 px-2">
+                Apakah Anda yakin ingin memutuskan nomor WhatsApp ini? Seluruh riwayat kirim notifikasi akan terhenti sementara.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmDisconnect(false)}
+                  className="flex-1 py-3 bg-gray-50 hover:bg-gray-100 text-[#18080F] text-xs font-bold rounded-xl transition-all border border-gray-100 active:scale-95"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    setShowConfirmDisconnect(false);
+                    handleDisconnect();
+                  }}
+                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-red-500/10 active:scale-95"
+                >
+                  Ya, Putuskan
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
