@@ -39,8 +39,8 @@ export default function WhatsAppSetupPage() {
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "warning" | "info">("success");
 
-  // Confirm Disconnect modal state
-  const [showConfirmDisconnect, setShowConfirmDisconnect] = useState(false);
+  // Confirm Disconnect/Clear modal states
+  const [confirmModalType, setConfirmModalType] = useState<"logout" | "clear" | null>(null);
 
   const supabase = createClient();
 
@@ -199,19 +199,30 @@ export default function WhatsAppSetupPage() {
     }
   };
 
-  const handleDisconnect = async () => {
+  const handleDisconnect = async (action: "logout" | "clear" = "logout") => {
     setIsDisconnecting(true);
     try {
-      const res = await fetch("/api/whatsapp/disconnect", { method: "POST" });
+      const res = await fetch("/api/whatsapp/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action })
+      });
       const result = await res.json();
 
       if (res.ok && result.success) {
-        setToken("");
-        setPhone("");
-        setQrCode(null);
-        setIsConnected(false);
-        setDeviceStatus("checking...");
-        setToastMsg("Koneksi WhatsApp berhasil diputuskan.");
+        if (action === "clear") {
+          setToken("");
+          setPhone("");
+          setQrCode(null);
+          setIsConnected(false);
+          setDeviceStatus("checking...");
+          setToastMsg("Nomor WhatsApp berhasil dihapus dari profil.");
+        } else {
+          setQrCode(null);
+          setIsConnected(false);
+          setDeviceStatus("checking...");
+          setToastMsg("Sesi WhatsApp berhasil diputuskan dari Fonnte.");
+        }
         setToastType("success");
         setShowToast(true);
       } else {
@@ -405,12 +416,21 @@ export default function WhatsAppSetupPage() {
                     )}
                     
                     <button
-                      onClick={() => setShowConfirmDisconnect(true)}
+                      onClick={() => setConfirmModalType("logout")}
                       disabled={isDisconnecting}
                       className="w-full py-3 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 text-xs font-bold text-gray-500 hover:text-red-500 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
                       {isDisconnecting ? <Loader2 className="w-4 h-4 animate-spin text-red-500" /> : <Trash2 className="w-4 h-4" />}
-                      <span>Putuskan Koneksi WhatsApp</span>
+                      <span>Putuskan Sesi WhatsApp</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setConfirmModalType("clear")}
+                      disabled={isDisconnecting}
+                      className="w-full text-center text-[10px] font-bold text-gray-400 hover:text-[#FF5FA2] transition-colors mt-1 select-none"
+                    >
+                      Hapus / Ganti Nomor WhatsApp
                     </button>
                   </div>
                 </div>
@@ -495,14 +515,14 @@ export default function WhatsAppSetupPage() {
       />
 
       <AnimatePresence>
-        {showConfirmDisconnect && (
+        {confirmModalType && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowConfirmDisconnect(false)}
+              onClick={() => setConfirmModalType(null)}
               className="absolute inset-0 bg-[#18080F]/45 backdrop-blur-[2px]"
             />
 
@@ -516,25 +536,31 @@ export default function WhatsAppSetupPage() {
               <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 mb-4 mx-auto border border-red-100">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-black text-[#18080F] mb-2">Putuskan Koneksi?</h3>
+              <h3 className="text-lg font-black text-[#18080F] mb-2">
+                {confirmModalType === "clear" ? "Hapus Nomor WhatsApp?" : "Putuskan Sesi WhatsApp?"}
+              </h3>
               <p className="text-xs text-gray-500 font-semibold leading-relaxed mb-6 px-2">
-                Apakah Anda yakin ingin memutuskan nomor WhatsApp ini? Seluruh riwayat kirim notifikasi akan terhenti sementara.
+                {confirmModalType === "clear" 
+                  ? "Apakah Anda yakin ingin menghapus nomor WhatsApp ini dari profil? Anda perlu mendaftarkannya kembali jika ingin menggunakannya."
+                  : "Apakah Anda yakin ingin memutuskan sesi WhatsApp ini? Seluruh riwayat kirim notifikasi akan terhenti sementara."
+                }
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowConfirmDisconnect(false)}
+                  onClick={() => setConfirmModalType(null)}
                   className="flex-1 py-3 bg-gray-50 hover:bg-gray-100 text-[#18080F] text-xs font-bold rounded-xl transition-all border border-gray-100 active:scale-95"
                 >
                   Batal
                 </button>
                 <button
                   onClick={() => {
-                    setShowConfirmDisconnect(false);
-                    handleDisconnect();
+                    const action = confirmModalType;
+                    setConfirmModalType(null);
+                    handleDisconnect(action);
                   }}
                   className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-red-500/10 active:scale-95"
                 >
-                  Ya, Putuskan
+                  {confirmModalType === "clear" ? "Ya, Hapus Nomor" : "Ya, Putuskan Sesi"}
                 </button>
               </div>
             </motion.div>

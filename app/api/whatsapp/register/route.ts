@@ -78,16 +78,53 @@ export async function POST(req: Request) {
     }
 
     const fonnteData = JSON.parse(text);
+    let deviceToken = '';
+
     if (fonnteData.status !== true) {
       console.error('[WhatsApp Register] Fonnte API failed:', fonnteData);
-      let errorMsg = fonnteData.reason || 'Gagal mendaftarkan perangkat di Fonnte. Pastikan nomor belum terdaftar dan slot perangkat Anda masih tersedia.';
-      if (fonnteData.reason === 'unknown user') {
-        errorMsg = 'Token Fonnte tidak valid (unknown user). Pastikan Anda telah mengonfigurasi "Account Token" (bukan Device Token) pada variabel FONNTE_ACCOUNT_TOKEN di file .env.local Anda.';
+      
+      if (fonnteData.reason === 'device already exist') {
+        console.log('[WhatsApp Register] Device already exists on Fonnte. Fetching existing devices list to retrieve token...');
+        try {
+          const devicesRes = await fetch('https://api.fonnte.com/get-devices', {
+            method: 'POST',
+            headers: {
+              'Authorization': accountToken
+            }
+          });
+          
+          if (devicesRes.ok) {
+            const devicesData = await devicesRes.json();
+            const devicesList = devicesData.data || [];
+            if (Array.isArray(devicesList)) {
+              const matchedDevice = devicesList.find((d: any) => {
+                const dPhone = String(d.device || '').replace(/[^0-9]/g, '');
+                return dPhone === normalizedPhone || dPhone.endsWith(normalizedPhone) || normalizedPhone.endsWith(dPhone);
+              });
+              
+              if (matchedDevice && matchedDevice.token) {
+                console.log('[WhatsApp Register] Successfully retrieved existing device token:', matchedDevice.token);
+                deviceToken = matchedDevice.token;
+              }
+            }
+          } else {
+            console.error('[WhatsApp Register] Failed to get devices list. HTTP status:', devicesRes.status);
+          }
+        } catch (fetchErr) {
+          console.error('[WhatsApp Register] Failed to fetch device list:', fetchErr);
+        }
       }
-      return NextResponse.json({ error: errorMsg }, { status: 400 });
-    }
 
-    const deviceToken = fonnteData.token;
+      if (!deviceToken) {
+        let errorMsg = fonnteData.reason || 'Gagal mendaftarkan perangkat di Fonnte. Pastikan nomor belum terdaftar dan slot perangkat Anda masih tersedia.';
+        if (fonnteData.reason === 'unknown user') {
+          errorMsg = 'Token Fonnte tidak valid (unknown user). Pastikan Anda telah mengonfigurasi "Account Token" (bukan Device Token) pada variabel FONNTE_ACCOUNT_TOKEN di file .env.local Anda.';
+        }
+        return NextResponse.json({ error: errorMsg }, { status: 400 });
+      }
+    } else {
+      deviceToken = fonnteData.token;
+    }
 
     // 6. Save token and phone to users_profile in database
     const { error: updateError } = await supabaseAdmin
