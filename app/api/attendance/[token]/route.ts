@@ -1,7 +1,7 @@
 import { NextResponse, after } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { sendWhatsApp } from '@/lib/whatsapp';
+import { sendWhatsApp, getWhatsAppStatus } from '@/lib/whatsapp';
 
 export const dynamic = 'force-dynamic';
 
@@ -201,11 +201,17 @@ export async function POST(
         waResult = { success: false, error: 'WhatsApp belum dikonfigurasi di Pengaturan' };
       } else {
         try {
-          waResult = await sendWhatsApp({
-            target: tag.teacher_phone,
-            message,
-            token: customToken
-          });
+          // Check if device is connected first
+          const status = await getWhatsAppStatus(customToken);
+          if (!status.isConnected) {
+            waResult = { success: false, error: `WhatsApp tidak terhubung (Status: ${status.deviceStatus})` };
+          } else {
+            waResult = await sendWhatsApp({
+              target: tag.teacher_phone,
+              message,
+              token: customToken
+            });
+          }
         } catch (waErr: any) {
           console.error('[attendance/token] WhatsApp send error in background:', waErr);
           waResult = { success: false, error: waErr.message || String(waErr) };
