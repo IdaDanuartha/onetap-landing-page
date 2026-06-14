@@ -43,7 +43,6 @@ export default function DashboardAttendanceLogsPage() {
   // WhatsApp connection validation states
   const [waStatus, setWaStatus] = useState<{ isConnected: boolean; deviceStatus: string } | null>(null);
   const [showWAWarningModal, setShowWAWarningModal] = useState(false);
-  const [pendingResendAction, setPendingResendAction] = useState<{ type: "single" | "bulk"; id?: string; ids?: string[] } | null>(null);
 
   useEffect(() => {
     async function fetchLogs() {
@@ -189,7 +188,6 @@ export default function DashboardAttendanceLogsPage() {
 
   const triggerResend = (logId: string) => {
     if (waStatus && !waStatus.isConnected) {
-      setPendingResendAction({ type: "single", id: logId });
       setShowWAWarningModal(true);
     } else {
       handleResend(logId);
@@ -198,22 +196,10 @@ export default function DashboardAttendanceLogsPage() {
 
   const triggerBulkResend = (failedIds: string[]) => {
     if (waStatus && !waStatus.isConnected) {
-      setPendingResendAction({ type: "bulk", ids: failedIds });
       setShowWAWarningModal(true);
     } else {
       handleBulkResend(failedIds);
     }
-  };
-
-  const executePendingResend = () => {
-    if (!pendingResendAction) return;
-    if (pendingResendAction.type === "single" && pendingResendAction.id) {
-      handleResend(pendingResendAction.id);
-    } else if (pendingResendAction.type === "bulk" && pendingResendAction.ids) {
-      handleBulkResend(pendingResendAction.ids);
-    }
-    setShowWAWarningModal(false);
-    setPendingResendAction(null);
   };
 
   const filteredLogs = logs.filter((log) => {
@@ -481,23 +467,14 @@ export default function DashboardAttendanceLogsPage() {
                   Buka Pengaturan WhatsApp
                 </Link>
                 
-                <div className="grid grid-cols-2 gap-3 mt-1">
-                  <button
-                    onClick={executePendingResend}
-                    className="py-3.5 bg-gray-50 hover:bg-gray-100 text-[#18080F] border border-gray-200 rounded-2xl font-bold text-xs transition-all cursor-pointer"
-                  >
-                    Tetap Kirim Ulang
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowWAWarningModal(false);
-                      setPendingResendAction(null);
-                    }}
-                    className="py-3.5 bg-white hover:bg-gray-50 text-gray-400 border border-gray-100 rounded-2xl font-bold text-xs transition-all cursor-pointer"
-                  >
-                    Batal
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setShowWAWarningModal(false);
+                  }}
+                  className="w-full py-3.5 bg-gray-50 hover:bg-gray-100 text-gray-500 border border-gray-200 rounded-2xl font-bold text-sm transition-all cursor-pointer mt-1"
+                >
+                  Batal
+                </button>
               </div>
             </motion.div>
           </div>
