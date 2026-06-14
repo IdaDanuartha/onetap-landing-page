@@ -636,14 +636,17 @@ export default function AttendanceManagementPage() {
       const result = await res.json();
       
       const isAlreadyLogged = result.alreadyLogged === true;
+      const isInactive = result.inactive === true;
       const newLog: ScanLog = {
-        student_name: result.studentName || "Tag Baru",
+        student_name: result.studentName || (res.status === 404 ? "Tag Tidak Terdaftar" : "Tag Baru"),
         class_name: result.className || "-",
         status: res.ok ? "success" : (isAlreadyLogged ? "warning" : "error"),
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         message: isAlreadyLogged 
           ? "Sudah Absen" 
-          : (result.message ? `${result.error}: ${result.message}` : (result.error || (res.ok ? "Kehadiran Berhasil!" : "Gagal")))
+          : (isInactive 
+              ? "Siswa Nonaktif" 
+              : (result.message ? `${result.error}: ${result.message}` : (result.error || (res.ok ? "Kehadiran Berhasil!" : "Gagal"))))
       };
 
       setScanLogs(prev => [newLog, ...prev].slice(0, 50));

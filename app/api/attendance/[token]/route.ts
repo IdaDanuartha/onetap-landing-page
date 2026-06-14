@@ -61,7 +61,6 @@ export async function POST(
       .from('attendance_tags')
       .select('*')
       .eq('token', token)
-      .eq('is_active', true)
       .maybeSingle();
 
     if (tagSelectError) {
@@ -74,7 +73,17 @@ export async function POST(
     }
 
     if (!tag) {
-      return NextResponse.json({ error: 'Tag tidak valid atau tidak aktif' }, { status: 404 });
+      return NextResponse.json({ error: 'Tag Tidak Terdaftar' }, { status: 404 });
+    }
+
+    if (!tag.is_active) {
+      return NextResponse.json({ 
+        error: 'Siswa Nonaktif', 
+        message: 'Kartu/Siswa ini dinonaktifkan.',
+        studentName: tag.student_name,
+        className: tag.class_name,
+        inactive: true
+      }, { status: 403 });
     }
 
     // Check if student already attended today (prevent duplicates)
