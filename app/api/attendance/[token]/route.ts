@@ -221,11 +221,14 @@ export async function POST(
     };
 
     // Trigger in the background reliably using next/server after()
-    after(() => {
-      sendWABackground().catch(err => {
+    after(async () => {
+      try {
+        await sendWABackground();
+      } catch (err) {
         console.error('[attendance/token] Background task error:', err);
-      });
+      }
     });
+
 
     return NextResponse.json({
       success: true,
