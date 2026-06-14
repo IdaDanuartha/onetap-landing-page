@@ -70,7 +70,7 @@ export async function getWhatsAppStatus(customToken?: string): Promise<{ isConne
     // Fonnte returns status: true and device_status: "connect" when ready
     return {
       isConnected: data.status === true && data.device_status === 'connect',
-      deviceStatus: data.device_status || 'unknown'
+      deviceStatus: data.device_status || data.reason || 'unknown'
     };
   } catch (err) {
     console.error('[WhatsApp] Status error:', err);

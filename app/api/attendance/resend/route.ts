@@ -23,9 +23,9 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ 
-        error: 'Akses ditolak', 
-        message: 'Hanya Guru/Admin yang sudah login yang dapat mengakses fitur ini.' 
+      return NextResponse.json({
+        error: 'Akses ditolak',
+        message: 'Hanya Guru/Admin yang sudah login yang dapat mengakses fitur ini.'
       }, { status: 401 });
     }
 
@@ -121,9 +121,9 @@ export async function POST(req: Request) {
     }
 
     if (!waResult.success) {
-      return NextResponse.json({ 
-        success: false, 
-        error: waResult.error || 'Gagal mengirim pesan WhatsApp' 
+      return NextResponse.json({
+        success: false,
+        error: waResult.error || 'Gagal mengirim pesan WhatsApp'
       }, { status: 500 });
     }
 
@@ -134,9 +134,9 @@ export async function POST(req: Request) {
 
   } catch (err: any) {
     console.error('[attendance/resend] Final catch:', err);
-    return NextResponse.json({ 
-      error: 'Internal error', 
-      message: err.message || String(err) 
+    return NextResponse.json({
+      error: 'Internal error',
+      message: err.message || String(err)
     }, { status: 500 });
   }
 }

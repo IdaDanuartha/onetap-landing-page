@@ -73,12 +73,12 @@ export default function WhatsAppSetupPage() {
     loadProfile();
   }, []);
 
-  // Poll status every 5 seconds if token is configured
+  // Poll status every 10 seconds if token is configured
   useEffect(() => {
     if (!hasAccess || !token) return;
 
     checkStatus();
-    const interval = setInterval(checkStatus, 5000);
+    const interval = setInterval(checkStatus, 10000);
     return () => clearInterval(interval);
   }, [hasAccess, token]);
 
@@ -148,7 +148,7 @@ export default function WhatsAppSetupPage() {
           : `data:image/png;base64,${data.url}`;
         setQrCode(qrSrc);
       } else {
-        setToastMsg(data.message || "Gagal mengambil QR Code.");
+        setToastMsg(data.reason || data.message || "Gagal mengambil QR Code.");
         setToastType("error");
         setShowToast(true);
       }

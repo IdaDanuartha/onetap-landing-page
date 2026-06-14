@@ -39,9 +39,9 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ 
-        error: 'Akses ditolak', 
-        message: 'Hanya Guru/Admin yang sudah login yang dapat mencatat kehadiran.' 
+      return NextResponse.json({
+        error: 'Akses ditolak',
+        message: 'Hanya Guru/Admin yang sudah login yang dapat mencatat kehadiran.'
       }, { status: 401 });
     }
 
@@ -65,10 +65,10 @@ export async function POST(
 
     if (tagSelectError) {
       console.error('[attendance/token] tag selection error:', tagSelectError);
-      return NextResponse.json({ 
-        error: 'Database error (Selection)', 
+      return NextResponse.json({
+        error: 'Database error (Selection)',
         message: tagSelectError.message,
-        code: tagSelectError.code 
+        code: tagSelectError.code
       }, { status: 500 });
     }
 
@@ -77,8 +77,8 @@ export async function POST(
     }
 
     if (!tag.is_active) {
-      return NextResponse.json({ 
-        error: 'Siswa Nonaktif', 
+      return NextResponse.json({
+        error: 'Siswa Nonaktif',
         message: 'Kartu/Siswa ini dinonaktifkan.',
         studentName: tag.student_name,
         className: tag.class_name,
@@ -99,17 +99,17 @@ export async function POST(
 
     // Check if student already attended today (prevent duplicates)
     // Use Asia/Jakarta timezone for "today" boundaries
-    const formatter = new Intl.DateTimeFormat('en-CA', { 
-      timeZone: 'Asia/Jakarta', 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
     });
     const parts = formatter.formatToParts(new Date());
     const year = parts.find(p => p.type === 'year')?.value;
     const month = parts.find(p => p.type === 'month')?.value;
     const day = parts.find(p => p.type === 'day')?.value;
-    
+
     const todayJakarta = `${year}-${month}-${day}`;
     const gte = `${todayJakarta}T00:00:00+07:00`;
     const lte = `${todayJakarta}T23:59:59+07:00`;
@@ -123,12 +123,12 @@ export async function POST(
       .limit(1);
 
     if (checkError) {
-        console.error('[attendance/token] duplicate check error:', checkError);
+      console.error('[attendance/token] duplicate check error:', checkError);
     }
 
     if (existingLogs && existingLogs.length > 0) {
-      return NextResponse.json({ 
-        error: 'Sudah Absen', 
+      return NextResponse.json({
+        error: 'Sudah Absen',
         message: 'Siswa sudah tercatat hadir hari ini.',
         studentName: tag.student_name,
         className: tag.class_name,
@@ -155,10 +155,10 @@ export async function POST(
 
     if (logError) {
       console.error('[attendance/token] log insertion error:', logError);
-      return NextResponse.json({ 
-        error: 'Database error (Insertion)', 
+      return NextResponse.json({
+        error: 'Database error (Insertion)',
         message: logError.message,
-        code: logError.code 
+        code: logError.code
       }, { status: 500 });
     }
 
@@ -196,10 +196,10 @@ export async function POST(
     const sendWABackground = async () => {
       let waResult: { success: boolean; error?: string } = { success: false, error: 'Not attempted' };
       try {
-        waResult = await sendWhatsApp({ 
-          target: tag.teacher_phone, 
+        waResult = await sendWhatsApp({
+          target: tag.teacher_phone,
           message,
-          token: creatorProfile?.whatsapp_token || undefined 
+          token: creatorProfile?.whatsapp_token || undefined
         });
       } catch (waErr: any) {
         console.error('[attendance/token] WhatsApp send error in background:', waErr);
@@ -239,8 +239,8 @@ export async function POST(
     });
   } catch (err: any) {
     console.error('[attendance/token] Final catch:', err);
-    return NextResponse.json({ 
-      error: 'Internal error', 
+    return NextResponse.json({
+      error: 'Internal error',
       message: err.message || String(err),
       details: err.details || null
     }, { status: 500 });
