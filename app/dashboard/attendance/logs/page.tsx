@@ -26,7 +26,7 @@ export default function DashboardAttendanceLogsPage() {
   const d_attendance = dict[locale].dashboard.attendance;
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }));
+  const [dateFilter, setDateFilter] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }));
   const [statusFilter, setStatusFilter] = useState<"all" | "success" | "failed">("all");
   const [classFilter, setClassFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
@@ -274,7 +274,7 @@ export default function DashboardAttendanceLogsPage() {
                       `"${log.student_name}"`,
                       `"${log.class_name}"`,
                       `"${log.subject || '-'}"`,
-                      `"${new Date(log.tapped_at).toLocaleString('id-ID')}"`,
+                      `"${new Date(log.tapped_at).toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })} WITA"`,
                       log.wa_sent ? "Terkirim" : "Gagal"
                     ].join(","))
                   ].join("\n");
@@ -384,10 +384,10 @@ export default function DashboardAttendanceLogsPage() {
                       <td className="px-8 py-5 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-[#18080F] font-bold text-sm">
-                            {new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(new Date(log.tapped_at))} WIB
+                            {new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Makassar' }).format(new Date(log.tapped_at))} WITA
                           </span>
                           <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                            {new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(log.tapped_at))}
+                            {new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Makassar' }).format(new Date(log.tapped_at))}
                           </span>
                         </div>
                       </td>

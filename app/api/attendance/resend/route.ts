@@ -75,15 +75,15 @@ export async function POST(req: Request) {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-      timeZone: 'Asia/Jakarta',
+      timeZone: 'Asia/Makassar',
     });
     const time = tappedAt.toLocaleTimeString('id-ID', {
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Asia/Jakarta',
+      timeZone: 'Asia/Makassar',
     });
 
-    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB';
+    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
     const template = creatorProfile?.whatsapp_template || tag.message_template || defaultTemplate;
 
     const message = template

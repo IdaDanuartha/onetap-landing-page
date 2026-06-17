@@ -63,7 +63,7 @@ export default function WhatsAppSetupPage() {
         setExpiresAt(profile.plan_expires_at);
         setPhone(profile.whatsapp || "");
         setToken(profile.whatsapp_token || "");
-        setTemplate(profile.whatsapp_template || "✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB");
+        setTemplate(profile.whatsapp_template || "✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA");
 
         const access = canAccess(profile.plan, "attendance", profile.plan_expires_at);
         setHasAccess(access);

@@ -50,7 +50,7 @@ export default function AttendanceManagementPage() {
   const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
   const [presentToday, setPresentToday] = useState(0);
   const [schoolName, setSchoolName] = useState("Umum");
-  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB");
+  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA");
   const [user, setUser] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -261,12 +261,12 @@ export default function AttendanceManagementPage() {
         .eq("created_by", user.id)
         .order("created_at", { ascending: false });
         
-        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
         const { count } = await supabase
         .from("attendance_logs")
         .select("*", { count: 'exact', head: true })
         .eq("created_by", user.id)
-        .gte("tapped_at", `${today}T00:00:00+07:00`);
+        .gte("tapped_at", `${today}T00:00:00+08:00`);
 
         setTags(tagsData || []);
         

@@ -98,9 +98,9 @@ export async function POST(
     }
 
     // Check if student already attended today (prevent duplicates)
-    // Use Asia/Jakarta timezone for "today" boundaries
+    // Use Asia/Makassar timezone for "today" boundaries
     const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Jakarta',
+      timeZone: 'Asia/Makassar',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
@@ -110,9 +110,9 @@ export async function POST(
     const month = parts.find(p => p.type === 'month')?.value;
     const day = parts.find(p => p.type === 'day')?.value;
 
-    const todayJakarta = `${year}-${month}-${day}`;
-    const gte = `${todayJakarta}T00:00:00+07:00`;
-    const lte = `${todayJakarta}T23:59:59+07:00`;
+    const todayMakassar = `${year}-${month}-${day}`;
+    const gte = `${todayMakassar}T00:00:00+08:00`;
+    const lte = `${todayMakassar}T23:59:59+08:00`;
 
     const { data: existingLogs, error: checkError } = await supabaseAdmin
       .from('attendance_logs')
@@ -173,15 +173,15 @@ export async function POST(
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-      timeZone: 'Asia/Jakarta',
+      timeZone: 'Asia/Makassar',
     });
     const time = tappedAt.toLocaleTimeString('id-ID', {
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Asia/Jakarta',
+      timeZone: 'Asia/Makassar',
     });
 
-    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB';
+    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
     const template = creatorProfile?.whatsapp_template || (tag.message_template as string) || defaultTemplate;
 
     const message = template

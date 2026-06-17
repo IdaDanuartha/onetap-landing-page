@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       tags.forEach(t => tagsMap.set(t.token, t));
     }
 
-    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WIB';
+    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
     const template = creatorProfile?.whatsapp_template || defaultTemplate;
 
     let successCount = 0;
@@ -106,12 +106,12 @@ export async function POST(req: Request) {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
-        timeZone: 'Asia/Jakarta',
+        timeZone: 'Asia/Makassar',
       });
       const time = tappedAt.toLocaleTimeString('id-ID', {
         hour: '2-digit',
         minute: '2-digit',
-        timeZone: 'Asia/Jakarta',
+        timeZone: 'Asia/Makassar',
       });
 
       // Use specific tag message template if defined, fallback to user profile template
