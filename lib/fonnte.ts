@@ -9,9 +9,10 @@ interface SendWAParams {
   /** Target phone number in format: 628xxxxxxxxxx */
   target: string;
   message: string;
+  delay?: string | number;
 }
 
-export async function sendWhatsApp({ target, message }: SendWAParams): Promise<boolean> {
+export async function sendWhatsApp({ target, message, delay }: SendWAParams): Promise<boolean> {
   const token = process.env.FONNTE_API_TOKEN;
   if (!token) {
     console.warn('[Fonnte] FONNTE_API_TOKEN not configured. Skipping WA send.');
@@ -29,6 +30,7 @@ export async function sendWhatsApp({ target, message }: SendWAParams): Promise<b
         target,
         message,
         countryCode: '62',
+        delay: delay !== undefined ? String(delay) : undefined,
       }),
     });
 

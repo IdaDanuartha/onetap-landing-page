@@ -10,9 +10,11 @@ interface SendWAParams {
   message: string;
   /** Optional custom API token (e.g. for Pro users) */
   token?: string;
+  /** Optional delay in seconds (e.g. "2" or "2-5" for random delay) */
+  delay?: string | number;
 }
 
-export async function sendWhatsApp({ target, message, token: customToken }: SendWAParams): Promise<{ success: boolean; error?: string }> {
+export async function sendWhatsApp({ target, message, token: customToken, delay }: SendWAParams): Promise<{ success: boolean; error?: string }> {
   const token = (customToken || process.env.FONNTE_API_TOKEN)?.trim();
   if (!token) {
     console.warn('[WhatsApp] API TOKEN not configured. Skipping WA send.');
@@ -33,6 +35,7 @@ export async function sendWhatsApp({ target, message, token: customToken }: Send
         target: normalizedTarget,
         message,
         countryCode: '62',
+        delay: delay !== undefined ? String(delay) : undefined,
       }),
     });
 

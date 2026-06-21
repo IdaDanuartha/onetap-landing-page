@@ -209,7 +209,8 @@ export async function POST(
             waResult = await sendWhatsApp({
               target: tag.teacher_phone,
               message,
-              token: customToken
+              token: customToken,
+              delay: '2-5'
             });
           }
         } catch (waErr: any) {

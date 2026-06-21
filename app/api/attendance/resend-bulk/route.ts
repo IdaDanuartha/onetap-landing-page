@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { sendWhatsApp, getWhatsAppStatus } from '@/lib/whatsapp';
@@ -93,72 +93,69 @@ export async function POST(req: Request) {
     const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
     const template = creatorProfile?.whatsapp_template || defaultTemplate;
 
-    let successCount = 0;
-    let failCount = 0;
-
-    // 6. Process and send in sequence (to avoid hitting rate limits too harshly)
-    for (const log of logs) {
-      const associatedTag = tagsMap.get(log.token) || {};
-      const tappedAt = new Date(log.tapped_at);
-      
-      const date = tappedAt.toLocaleDateString('id-ID', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'Asia/Makassar',
-      });
-      const time = tappedAt.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Asia/Makassar',
-      });
-
-      // Use specific tag message template if defined, fallback to user profile template
-      const msgTemplate = associatedTag.message_template || template;
-      const message = msgTemplate
-        .replace(/{student_name}/g, log.student_name || 'Siswa')
-        .replace(/{class_name}/g, log.class_name || '-')
-        .replace(/{subject}/g, log.subject ?? '-')
-        .replace(/{school_name}/g, associatedTag.school_name || 'OneTap School')
-        .replace(/{date}/g, date)
-        .replace(/{time}/g, time);
-
-      let waResult: { success: boolean; error?: string } = { success: false, error: 'Not attempted' };
+    // 6. Trigger bulk resend task in the background using after()
+    after(async () => {
       try {
-        waResult = await sendWhatsApp({
-          target: associatedTag.teacher_phone || log.teacher_phone || '', // fallback to log phone if stored
-          message,
-          token: customToken
-        });
-      } catch (waErr: any) {
-        waResult = { success: false, error: waErr.message || String(waErr) };
+        for (const log of logs) {
+          const associatedTag = tagsMap.get(log.token) || {};
+          const tappedAt = new Date(log.tapped_at);
+          
+          const date = tappedAt.toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'Asia/Makassar',
+          });
+          const time = tappedAt.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Asia/Makassar',
+          });
+
+          // Use specific tag message template if defined, fallback to user profile template
+          const msgTemplate = associatedTag.message_template || template;
+          const message = msgTemplate
+            .replace(/{student_name}/g, log.student_name || 'Siswa')
+            .replace(/{class_name}/g, log.class_name || '-')
+            .replace(/{subject}/g, log.subject ?? '-')
+            .replace(/{school_name}/g, associatedTag.school_name || 'OneTap School')
+            .replace(/{date}/g, date)
+            .replace(/{time}/g, time);
+
+          let waResult: { success: boolean; error?: string } = { success: false, error: 'Not attempted' };
+          try {
+            waResult = await sendWhatsApp({
+              target: associatedTag.teacher_phone || log.teacher_phone || '', // fallback to log phone if stored
+              message,
+              token: customToken,
+              delay: '2-5' // Use Fonnte's safe queuing delay per message
+            });
+          } catch (waErr: any) {
+            waResult = { success: false, error: waErr.message || String(waErr) };
+          }
+
+          // Update individual log status
+          await supabaseAdmin
+            .from('attendance_logs')
+            .update({
+              wa_sent: waResult.success,
+              wa_error: waResult.success ? null : waResult.error
+            })
+            .eq('id', log.id);
+
+          // Add a natural background delay of 3 seconds between successive Fonnte API requests
+          await new Promise(r => setTimeout(r, 3000));
+        }
+      } catch (err) {
+        console.error('[attendance/resend-bulk] Background task error:', err);
       }
-
-      if (waResult.success) {
-        successCount++;
-      } else {
-        failCount++;
-      }
-
-      // Update individual log status
-      await supabaseAdmin
-        .from('attendance_logs')
-        .update({
-          wa_sent: waResult.success,
-          wa_error: waResult.success ? null : waResult.error
-        })
-        .eq('id', log.id);
-
-      // Brief delay (e.g. 200ms) between sends to prevent rate limits
-      await new Promise(r => setTimeout(r, 200));
-    }
+    });
 
     return NextResponse.json({
       success: true,
-      processedCount: logs.length,
-      successCount,
-      failCount
+      message: 'Proses pengiriman ulang WhatsApp bulk telah dimulai di background.',
+      processedCount: logs.length
     });
 
   } catch (err: any) {
