@@ -87,6 +87,59 @@ export default function AttendanceManagementPage() {
   const [waStatus, setWaStatus] = useState<{ isConnected: boolean; deviceStatus: string } | null>(null);
   const [checkingWA, setCheckingWA] = useState(false);
 
+  const [waGroups, setWaGroups] = useState<{ id: string; name: string }[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [groupSearch, setGroupSearch] = useState("");
+  const [showGroupSelectModal, setShowGroupSelectModal] = useState(false);
+  const [groupSelectTarget, setGroupSelectTarget] = useState<"single" | "bulk">("single");
+
+  const fetchGroups = async (forceRefresh = false) => {
+    setLoadingGroups(true);
+    try {
+      const res = await fetch(`/api/whatsapp/groups?refresh=${forceRefresh}`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setWaGroups(data.groups || []);
+      } else {
+        setToastMsg(data.error || "Gagal memuat grup WhatsApp.");
+        setToastType("error");
+        setShowToast(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch WA groups:", err);
+      setToastMsg("Kesalahan koneksi saat mengambil grup.");
+      setToastType("error");
+      setShowToast(true);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleOpenGroupSelect = (target: "single" | "bulk") => {
+    setGroupSelectTarget(target);
+    setGroupSearch("");
+    setShowGroupSelectModal(true);
+    if (waGroups.length === 0) {
+      fetchGroups(false);
+    }
+  };
+
+  const filteredGroups = useMemo(() => {
+    return waGroups.filter((g) =>
+      g.name.toLowerCase().includes(groupSearch.toLowerCase()) ||
+      g.id.toLowerCase().includes(groupSearch.toLowerCase())
+    );
+  }, [waGroups, groupSearch]);
+
+  const handleSelectGroup = (g: { id: string; name: string }) => {
+    if (groupSelectTarget === "single") {
+      setFormData((prev) => ({ ...prev, teacher_phone: g.id }));
+    } else {
+      setBulkWAPhone(g.id);
+    }
+    setShowGroupSelectModal(false);
+  };
+
   useEffect(() => {
     if (!loading && hasAccess) {
       const searchParams = new URLSearchParams(window.location.search);
@@ -1424,31 +1477,41 @@ export default function AttendanceManagementPage() {
                   </div>
                 </div>
 
-                {editingTag ? (
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{d.modal.wa} <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={formData.teacher_phone}
-                        onChange={(e) => setFormData({...formData, teacher_phone: e.target.value})}
-                        placeholder="628123456789"
-                        className="w-full pl-11 pr-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold"
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      {d.modal.wa} {editingTag && <span className="text-red-500">*</span>}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenGroupSelect("single")}
+                      className="text-[10px] font-black text-[#FF5FA2] hover:underline cursor-pointer"
+                    >
+                      Pilih dari Grup WA
+                    </button>
                   </div>
-                ) : (
-                  <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-3">
-                    <Lightbulb className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-black text-blue-700 mb-1 uppercase tracking-wider">Tips Pengisian</p>
-                      <p className="text-xs font-bold text-blue-600/80 leading-relaxed">
-                        Nomor WA tidak perlu diisi sekarang. Anda bisa mengisi nomor WA banyak siswa sekaligus menggunakan fitur <span className="text-blue-700 underline font-extrabold">Bulk Update WA</span> di tabel utama.
-                      </p>
-                    </div>
+                  <div className="relative">
+                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={formData.teacher_phone}
+                      onChange={(e) => setFormData({...formData, teacher_phone: e.target.value})}
+                      placeholder="628123456789 atau ID Grup"
+                      className="w-full pl-11 pr-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold"
+                    />
                   </div>
-                )}
+                  {!editingTag && (
+                    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-3 mt-2">
+                      <Lightbulb className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-black text-blue-700 mb-1 uppercase tracking-wider">Tips Pengisian</p>
+                        <p className="text-xs font-bold text-blue-600/80 leading-relaxed">
+                          Nomor WA tidak perlu diisi sekarang. Anda bisa mengisi nomor WA banyak siswa sekaligus menggunakan fitur <span className="text-blue-700 underline font-extrabold">Bulk Update WA</span> di tabel utama.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Unique Token (NFC ID)</label>
@@ -1579,12 +1642,21 @@ export default function AttendanceManagementPage() {
 
               <div className="space-y-4 mb-8">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nomor WhatsApp Baru</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nomor WhatsApp Baru</label>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenGroupSelect("bulk")}
+                      className="text-[10px] font-black text-[#FF5FA2] hover:underline cursor-pointer"
+                    >
+                      Pilih dari Grup WA
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={bulkWAPhone}
                     onChange={(e) => setBulkWAPhone(e.target.value)}
-                    placeholder="Contoh: 628123456789"
+                    placeholder="628123456789 atau ID Grup"
                     className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-bold text-center"
                   />
                 </div>
@@ -2034,6 +2106,105 @@ export default function AttendanceManagementPage() {
                 <p className="text-[10px] md:text-xs text-orange-800 font-medium leading-relaxed">
                   <strong>Tips:</strong> {d.bulkScan.tips}
                 </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Group Selection Modal */}
+      <AnimatePresence>
+        {showGroupSelectModal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-[#18080F]/45 backdrop-blur-[2px]">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGroupSelectModal(false)}
+              className="absolute inset-0"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative z-10 max-h-[85vh] flex flex-col border border-gray-100"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-2xl font-black text-[#18080F]">Pilih Grup WA</h3>
+                  <p className="text-xs text-gray-400 font-semibold mt-0.5">Pilih grup WhatsApp terdaftar di Fonnte Anda.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGroupSelectModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                >
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              {/* Search & Refresh Row */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari nama grup..."
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all text-sm font-medium"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fetchGroups(true)}
+                  disabled={loadingGroups}
+                  className="p-3 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                  title="Sinkronisasi Grup Terbaru"
+                >
+                  {loadingGroups ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-[#FF5FA2]" />
+                  ) : (
+                    <Download className="w-5 h-5 rotate-180 text-[#FF5FA2]" />
+                  )}
+                </button>
+              </div>
+
+              {/* Groups List */}
+              <div className="flex-1 overflow-y-auto min-h-[220px] max-h-[45vh] space-y-2 pr-2 custom-scrollbar">
+                {loadingGroups && waGroups.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center py-10 gap-2">
+                    <Loader2 className="w-8 h-8 text-[#FF5FA2] animate-spin" />
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Memuat Grup...</p>
+                  </div>
+                ) : filteredGroups.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center py-10 text-center">
+                    <Smartphone className="w-12 h-12 text-gray-200 mb-2" />
+                    <p className="text-sm font-bold text-[#18080F]">Grup Tidak Ditemukan</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-[220px] mx-auto font-medium">
+                      {groupSearch 
+                        ? `Tidak ada grup bernama "${groupSearch}"`
+                        : "Belum ada grup yang tersinkronisasi. Klik tombol sinkronisasi di kanan atas."}
+                    </p>
+                  </div>
+                ) : (
+                  filteredGroups.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => handleSelectGroup(g)}
+                      className="w-full text-left p-4 rounded-2xl border border-gray-50 hover:border-[#FF5FA2]/30 hover:bg-[#FF5FA2]/5 transition-all flex items-start justify-between gap-3 group cursor-pointer"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-[#18080F] truncate group-hover:text-[#FF5FA2] transition-colors">{g.name}</p>
+                        <p className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">{g.id}</p>
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-[#FF5FA2] bg-[#FF5FA2]/10 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        Pilih
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
             </motion.div>
           </div>
