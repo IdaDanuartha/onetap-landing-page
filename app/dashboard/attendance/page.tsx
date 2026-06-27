@@ -1810,7 +1810,7 @@ export default function AttendanceManagementPage() {
               <div className="bg-gray-50 p-4 rounded-2xl mb-8 border border-gray-100">
                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">URL Absensi</div>
                 <div className="text-[10px] font-mono text-gray-400 break-all bg-white p-2 rounded-lg border border-gray-100">
-                  {window.location.origin}/api/attendance/{fallbackToken}
+                  {window.location.origin}/attend/{fallbackToken}
                 </div>
               </div>
 
