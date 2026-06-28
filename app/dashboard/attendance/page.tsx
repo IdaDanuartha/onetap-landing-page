@@ -1377,11 +1377,11 @@ export default function AttendanceManagementPage() {
                 {selectedTags.length > 0 && (
                   <tr className="bg-[#FF5FA2]/5">
                     <td colSpan={5} className="px-6 py-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-[#FF5FA2]">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <span className="text-sm font-bold text-[#FF5FA2] whitespace-nowrap">
                           {selectedTags.length} {d.table.student} {d.table.selected}
                         </span>
-                        <div className="flex gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <button 
                             onClick={() => setShowBulkWAModal(true)}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white text-xs font-bold hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20"
