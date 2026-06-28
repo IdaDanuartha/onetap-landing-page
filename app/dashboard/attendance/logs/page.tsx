@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle2, XCircle, Search, Calendar, User, ArrowRight, Filter, Download, Globe, RefreshCw, Loader2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, Search, Calendar, User, ArrowRight, Filter, Download, Globe, RefreshCw, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -32,6 +32,8 @@ export default function DashboardAttendanceLogsPage() {
   const [subjectFilter, setSubjectFilter] = useState("");
   const [uniqueClasses, setUniqueClasses] = useState<string[]>([]);
   const [uniqueSubjects, setUniqueSubjects] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Resend WhatsApp states
   const [resendingId, setResendingId] = useState<string | null>(null);
@@ -220,6 +222,51 @@ export default function DashboardAttendanceLogsPage() {
     return matchesSearch && matchesDate && matchesStatus && matchesClass && matchesSubject;
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, dateFilter, statusFilter, classFilter, subjectFilter]);
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      
+      if (currentPage <= 3) {
+        end = 4;
+      }
+      if (currentPage >= totalPages - 2) {
+        start = totalPages - 3;
+      }
+      
+      if (start > 2) {
+        pages.push("ellipsis-1");
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (end < totalPages - 1) {
+        pages.push("ellipsis-2");
+      }
+      
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   return (
     <div className="min-h-screen bg-[#FFF8F2]">
       <main className="max-w-7xl mx-auto px-6 py-12">
@@ -229,7 +276,12 @@ export default function DashboardAttendanceLogsPage() {
               <ArrowRight className="w-4 h-4 rotate-180" />
               {d_attendance.back}
             </Link>
-            <h1 className="text-3xl font-black text-[#18080F] tracking-tight">{d_attendance.actions.history}</h1>
+            <h1 className="text-3xl font-black text-[#18080F] tracking-tight flex items-center gap-3">
+              <span>{d_attendance.actions.history}</span>
+              <span className="text-xs font-bold bg-[#FF5FA2]/10 text-[#FF5FA2] px-3 py-1.5 rounded-full border border-[#FF5FA2]/20">
+                {filteredLogs.length} Data
+              </span>
+            </h1>
             <p className="text-gray-500 font-medium">Log kehadiran lengkap dengan status pengiriman WhatsApp.</p>
           </div>
           
@@ -369,8 +421,31 @@ export default function DashboardAttendanceLogsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {loading ? null : filteredLogs.length > 0 ? (
-                  filteredLogs.map((log) => (
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-8 py-5 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-gray-100" />
+                          <div className="h-4 bg-gray-100 rounded w-32" />
+                        </div>
+                      </td>
+                      <td className="px-8 py-5 whitespace-nowrap">
+                        <div className="h-4 bg-gray-100 rounded w-16" />
+                      </td>
+                      <td className="px-8 py-5 whitespace-nowrap">
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-100 rounded w-24" />
+                          <div className="h-3 bg-gray-100 rounded w-16" />
+                        </div>
+                      </td>
+                      <td className="px-8 py-5 whitespace-nowrap">
+                        <div className="h-6 bg-gray-100 rounded-full w-20" />
+                      </td>
+                    </tr>
+                  ))
+                ) : paginatedLogs.length > 0 ? (
+                  paginatedLogs.map((log) => (
                     <tr key={log.id} className="hover:bg-gray-50/30 transition-colors">
                       <td className="px-8 py-5 whitespace-nowrap">
                         <div className="flex items-center gap-3">
@@ -434,6 +509,60 @@ export default function DashboardAttendanceLogsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {!loading && filteredLogs.length > itemsPerPage && (
+            <div className="px-6 py-4 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs font-bold text-gray-400">
+                {locale === 'id' 
+                  ? `Menampilkan ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredLogs.length)}-${Math.min(currentPage * itemsPerPage, filteredLogs.length)} dari ${filteredLogs.length} log`
+                  : `Showing ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredLogs.length)}-${Math.min(currentPage * itemsPerPage, filteredLogs.length)} of ${filteredLogs.length} logs`
+                }
+              </div>
+              
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-gray-100 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors text-gray-500 cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {getPageNumbers().map((page, index) => {
+                  if (typeof page === 'string') {
+                    return (
+                      <span key={`ellipsis-${index}`} className="px-2 text-gray-400 font-bold text-xs select-none">
+                        ...
+                      </span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                        currentPage === page
+                          ? "bg-[#FF5FA2] text-white shadow-sm"
+                          : "bg-white border border-gray-100 hover:bg-gray-50 text-gray-500 cursor-pointer"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg border border-gray-100 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors text-gray-500 cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
       <Toast 
