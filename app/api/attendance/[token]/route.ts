@@ -45,18 +45,7 @@ export async function POST(
       }, { status: 401 });
     }
 
-    // Rate limiting
-    const now = Date.now();
-    const lastTappedTime = globalForLocks.attendanceLocks.get(token);
-    if (lastTappedTime && now - lastTappedTime < RATE_LIMIT_MS) {
-      return NextResponse.json(
-        { error: 'Terlalu cepat. Tunggu sebentar sebelum tap lagi.' },
-        { status: 429 }
-      );
-    }
-    globalForLocks.attendanceLocks.set(token, now);
-
-
+    // Fetch the tag creator's custom WhatsApp token and template from users_profile
     const { data: tag, error: tagSelectError } = await supabaseAdmin
       .from('attendance_tags')
       .select('*')
@@ -84,17 +73,6 @@ export async function POST(
         className: tag.class_name,
         inactive: true
       }, { status: 403 });
-    }
-
-    // Fetch the tag creator's custom WhatsApp token and template from users_profile
-    const { data: creatorProfile, error: creatorProfileError } = await supabaseAdmin
-      .from('users_profile')
-      .select('whatsapp_token, whatsapp_template')
-      .eq('id', tag.created_by)
-      .maybeSingle();
-
-    if (creatorProfileError) {
-      console.warn('[attendance/token] Warning: Failed to fetch tag creator profile:', creatorProfileError);
     }
 
     // Check if student already attended today (prevent duplicates)
@@ -134,6 +112,30 @@ export async function POST(
         className: tag.class_name,
         alreadyLogged: true
       }, { status: 400 });
+    }
+
+    // Rate limiting (concurrency check)
+    const now = Date.now();
+    const lastTappedTime = globalForLocks.attendanceLocks.get(token);
+    if (lastTappedTime && now - lastTappedTime < RATE_LIMIT_MS) {
+      return NextResponse.json({
+        error: 'Terlalu cepat',
+        message: 'Tunggu sebentar sebelum tap lagi.',
+        studentName: tag.student_name,
+        className: tag.class_name,
+      }, { status: 429 });
+    }
+    globalForLocks.attendanceLocks.set(token, now);
+
+    // Fetch the tag creator's custom WhatsApp token and template from users_profile
+    const { data: creatorProfile, error: creatorProfileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('whatsapp_token, whatsapp_template')
+      .eq('id', tag.created_by)
+      .maybeSingle();
+
+    if (creatorProfileError) {
+      console.warn('[attendance/token] Warning: Failed to fetch tag creator profile:', creatorProfileError);
     }
 
     const tappedAt = new Date();

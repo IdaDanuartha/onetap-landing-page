@@ -124,10 +124,10 @@ export default function AttendKeychainPage() {
             {/* Main Card */}
             <div className="bg-white rounded-[36px] shadow-2xl shadow-[#FF5FA2]/10 border border-[#FFD6E8]/40 overflow-hidden">
               
-              {/* Header gradient */}
-              <div className={`relative px-8 pt-10 pb-8 ${data.presentToday
-                ? 'bg-gradient-to-br from-[#FF5FA2] via-[#FF7BAB] to-[#FFB347]'
-                : 'bg-gradient-to-br from-[#18080F] via-[#2d1020] to-[#3d1a2e]'
+              {/* Header background */}
+              <div className={`relative px-8 pt-10 pb-8 text-white ${data.presentToday
+                ? 'bg-[#FF5FA2]'
+                : 'bg-[#18080F]'
               }`}>
                 {/* NFC decoration */}
                 <div className="absolute top-4 right-5 opacity-20">
