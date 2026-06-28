@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users, Globe, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Upload, Zap, Radio, Signal, AlertCircle, Info, Lightbulb, BookOpen } from "lucide-react";
+import { User, Users, Globe, School, Calendar, ArrowRight, Plus, Search, MoreVertical, Edit3, Trash2, X, Loader2, Smartphone, Save, AlertTriangle, Wifi, CheckCircle2, Download, Upload, Zap, Radio, Signal, AlertCircle, Info, Lightbulb, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import Toast from "@/app/components/Toast";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -70,6 +70,8 @@ export default function AttendanceManagementPage() {
   const [importError, setImportError] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
   const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
   const { locale, setLocale, t } = useLanguage();
@@ -375,6 +377,10 @@ export default function AttendanceManagementPage() {
       fetchData();
     }
   }, [user]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, classFilter, subjectFilter]);
 
   const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -919,6 +925,51 @@ export default function AttendanceManagementPage() {
     return [];
   }, [filteredTags, runTour, locale]);
 
+  const totalPages = Math.ceil(displayTags.length / itemsPerPage);
+
+  const paginatedTags = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return displayTags.slice(startIndex, startIndex + itemsPerPage);
+  }, [displayTags, currentPage, itemsPerPage]);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      
+      if (currentPage <= 3) {
+        end = 4;
+      }
+      if (currentPage >= totalPages - 2) {
+        start = totalPages - 3;
+      }
+      
+      if (start > 2) {
+        pages.push("ellipsis-1");
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (end < totalPages - 1) {
+        pages.push("ellipsis-2");
+      }
+      
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   const uniqueClasses = Array.from(new Set(tags.map(t => t.class_name).filter(Boolean)));
   const uniqueSubjects = Array.from(new Set(tags.map(t => t.subject).filter(Boolean)));
 
@@ -1268,12 +1319,15 @@ export default function AttendanceManagementPage() {
                   <th className="px-6 py-5 w-10">
                     <input 
                       type="checkbox"
-                      checked={selectedTags.length === displayTags.length && displayTags.length > 0}
+                      checked={displayTags.length > 0 && displayTags.every(t => selectedTags.includes(t.id))}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedTags(displayTags.map(t => t.id));
+                          setSelectedTags(prev => {
+                            const newSelections = displayTags.map(t => t.id);
+                            return Array.from(new Set([...prev, ...newSelections]));
+                          });
                         } else {
-                          setSelectedTags([]);
+                          setSelectedTags(prev => prev.filter(id => !displayTags.some(t => t.id === id)));
                         }
                       }}
                       className="w-4 h-4 rounded border-gray-300 text-[#FF5FA2] focus:ring-[#FF5FA2]"
@@ -1346,7 +1400,7 @@ export default function AttendanceManagementPage() {
                       </div>
                     </td>
                   </tr>
-                ) : displayTags.map((tag, index) => (
+                ) : paginatedTags.map((tag, index) => (
                   <tr key={tag.id} className={`hover:bg-gray-50/30 transition-colors ${selectedTags.includes(tag.id) ? 'bg-[#FF5FA2]/5' : ''}`}>
                     <td className="px-6 py-5">
                       <input 
@@ -1402,7 +1456,59 @@ export default function AttendanceManagementPage() {
               </tbody>
             </table>
           </div>
-          
+
+          {/* Pagination Controls */}
+          {displayTags.length > itemsPerPage && (
+            <div className="px-6 py-4 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs font-bold text-gray-400">
+                {locale === 'id' 
+                  ? `Menampilkan ${Math.min((currentPage - 1) * itemsPerPage + 1, displayTags.length)}-${Math.min(currentPage * itemsPerPage, displayTags.length)} dari ${displayTags.length} siswa`
+                  : `Showing ${Math.min((currentPage - 1) * itemsPerPage + 1, displayTags.length)}-${Math.min(currentPage * itemsPerPage, displayTags.length)} of ${displayTags.length} students`
+                }
+              </div>
+              
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-gray-100 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors text-gray-500 cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {getPageNumbers().map((page, index) => {
+                  if (typeof page === 'string') {
+                    return (
+                      <span key={`ellipsis-${index}`} className="px-2 text-gray-400 font-bold text-xs select-none">
+                        ...
+                      </span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                        currentPage === page
+                          ? "bg-[#FF5FA2] text-white shadow-sm"
+                          : "bg-white border border-gray-100 hover:bg-gray-50 text-gray-500 cursor-pointer"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg border border-gray-100 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors text-gray-500 cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
       </main>
