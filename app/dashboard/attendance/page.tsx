@@ -42,6 +42,9 @@ export default function AttendanceManagementPage() {
   const [showBulkWAModal, setShowBulkWAModal] = useState(false);
   const [bulkWAPhone, setBulkWAPhone] = useState("");
   const [isSubmittingBulkWA, setIsSubmittingBulkWA] = useState(false);
+  const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
+  const [bulkStatusValue, setBulkStatusValue] = useState(true);
+  const [isSubmittingBulkStatus, setIsSubmittingBulkStatus] = useState(false);
   const [isBulkScanning, setIsBulkScanning] = useState(false);
   const [bulkScanError, setBulkScanError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -517,6 +520,37 @@ export default function AttendanceManagementPage() {
       setShowToast(true);
     } finally {
       setIsSubmittingBulkWA(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkUpdateStatus = async () => {
+    setIsSubmittingBulkStatus(true);
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("attendance_tags")
+        .update({ is_active: bulkStatusValue })
+        .in("id", selectedTags);
+
+      if (error) throw error;
+
+      setSuccessMessage("Bulk Update Status Success!");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      setShowBulkStatusModal(false);
+      setSelectedTags([]);
+      fetchData();
+      setToastMsg("Status berhasil diperbarui.");
+      setToastType("success");
+      setShowToast(true);
+    } catch (err) {
+      console.error("Bulk update status failed:", err);
+      setToastMsg("Gagal memperbarui status.");
+      setToastType("error");
+      setShowToast(true);
+    } finally {
+      setIsSubmittingBulkStatus(false);
       setIsSubmitting(false);
     }
   };
@@ -1356,6 +1390,13 @@ export default function AttendanceManagementPage() {
                             Update WA ({selectedTags.length})
                           </button>
                           <button 
+                            onClick={() => { setBulkStatusValue(true); setShowBulkStatusModal(true); }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white text-xs font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-600/20"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            Update Status ({selectedTags.length})
+                          </button>
+                          <button 
                             onClick={handleBulkDeleteTrigger}
                             disabled={isDeletingBulk}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50 shadow-lg shadow-red-500/20"
@@ -1781,6 +1822,79 @@ export default function AttendanceManagementPage() {
                   className="flex-[2] py-4 rounded-2xl bg-blue-500 text-white font-black hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-50"
                 >
                   {isSubmittingBulkWA ? <Loader2 className="w-5 h-5 animate-spin" /> : d.table.updateAll}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bulk Status Update Modal */}
+      <AnimatePresence>
+        {showBulkStatusModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowBulkStatusModal(false)}
+              className="absolute inset-0 bg-[#18080F]/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl relative z-10"
+            >
+              <div className="w-20 h-20 rounded-3xl bg-green-50 flex items-center justify-center mx-auto mb-6 transform -rotate-3">
+                <CheckCircle2 className="w-10 h-10 text-green-500" />
+              </div>
+              
+              <h3 className="text-2xl font-black text-[#18080F] mb-3 text-center">
+                Bulk Update Status
+              </h3>
+              <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8 text-center">
+                Pilih status baru untuk <span className="text-green-600 font-bold">{selectedTags.length} siswa</span> terpilih.
+              </p>
+
+              <div className="space-y-4 mb-8">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBulkStatusValue(true)}
+                    className={`py-3.5 rounded-2xl font-black transition-all border ${
+                      bulkStatusValue
+                        ? "bg-green-50 border-green-500 text-green-700 shadow-sm"
+                        : "bg-white border-gray-100 hover:bg-gray-50 text-gray-500 cursor-pointer"
+                    }`}
+                  >
+                    Aktif
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkStatusValue(false)}
+                    className={`py-3.5 rounded-2xl font-black transition-all border ${
+                      !bulkStatusValue
+                        ? "bg-gray-100 border-gray-400 text-gray-700 shadow-sm"
+                        : "bg-white border-gray-100 hover:bg-gray-50 text-gray-500 cursor-pointer"
+                    }`}
+                  >
+                    Nonaktif
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBulkStatusModal(false)}
+                  className="flex-1 py-4 rounded-2xl bg-gray-50 text-gray-500 font-black hover:bg-gray-100 transition-all"
+                >
+                  {d.table.cancel}
+                </button>
+                <button
+                  onClick={handleBulkUpdateStatus}
+                  disabled={isSubmittingBulkStatus}
+                  className="flex-[2] py-4 rounded-2xl bg-green-500 text-white font-black hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 disabled:opacity-50"
+                >
+                  {isSubmittingBulkStatus ? <Loader2 className="w-5 h-5 animate-spin" /> : d.table.updateAll}
                 </button>
               </div>
             </motion.div>
