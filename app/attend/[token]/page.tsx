@@ -141,8 +141,8 @@ export default function AttendKeychainPage() {
                     : 'bg-white/10 text-white/70'
                 }`}>
                   {data.presentToday
-                    ? <><CheckCircle2 className="w-3 h-3" /> Hadir Hari Ini</>
-                    : <><XCircle className="w-3 h-3" /> Belum Hadir</>
+                    ? <><CheckCircle2 className="w-3 h-3" /> Check In/Out Hari Ini</>
+                    : <><XCircle className="w-3 h-3" /> Belum Check In/Out</>
                   }
                 </div>
 
@@ -189,7 +189,7 @@ export default function AttendKeychainPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <StatCard
                     icon={<TrendingUp className="w-5 h-5 text-[#FF5FA2]" />}
-                    label="Total Hadir"
+                    label="Total Check In/Out"
                     value={data.totalAttendance}
                     accent="bg-[#FFF0F7] text-[#18080F]"
                   />

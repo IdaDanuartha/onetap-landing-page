@@ -63,7 +63,7 @@ export default function WhatsAppSetupPage() {
         setExpiresAt(profile.plan_expires_at);
         setPhone(profile.whatsapp || "");
         setToken(profile.whatsapp_token || "");
-        setTemplate(profile.whatsapp_template || "✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA");
+        setTemplate(profile.whatsapp_template || "✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* check in/out dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA");
 
         const access = canAccess(profile.plan, "attendance", profile.plan_expires_at);
         setHasAccess(access);
@@ -481,7 +481,7 @@ export default function WhatsAppSetupPage() {
                       rows={6}
                       value={template}
                       onChange={(e) => setTemplate(e.target.value)}
-                      placeholder="Halo, Siswa {student_name} telah hadir..."
+                      placeholder="Halo, Siswa {student_name} telah check in/out..."
                       className="w-full px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-[#FF5FA2]/20 outline-none transition-all font-bold text-sm text-[#18080F] resize-none"
                     />
 

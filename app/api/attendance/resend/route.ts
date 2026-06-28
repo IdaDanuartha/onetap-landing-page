@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       timeZone: 'Asia/Makassar',
     });
 
-    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
+    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* check in/out dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
     const template = creatorProfile?.whatsapp_template || tag.message_template || defaultTemplate;
 
     const message = template

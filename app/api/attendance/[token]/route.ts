@@ -129,7 +129,7 @@ export async function POST(
     if (existingLogs && existingLogs.length > 0) {
       return NextResponse.json({
         error: 'Sudah Absen',
-        message: 'Siswa sudah tercatat hadir hari ini.',
+        message: 'Siswa sudah tercatat check in/out hari ini.',
         studentName: tag.student_name,
         className: tag.class_name,
         alreadyLogged: true
@@ -164,7 +164,7 @@ export async function POST(
 
     if (!log) {
       console.error('[attendance/token] Failed to create log - no data returned');
-      throw new Error('Gagal mencatat log kehadiran');
+      throw new Error('Gagal mencatat log check in/out');
     }
 
     // Format date/time in Indonesian locale
@@ -181,7 +181,7 @@ export async function POST(
       timeZone: 'Asia/Makassar',
     });
 
-    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
+    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* check in/out dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
     const template = creatorProfile?.whatsapp_template || (tag.message_template as string) || defaultTemplate;
 
     const message = template

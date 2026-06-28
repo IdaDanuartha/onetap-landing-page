@@ -53,7 +53,7 @@ export default function AttendanceManagementPage() {
   const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
   const [presentToday, setPresentToday] = useState(0);
   const [schoolName, setSchoolName] = useState("Umum");
-  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA");
+  const [globalMessageTemplate, setGlobalMessageTemplate] = useState("✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* check in/out dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA");
   const [user, setUser] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -758,7 +758,7 @@ export default function AttendanceManagementPage() {
           ? "Sudah Absen" 
           : (isInactive 
               ? "Siswa Nonaktif" 
-              : (result.message ? `${result.error}: ${result.message}` : (result.error || (res.ok ? "Kehadiran Berhasil!" : "Gagal"))))
+              : (result.message ? `${result.error}: ${result.message}` : (result.error || (res.ok ? "Check In/Out Berhasil!" : "Gagal"))))
       };
 
       setScanLogs(prev => [newLog, ...prev].slice(0, 50));
@@ -2307,7 +2307,7 @@ export default function AttendanceManagementPage() {
                                   ? 'bg-amber-100 text-amber-700'
                                   : 'bg-red-100 text-red-700'
                             }`}>
-                              {log.status === 'success' && "Hadir"}
+                              {log.status === 'success' && "Check In/Out"}
                               {log.status === 'warning' && "Sudah Absen"}
                               {log.status === 'error' && "Gagal"}
                             </span>

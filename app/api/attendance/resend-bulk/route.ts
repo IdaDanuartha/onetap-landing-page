@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       tags.forEach(t => tagsMap.set(t.token, t));
     }
 
-    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* hadir dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
+    const defaultTemplate = '✅ *Presensi Kehadiran*\n\nSiswa *{student_name}* check in/out dalam kelas *{class_name}*\n📅 {date}\n🕒 {time} WITA';
     const template = creatorProfile?.whatsapp_template || defaultTemplate;
 
     // 6. Trigger bulk resend task in the background using after()

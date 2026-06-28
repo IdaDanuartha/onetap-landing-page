@@ -263,8 +263,8 @@ export const translations = {
       ctaSecondary: "Konsultasi Setup",
       live: "Live",
       attendanceLabel: "Absensi Hari Ini",
-      presentLabel: "siswa hadir",
-      presentStat: "43 dari 50 siswa hadir",
+      presentLabel: "siswa check in/out",
+      presentStat: "43 dari 50 siswa check in/out",
     },
     attendanceSection: {
       badge: "Sistem Absensi NFC",
@@ -289,8 +289,8 @@ export const translations = {
       waMessage: "Halo OneTap, saya ingin konsultasi mengenai setup sistem absensi NFC OneTap untuk instansi/sekolah saya.",
       mock: {
         title: "Notifikasi Kehadiran",
-        body1: "Halo Bapak/Ibu, Siswa **Budi Santoso** telah hadir di sekolah pada pukul **07:15 WIB**.",
-        body2: "Siswa **Siti Aminah** telah hadir di sekolah pada pukul **07:20 WIB**.",
+        body1: "Halo Bapak/Ibu, Siswa **Budi Santoso** telah check in/out di sekolah pada pukul **07:15 WIB**.",
+        body2: "Siswa **Siti Aminah** telah check in/out di sekolah pada pukul **07:20 WIB**.",
         status: "Live Status",
         connected: "WhatsApp Connected",
         response: "Waktu Respon",
@@ -762,7 +762,7 @@ export const translations = {
         back: "Kembali ke Dashboard",
         stats: {
           totalStudents: "Total Siswa",
-          presentToday: "Hadir Hari Ini",
+          presentToday: "Check In/Out Hari Ini",
           activeTags: "Tag Aktif",
         },
         globalSettings: {
@@ -1689,7 +1689,7 @@ export const translations = {
         back: "Back to Dashboard",
         stats: {
           totalStudents: "Total Students",
-          presentToday: "Present Today",
+          presentToday: "Check In/Out Today",
           activeTags: "Active Tags",
         },
         globalSettings: {
